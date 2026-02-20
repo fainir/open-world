@@ -1,0 +1,6 @@
+venv/
+data/
+versions/*.html
+__pycache__/
+*.pyc
+.env
