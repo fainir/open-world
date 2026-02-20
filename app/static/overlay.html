@@ -145,6 +145,21 @@
   border-radius:8px;font-size:13px;opacity:0;transition:all .3s;z-index:10001;pointer-events:none}
 #ow-toast.ow-show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* New version ready banner */
+#ow-new-version{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:linear-gradient(135deg,#1a1a2e,#1e1e3a);border:1px solid rgba(99,102,241,.5);
+  border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:12px;
+  z-index:10001;pointer-events:all;transition:transform .4s ease;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:'Inter',sans-serif;font-size:13px;color:#e0e0f0}
+#ow-new-version.ow-show{transform:translateX(-50%) translateY(0)}
+#ow-new-version .ow-nv-text{color:#c0c0d8}
+#ow-new-version .ow-nv-load{background:#6366f1;border:none;border-radius:8px;color:#fff;
+  padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;
+  transition:background .15s;white-space:nowrap}
+#ow-new-version .ow-nv-load:hover{background:#4f46e5}
+#ow-new-version .ow-nv-dismiss{background:none;border:none;color:#666;cursor:pointer;font-size:16px;padding:0 4px}
+#ow-new-version .ow-nv-dismiss:hover{color:#fff}
+
 /* Version indicator */
 #ow-ver-indicator{position:fixed;top:12px;right:80px;z-index:9999;background:rgba(10,10,18,.85);
   border:1px solid rgba(60,60,90,.4);border-radius:8px;padding:6px 12px;font-size:12px;
@@ -250,6 +265,11 @@
     </div>
   </div>
 
+  <div id="ow-new-version">
+    <span class="ow-nv-text">New version ready!</span>
+    <button class="ow-nv-load" id="ow-nv-load">Load Changes</button>
+    <button class="ow-nv-dismiss" id="ow-nv-dismiss">&times;</button>
+  </div>
   <div id="ow-toast"></div>
 </div>
 
@@ -281,6 +301,7 @@ let sessionId=localStorage.getItem(SK.SESSION);
 let currentVersionId=localStorage.getItem(SK.VERSION);
 let panelOpen=false;
 let isProcessing=false;
+let pendingVersionUrl=null;
 
 // Detect current version from URL
 const urlMatch=window.location.pathname.match(/^\/v\/([a-f0-9-]+)/);
@@ -392,9 +413,10 @@ async function sendMessage(){
         localStorage.setItem(SK.VERSION,currentVersionId);
         showSuggestions(data.suggestions||[]);
         saveChatHistory();
-        // Navigate to new version
-        setTimeout(()=>{window.location.href='/v/'+data.version_id},300);
-        return;
+        // Show "new version ready" banner — don't interrupt gameplay
+        pendingVersionUrl='/v/'+data.version_id;
+        $('ow-new-version').classList.add('ow-show');
+        fab.classList.add('ow-has-update');
       }
     }
     setStatus('Done!','ow-success');setTimeout(()=>setStatus(''),2000);
@@ -614,6 +636,15 @@ function showToast(message){
   const t=$('ow-toast');t.textContent=message;t.className='ow-show';
   setTimeout(()=>{t.className=''},3000);
 }
+
+// ── New version banner ──
+$('ow-nv-load').onclick=()=>{
+  if(pendingVersionUrl){saveChatHistory();window.location.href=pendingVersionUrl}
+};
+$('ow-nv-dismiss').onclick=()=>{
+  $('ow-new-version').classList.remove('ow-show');
+  fab.classList.remove('ow-has-update');
+};
 
 // ── Click outside panel to close ──
 document.addEventListener('mousedown',(e)=>{
