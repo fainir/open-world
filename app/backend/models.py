@@ -23,7 +23,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=_now)
 
-    versions = relationship("GameVersion", back_populates="user", order_by="desc(GameVersion.created_at)")
+    versions = relationship("GameVersion", back_populates="user", foreign_keys="[GameVersion.user_id]", order_by="desc(GameVersion.created_at)")
     sessions = relationship("ChatSession", back_populates="user", order_by="desc(ChatSession.created_at)")
 
 
@@ -74,4 +74,4 @@ class GameVersion(Base):
     created_at = Column(DateTime, default=_now)
 
     session = relationship("ChatSession", back_populates="versions")
-    user = relationship("User", back_populates="versions")
+    user = relationship("User", back_populates="versions", foreign_keys=[user_id])
