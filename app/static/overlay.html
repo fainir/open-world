@@ -357,7 +357,7 @@ document.addEventListener('keydown',(e)=>{
   if(!panelOpen)return; // let game handle everything when panel closed
   // Close panel on Escape
   if(e.key==='Escape'){e.stopPropagation();e.preventDefault();closePanel();return}
-},{true});
+},true);
 
 // Stop propagation on all key events inside the panel so game doesn't react
 panel.addEventListener('keydown',e=>e.stopPropagation(),false);
