@@ -139,10 +139,11 @@ canvas{display:block}
 <canvas id="game"></canvas>
 
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
 </script>
 <script type="module">
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 // ══════════════ ERROR DISPLAY ══════════════
 window.onerror=(msg,src,line)=>{
@@ -163,7 +164,7 @@ const box=(w,h,d,c)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshS
 const cyl=(rt,rb,h,c,s=8)=>new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s),new THREE.MeshStandardMaterial({color:c,roughness:0.6}));
 
 // ══════════════ CONSTANTS ══════════════
-const CS=1800,CH=900,BK=42,ST=12,GRAV=26,WSPD=22,JFORCE=14;
+const CS=1500,CH=750,BK=42,ST=12,GRAV=26,WSPD=22,JFORCE=14;
 
 // ══════════════ STATE ══════════════
 const keys={};let yaw=Math.PI,pitch=0,locked=false,boostFuel=100,score=0,comboCount=0,comboTimer=0;
@@ -233,7 +234,7 @@ function getH(x,z){
   let bc=0;if(x>CH-50){const d=clamp((x-CH+50)/300,0,3);bc=-d*4+fbm(x*0.01,z*0.01,2)*.8*d}
   return lerp(mt+bc+fbm(x*0.007,z*0.007,3)*3,0,cityB);
 }
-const tG=new THREE.PlaneGeometry(4800,4800,200,200);tG.rotateX(-Math.PI/2);
+const tG=new THREE.PlaneGeometry(4000,4000,160,160);tG.rotateX(-Math.PI/2);
 const tP=tG.attributes.position,tC=new Float32Array(tP.count*3);
 for(let i=0;i<tP.count;i++){const x=tP.getX(i),z=tP.getZ(i),h=getH(x,z);tP.setY(i,h);
   let r,g,b;if(h>110){r=0.95;g=0.96;b=1}else if(h>70){const t=(h-70)/40;r=lerp(.48,.95,t);g=lerp(.44,.96,t);b=lerp(.4,1,t)}
@@ -251,7 +252,7 @@ vertexShader:`uniform float time;varying vec3 vW,vN;void main(){vec3 p=position;
 fragmentShader:`uniform vec3 sunDir;varying vec3 vW,vN;void main(){vec3 V2=normalize(cameraPosition-vW),n=normalize(vN);float fr=pow(1.0-max(dot(V2,n),0.0),4.0);vec3 col=mix(mix(vec3(.02,.15,.30),vec3(.01,.08,.22),.4),vec3(.25,.45,.70),fr*.65);col+=vec3(1,.9,.7)*pow(max(dot(n,normalize(sunDir+V2)),0.0),256.0)*2.0;gl_FragColor=vec4(col,.92);}`
 });
 const water=new THREE.Mesh(new THREE.PlaneGeometry(5000,5000,100,100),wMat);
-water.rotation.x=-Math.PI/2;water.position.set(CH+1500,-0.8,0);scene.add(water);
+water.rotation.x=-Math.PI/2;water.position.set(CH+1200,-0.8,0);scene.add(water);
 
 // ══════════════ CITY GROUND ══════════════
 function mkCityTex(){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d'),rw=Math.round(512*ST/BK);
@@ -346,7 +347,7 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
     const rH=5+srand()*4;const rw=w*.9,rd=d*.9;
     const rColors=[0x8B2500,0x6B3A2A,0x4a2a1a,0x2a4a3a][Math.floor(srand()*4)];
     const rm=new THREE.Mesh(new THREE.BoxGeometry(rw,rH,rd),new THREE.MeshStandardMaterial({color:rColors,roughness:.6}));
-    rm.position.set(cx,rH/2,cz);rm.castShadow=true;scene.add(rm);
+    rm.position.set(cx,rH/2,cz);scene.add(rm);
     // Big front window
     const fwM=new THREE.MeshStandardMaterial({color:0xffeecc,transparent:true,opacity:.6,emissive:0xffddaa,emissiveIntensity:.3});
     const fw=new THREE.Mesh(new THREE.PlaneGeometry(rw*.7,rH*.5),fwM);
@@ -354,13 +355,10 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
     // Awning
     const awC2=[0xcc3333,0x33aa33,0x3366cc,0xcc8833][Math.floor(srand()*4)];
     const aw2=box(rw,.08,1.5,awC2);aw2.position.set(cx,rH-.3,cz+rd/2+.7);aw2.rotation.x=.15;scene.add(aw2);
-    // Outdoor tables (2-3)
-    for(let t=0;t<2+Math.floor(srand()*2);t++){
-      const tx=cx-rw/3+t*(rw/3),tz=cz+rd/2+2+srand()*2;
-      const tbl=box(.8,.05,.8,0x8B6914);tbl.position.set(tx,.75,tz);scene.add(tbl);
-      const tLeg=cyl(.03,.03,.7,0x666666);tLeg.position.set(tx,.35,tz);scene.add(tLeg);
-      // Chairs
-      for(const cs of[-.5,.5]){const ch=box(.3,.03,.3,0x555555);ch.position.set(tx+cs,.4,tz);scene.add(ch)}}
+    // Outdoor tables (2 simple)
+    for(let t=0;t<2;t++){
+      const tx=cx-rw/4+t*(rw/2),tz=cz+rd/2+2+srand()*1.5;
+      const tbl=box(1.2,.6,1.2,0x8B6914);tbl.position.set(tx,.3,tz);scene.add(tbl)}
     // Sign
     const signC=[0xff4444,0x44ff44,0xffaa22,0xff44aa][Math.floor(srand()*4)];
     const sign=box(rw*.5,.6,.08,signC);sign.material=new THREE.MeshStandardMaterial({color:signC,emissive:signC,emissiveIntensity:.4});
@@ -372,7 +370,7 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
     const sH=4+srand()*3;const sw2=w*.85,sd2=d*.85;
     const shopColors=[0xdd6644,0x44aa88,0x6644aa,0xaaaa22,0xdd4488,0x44aadd][Math.floor(srand()*6)];
     const sm2=new THREE.Mesh(new THREE.BoxGeometry(sw2,sH,sd2),new THREE.MeshStandardMaterial({color:shopColors,roughness:.5}));
-    sm2.position.set(cx,sH/2,cz);sm2.castShadow=true;scene.add(sm2);
+    sm2.position.set(cx,sH/2,cz);scene.add(sm2);
     // Display window
     const dwM=new THREE.MeshStandardMaterial({color:0xeeffff,transparent:true,opacity:.5,metalness:.4});
     const dw=new THREE.Mesh(new THREE.PlaneGeometry(sw2*.6,sH*.55),dwM);
@@ -389,7 +387,7 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
   else if(bType<.62&&h<35){
     const cH=6+srand()*5;const cw=w*.95,cd=d*.95;
     const cm=new THREE.Mesh(new THREE.BoxGeometry(cw,cH,cd),new THREE.MeshStandardMaterial({color:0x111122,roughness:.3,metalness:.5}));
-    cm.position.set(cx,cH/2,cz);cm.castShadow=true;scene.add(cm);
+    cm.position.set(cx,cH/2,cz);scene.add(cm);
     // Neon strips on facade
     const neonC=[0xff00ff,0x00ffff,0xff0066,0x6600ff,0x00ff66][Math.floor(srand()*5)];
     const nM=new THREE.MeshStandardMaterial({color:neonC,emissive:neonC,emissiveIntensity:1.5});
@@ -399,11 +397,10 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
     // Neon sign
     const signM=new THREE.MeshStandardMaterial({color:0xff00ff,emissive:0xff00ff,emissiveIntensity:2});
     const nsign=box(cw*.3,.8,.1,0xff00ff);nsign.material=signM;nsign.position.set(cx,cH+.5,cz+cd/2);scene.add(nsign);
-    // Colored point light
-    const nLight=new THREE.PointLight(neonC,.8,20);nLight.position.set(cx,cH+1,cz+cd/2+2);scene.add(nLight);
-    // Bouncer area (small box)
-    const rope1=cyl(.02,.02,1,0x888888);rope1.position.set(cx-1.5,.5,cz+cd/2+1.5);scene.add(rope1);
-    const rope2=cyl(.02,.02,1,0x888888);rope2.position.set(cx+1.5,.5,cz+cd/2+1.5);scene.add(rope2);
+    // Glowing ground strip (no PointLight for performance)
+    const glow=new THREE.Mesh(new THREE.PlaneGeometry(cw*.6,2),
+      new THREE.MeshStandardMaterial({color:neonC,emissive:neonC,emissiveIntensity:1,side:THREE.DoubleSide}));
+    glow.rotation.x=-Math.PI/2;glow.position.set(cx,.12,cz+cd/2+1.5);scene.add(glow);
     bldgs.push({minX:cx-cw/2-.3,maxX:cx+cw/2+.3,minZ:cz-cd/2-.3,maxZ:cz+cd/2+.3,h:cH});
   }
   // ─── Standard box building ───
@@ -431,7 +428,7 @@ const waterPondM=new THREE.MeshStandardMaterial({color:0x2266aa,transparent:true
 
 // ─── PARKS ───
 seedR(3333);
-const parkCount=Math.min(emptyLots.length,14);
+const parkCount=Math.min(emptyLots.length,10);
 for(let i=0;i<parkCount;i++){
   const lot=emptyLots[i];const px=lot.cx,pz=lot.cz;
   // Grass ground
@@ -440,30 +437,18 @@ for(let i=0;i<parkCount;i++){
   // Diagonal path
   const path=new THREE.Mesh(new THREE.PlaneGeometry(2,BK-ST),pathM);
   path.rotation.x=-Math.PI/2;path.rotation.z=Math.PI/4;path.position.set(px,.12,pz);scene.add(path);
-  // Trees (3-6)
-  for(let t=0;t<3+Math.floor(srand()*4);t++){
-    const tx=px-8+srand()*16,tz=pz-8+srand()*16;
+  // Trees (2-3)
+  for(let t=0;t<2+Math.floor(srand()*2);t++){
+    const tx=px-6+srand()*12,tz=pz-6+srand()*12;
     const g=new THREE.Group();const th=3+srand()*2;
     g.add(cyl(.08,.12,th,0x6a4a2a));g.children[0].position.y=th/2;
-    const crown=new THREE.Mesh(new THREE.SphereGeometry(1.2+srand()*.8,6,4),
-      new THREE.MeshStandardMaterial({color:0x2a7a2a+Math.floor(srand()*0x001a00),roughness:.8}));
+    const crown=new THREE.Mesh(new THREE.SphereGeometry(1.5,5,3),
+      new THREE.MeshStandardMaterial({color:0x2a7a2a,roughness:.8}));
     crown.position.y=th+.8;crown.scale.y=.7;g.add(crown);
     g.position.set(tx,.1,tz);scene.add(g)}
-  // Benches (2-3)
-  for(let b=0;b<2+Math.floor(srand()*2);b++){
-    const ba=srand()*Math.PI*2;const bx=px+Math.cos(ba)*6,bz2=pz+Math.sin(ba)*6;
-    const bench=new THREE.Group();
-    bench.add(box(1.5,.05,.5,0x6a4a2a));bench.children[0].position.y=.45;
-    bench.add(box(1.5,.4,.05,0x6a4a2a));bench.children[1].position.set(0,.65,-.22);
-    const leg1=box(.08,.4,.05,0x444444);leg1.position.set(-.6,.2,0);bench.add(leg1);
-    const leg2=box(.08,.4,.05,0x444444);leg2.position.set(.6,.2,0);bench.add(leg2);
-    bench.position.set(bx,.1,bz2);bench.rotation.y=ba;scene.add(bench)}
-  // Flower beds
-  if(srand()>.4){const fbC=[0xff4466,0xffaa22,0xff66cc,0xaa44ff];
-    for(let f=0;f<8;f++){const fx=px-4+srand()*8,fz=pz-4+srand()*8;
-      const fl=new THREE.Mesh(new THREE.SphereGeometry(.3,4,3),
-        new THREE.MeshStandardMaterial({color:fbC[f%4],roughness:.9}));
-      fl.position.set(fx,.25,fz);fl.scale.y=.5;scene.add(fl)}}
+  // Bench (1 simple)
+  const ba=srand()*Math.PI*2;const bx=px+Math.cos(ba)*6,bz2=pz+Math.sin(ba)*6;
+  const bench=box(1.5,.5,.5,0x6a4a2a);bench.position.set(bx,.35,bz2);bench.rotation.y=ba;scene.add(bench);
 }
 
 // ─── SPORTS AREAS ───
@@ -529,24 +514,18 @@ for(let i=0;i<Math.min(sportsLots.length,6);i++){
 
 // ─── SMALL LAKES/PONDS ───
 seedR(7777);
-const pondLots=emptyLots.slice(parkCount+6,parkCount+11);
-for(let i=0;i<Math.min(pondLots.length,5);i++){
+const pondLots=emptyLots.slice(parkCount+6,parkCount+10);
+for(let i=0;i<Math.min(pondLots.length,4);i++){
   const lot=pondLots[i];const lx=lot.cx,lz=lot.cz;
   const pr=6+srand()*4;
-  // Water surface
-  const pond=new THREE.Mesh(new THREE.CircleGeometry(pr,16),waterPondM);
+  const pond=new THREE.Mesh(new THREE.CircleGeometry(pr,12),waterPondM);
   pond.rotation.x=-Math.PI/2;pond.position.set(lx,.02,lz);scene.add(pond);
-  // Stone border
-  for(let s=0;s<12;s++){const a=s/12*Math.PI*2;
-    const stone=new THREE.Mesh(new THREE.SphereGeometry(.3+srand()*.2,5,4),
+  // Few border stones (simple)
+  for(let s=0;s<6;s++){const a=s/6*Math.PI*2;
+    const stone=new THREE.Mesh(new THREE.SphereGeometry(.35,4,3),
       new THREE.MeshStandardMaterial({color:0x777777,roughness:.9}));
     stone.position.set(lx+Math.cos(a)*(pr+.2),.15,lz+Math.sin(a)*(pr+.2));
     stone.scale.y=.5;scene.add(stone)}
-  // Vegetation around pond
-  for(let v=0;v<6;v++){const a=srand()*Math.PI*2;
-    const bush=new THREE.Mesh(new THREE.SphereGeometry(.5+srand()*.3,5,4),
-      new THREE.MeshStandardMaterial({color:0x2a6a2a,roughness:.9}));
-    bush.position.set(lx+Math.cos(a)*(pr+1),.3,lz+Math.sin(a)*(pr+1));bush.scale.y=.6;scene.add(bush)}
 }
 
 // ─── CENTRAL PLAZA WITH FOUNTAIN ───
@@ -563,15 +542,10 @@ if(!colBldg(0,0,8)){
   const fTop=new THREE.Mesh(new THREE.SphereGeometry(.4,8,6),
     new THREE.MeshStandardMaterial({color:0x888888,metalness:.6,roughness:.3}));
   fTop.position.set(0,4,0);scene.add(fTop);
-  // Benches around fountain
-  for(let b=0;b<6;b++){const a=b/6*Math.PI*2;
-    const bench=new THREE.Group();
-    bench.add(box(1.5,.05,.5,0x6a4a2a));bench.children[0].position.y=.45;
-    bench.add(box(1.5,.4,.05,0x6a4a2a));bench.children[1].position.set(0,.65,-.22);
-    bench.add(box(.08,.4,.05,0x444444));bench.children[2].position.set(-.6,.2,0);
-    bench.add(box(.08,.4,.05,0x444444));bench.children[3].position.set(.6,.2,0);
-    bench.position.set(Math.cos(a)*(plazaR-2),.1,Math.sin(a)*(plazaR-2));
-    bench.rotation.y=a+Math.PI;scene.add(bench)}
+  // Benches around fountain (simple boxes)
+  for(let b=0;b<4;b++){const a=b/4*Math.PI*2;
+    const bnch=box(1.5,.5,.5,0x6a4a2a);bnch.position.set(Math.cos(a)*(plazaR-2),.35,Math.sin(a)*(plazaR-2));
+    bnch.rotation.y=a+Math.PI;scene.add(bnch)}
 }
 
 // ─── SMALL PLAZAS AT INTERSECTIONS ───
@@ -594,28 +568,23 @@ for(let i=0;i<5;i++){
 // ─── SIDEWALKS & BUS STOPS ───
 seedR(1111);
 for(let x=-CH+ST;x<CH;x+=BK)for(let z=-CH+ST;z<CH;z+=BK){
-  // Sidewalk strips along building edges
-  if(srand()>.6){const sw=box(BK-ST,.08,.8,0x888888);sw.position.set(x+(BK-ST)/2,.04,z+.4);scene.add(sw)}
-  if(srand()>.6){const sw=box(.8,.08,BK-ST,0x888888);sw.position.set(x+.4,.04,z+(BK-ST)/2);scene.add(sw)}
+  // Sidewalk strips (sparse)
+  if(srand()>.8){const sw=box(BK-ST,.08,.8,0x888888);sw.position.set(x+(BK-ST)/2,.04,z+.4);scene.add(sw)}
 }
-// Bus stops
-for(let i=0;i<14;i++){
+// Bus stops (simplified - just roof + pole)
+for(let i=0;i<8;i++){
   const bx=-CH+BK*3+srand()*(CS-BK*6),bz=-CH+BK*3+srand()*(CS-BK*6);
   if(colBldg(bx,bz,1))continue;
   const bg=new THREE.Group();
-  bg.add(cyl(.05,.05,2.8,0x666666));bg.children[0].position.set(-.8,1.4,0);
-  bg.add(cyl(.05,.05,2.8,0x666666));bg.children[1].position.set(.8,1.4,0);
+  bg.add(cyl(.05,.05,2.8,0x666666));bg.children[0].position.set(0,1.4,0);
   const roof=box(2,.05,1.2,0x3388aa);roof.position.y=2.8;bg.add(roof);
-  const back=box(2,1.5,.05,0x44aacc);back.material=new THREE.MeshStandardMaterial({color:0x44aacc,transparent:true,opacity:.4});
-  back.position.set(0,1.5,-.55);bg.add(back);
-  const seat=box(1.5,.05,.4,0x666666);seat.position.set(0,.7,0);bg.add(seat);
   bg.position.set(bx,.1,bz);bg.rotation.y=srand()*Math.PI*2;scene.add(bg)}
 
 // ─── PARKING LOTS ───
 const parkingM=new THREE.MeshStandardMaterial({color:0x444444,roughness:.9});
 const lineM=new THREE.MeshStandardMaterial({color:0xffffff});
 seedR(2222);
-const parkingLots=emptyLots.slice(parkCount+11,parkCount+17);
+const parkingLots=emptyLots.slice(parkCount+10,parkCount+14);
 for(let i=0;i<Math.min(parkingLots.length,3);i++){
   const lot=parkingLots[i];const lx=lot.cx,lz=lot.cz;
   const pg=new THREE.Mesh(new THREE.PlaneGeometry(BK-ST-2,BK-ST-2),parkingM);
@@ -635,156 +604,152 @@ for(let x=-CH+ST;x<CH;x+=BK*3)for(let z=-CH+ST;z<CH;z+=BK*3){
   const light=new THREE.Mesh(new THREE.SphereGeometry(.25,5,4),glowMat);light.position.set(lx,4.9,lz+1.4);scene.add(light);
 }
 
-// ══════════════ NATURE: PALMS ══════════════
-const palmTM=new THREE.MeshStandardMaterial({color:0x8B7355,roughness:.9});
-const palmLM=new THREE.MeshStandardMaterial({color:0x1a8a2a,side:THREE.DoubleSide,roughness:.8});
-function mkPalm(px,pz){const g=new THREE.Group(),th=5+hash2(px*.3,pz*.3)*4;
-  const t=new THREE.Mesh(new THREE.CylinderGeometry(.1,.22,th,5),palmTM);t.position.y=th/2;g.add(t);
-  for(let i=0;i<5;i++){const a=i/5*Math.PI*2,ll=2.5+hash2(px+i*47,pz+i*31)*1.5;
-    const l=new THREE.Mesh(new THREE.ConeGeometry(.45,ll,3,1),palmLM);
-    l.position.set(Math.cos(a)*.4,th+.1,Math.sin(a)*.4);l.lookAt(new THREE.Vector3(Math.cos(a)*3,th-2.5,Math.sin(a)*3));
-    l.rotateX(Math.PI/2);g.add(l)}
-  g.position.set(px,getH(px,pz),pz);return g}
-seedR(321);for(let i=0;i<100;i++){const x=CH+20+srand()*600,z=-1200+srand()*2400,h=getH(x,z);if(h>-2&&h<5)scene.add(mkPalm(x,z))}
+// ══════════════ MERGED NATURE (batched geometry for performance) ══════════════
+// Helper: transform geometry to world position/rotation/scale and return clone
+function geoAt(geo,px,py,pz,rx,ry,rz,sx,sy,sz){
+  const g=geo.clone();const m=new THREE.Matrix4();
+  m.compose(new THREE.Vector3(px,py,pz),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)),new THREE.Vector3(sx||1,sy||1,sz||1));
+  g.applyMatrix4(m);return g}
 
-// Beach umbrellas
+// Collect geometries by material batch
+const trunkGeos=[],leafGeos=[],darkLeafGeos=[],snowLeafGeos=[];
+const oakTrunkGeos=[],oakLeafGeos=[],birchTrunkGeos=[],birchLeafGeos=[];
+const willowTrunkGeos=[],willowLeafGeos=[],rockGeos=[],bushGeos=[];
+const flowerGeos=[],meadowGeos=[],logGeos=[];
+
+// ─── PALMS (merged) ───
+const _palmTrunk=new THREE.CylinderGeometry(.1,.22,7,4);
+const _palmLeaf=new THREE.ConeGeometry(.45,3,3,1);
+seedR(321);for(let i=0;i<60;i++){const x=CH+20+srand()*500,z=-1000+srand()*2000,h=getH(x,z);
+  if(h<-2||h>5)continue;const th=5+hash2(x*.3,z*.3)*4;
+  trunkGeos.push(geoAt(_palmTrunk,x,h+th/2,z));
+  for(let j=0;j<4;j++){const a=j/4*Math.PI*2;
+    leafGeos.push(geoAt(_palmLeaf,x+Math.cos(a)*.4,h+th-.5,z+Math.sin(a)*.4,-.8+a*.1,a,0))}}
+
+// ─── PINES (merged) ───
+const _pineTrunk=new THREE.CylinderGeometry(.08,.15,3,4);
+const _pineCone=new THREE.ConeGeometry(1,2.5,4);
+seedR(555);for(let i=0;i<120;i++){const x=-CH-30-srand()*800,z=-1000+srand()*2000,h=getH(x,z);
+  if(h<3||h>90)continue;const th=2+hash2(x*.2,z*.2)*3;
+  trunkGeos.push(geoAt(_pineTrunk,x,h+th/2,z));
+  const isSnow=h>50;
+  for(let j=0;j<3;j++){const s=1-j*.25;
+    const g=geoAt(_pineCone,x,h+th-.5+j*1.5,z,0,0,0,s,s,s);
+    (isSnow?snowLeafGeos:darkLeafGeos).push(g)}}
+
+// ─── DECIDUOUS (city trees, merged) ───
+const _decTrunk=new THREE.CylinderGeometry(.08,.12,4,4);
+const _decCrown=new THREE.SphereGeometry(1.5,5,3);
+seedR(654);for(let i=0;i<50;i++){const x=-CH+srand()*CS,z=-CH+srand()*CS;
+  if(Math.abs(x%(BK))<3||Math.abs(z%(BK))<3||colBldg(x,z))continue;
+  const th=3+srand()*2,h=getH(x,z);
+  trunkGeos.push(geoAt(_decTrunk,x,h+th/2,z));
+  leafGeos.push(geoAt(_decCrown,x,h+th+1,z,0,0,0,1,.7,1))}
+
+// ─── OAK TREES (merged) ───
+const _oakTrunk=new THREE.CylinderGeometry(.12,.2,6,4);
+const _oakCrown=new THREE.SphereGeometry(2.2,5,4);
+seedR(4440);for(let i=0;i<60;i++){const x=-CH+100+srand()*(CS-200),z=CH+20+srand()*300,h=getH(x,z);
+  if(h<-1||h>15)continue;const th=4+hash2(x*.2,z*.2)*4;
+  oakTrunkGeos.push(geoAt(_oakTrunk,x,h+th/2,z));
+  oakLeafGeos.push(geoAt(_oakCrown,x,h+th+1,z,0,0,0,1,.6,1))}
+
+// ─── BIRCH TREES (merged) ───
+const _birchTrunk=new THREE.CylinderGeometry(.06,.1,6,4);
+const _birchLeaf=new THREE.SphereGeometry(.9,4,3);
+seedR(4441);for(let i=0;i<50;i++){const x=-CH+srand()*CS,z=-CH-20-srand()*300,h=getH(x,z);
+  if(h<-1||h>15)continue;const th=5+hash2(x*.15,z*.15)*3;
+  birchTrunkGeos.push(geoAt(_birchTrunk,x,h+th/2,z));
+  for(let j=0;j<2;j++)birchLeafGeos.push(geoAt(_birchLeaf,x+(hash2(x+j*33,z)-.5),h+th-.5+j*1.4,z+(hash2(x,z+j*33)-.5),0,0,0,1,1.3,1))}
+
+// ─── WILLOWS (merged) ───
+const _willowTrunk=new THREE.CylinderGeometry(.15,.25,6,5);
+const _willowCrown=new THREE.SphereGeometry(2.5,5,4);
+const _willowDroop=new THREE.ConeGeometry(.6,3,3);
+seedR(4444);for(let i=0;i<15;i++){const x=CH+5+srand()*150,z=-500+srand()*1000,h=getH(x,z);
+  if(h<-2||h>4)continue;const th=5+hash2(x*.1,z*.1)*3;
+  willowTrunkGeos.push(geoAt(_willowTrunk,x,h+th/2,z));
+  willowLeafGeos.push(geoAt(_willowCrown,x,h+th,z,0,0,0,1,.8,1));
+  for(let b=0;b<4;b++){const a=b/4*Math.PI*2;
+    willowLeafGeos.push(geoAt(_willowDroop,x+Math.cos(a)*1.8,h+th-1.5,z+Math.sin(a)*1.8))}}
+
+// ─── ROCKS (merged) ───
+const _rock=new THREE.DodecahedronGeometry(1,0);
+seedR(4442);for(let i=0;i<30;i++){
+  const side=srand()<.5?1:-1;const x=side*(CH+30+srand()*400),z=-800+srand()*1600,h=getH(x,z);
+  if(h<-2||h>80)continue;
+  for(let r=0;r<2+Math.floor(srand()*3);r++){
+    const rs=.5+srand()*1.5,rx2=x+srand()*3-1.5,rz2=z+srand()*3-1.5;
+    rockGeos.push(geoAt(_rock,rx2,h+rs*.4,rz2,srand(),srand(),srand(),rs,rs*(.5+srand()*.5),rs))}}
+
+// ─── BUSHES (merged into single green mesh) ───
+const _bush=new THREE.SphereGeometry(.5,4,3);
+seedR(4445);for(let i=0;i<80;i++){
+  const angle=srand()*Math.PI*2,dist=CH+20+srand()*400;
+  const x=Math.cos(angle)*dist,z=Math.sin(angle)*dist,h=getH(x,z);
+  if(h<-2||h>50)continue;
+  const s=.6+srand()*.6;
+  bushGeos.push(geoAt(_bush,x,h+.3,z,0,0,0,s*(1+srand()*.3),s*(.5+srand()*.3),s*(1+srand()*.3)))}
+
+// ─── FLOWER MEADOWS (merged) ───
+const _flower=new THREE.SphereGeometry(.18,3,2);
+const _meadow=new THREE.CircleGeometry(5,6);_meadow.rotateX(-Math.PI/2);
+seedR(4443);for(let i=0;i<12;i++){
+  const side=srand()<.3?1:(srand()<.5?-1:0);
+  const x=(side===0?(-CH+srand()*CS):(side*(CH+20+srand()*200)));
+  const z=side===0?(srand()<.5?CH+20+srand()*150:-CH-20-srand()*150):(-600+srand()*1200);
+  const h=getH(x,z);if(h<-1||h>20)continue;
+  meadowGeos.push(geoAt(_meadow,x,h+.05,z));
+  for(let f=0;f<10+Math.floor(srand()*10);f++){
+    const fx=x-4+srand()*8,fz=z-4+srand()*8,fh=getH(fx,fz);
+    flowerGeos.push(geoAt(_flower,fx,fh+.15,fz,0,0,0,1,.6,1))}}
+
+// ─── FALLEN LOGS (merged) ───
+const _log=new THREE.CylinderGeometry(.12,.15,2.5,4);
+seedR(4446);for(let i=0;i<15;i++){
+  const angle=srand()*Math.PI*2,dist=CH+50+srand()*300;
+  const x=Math.cos(angle)*dist,z=Math.sin(angle)*dist,h=getH(x,z);
+  if(h<-1||h>40)continue;
+  logGeos.push(geoAt(_log,x,h+.1,z,0,srand()*Math.PI,Math.PI/2))}
+
+// ─── Build merged meshes ───
+function batchMesh(geos,mat){if(!geos.length)return;const m=new THREE.Mesh(mergeGeometries(geos),mat);scene.add(m)}
+const treeTrunkM=new THREE.MeshStandardMaterial({color:0x6a4a2a,roughness:.9});
+const greenLeafM=new THREE.MeshStandardMaterial({color:0x2a7a2a,roughness:.8});
+const darkGreenM=new THREE.MeshStandardMaterial({color:0x1a5a2a,roughness:.8});
+const snowGreenM=new THREE.MeshStandardMaterial({color:0x3a7a4a,roughness:.8});
+const oakTrunkM=new THREE.MeshStandardMaterial({color:0x4a3a1a,roughness:.9});
+const oakLeafM2=new THREE.MeshStandardMaterial({color:0x2a6a1a,roughness:.8});
+const birchTrunkM=new THREE.MeshStandardMaterial({color:0xe8dcc8,roughness:.7});
+const birchLeafM2=new THREE.MeshStandardMaterial({color:0x5aaa3a,roughness:.8});
+const willowTrunkM=new THREE.MeshStandardMaterial({color:0x5a4a2a,roughness:.9});
+const willowLeafM2=new THREE.MeshStandardMaterial({color:0x3a8a2a,roughness:.7,side:THREE.DoubleSide});
+const rockBatchM=new THREE.MeshStandardMaterial({color:0x6a6a66,roughness:.92});
+const bushBatchM=new THREE.MeshStandardMaterial({color:0x2a6a1a,roughness:.9});
+const flowerBatchM=new THREE.MeshStandardMaterial({color:0xff6688,roughness:.8});
+const meadowBatchM=new THREE.MeshStandardMaterial({color:0x4a9a3a,roughness:.9});
+const logBatchM=new THREE.MeshStandardMaterial({color:0x5a3a1a,roughness:.95});
+
+batchMesh(trunkGeos,treeTrunkM);batchMesh(leafGeos,greenLeafM);
+batchMesh(darkLeafGeos,darkGreenM);batchMesh(snowLeafGeos,snowGreenM);
+batchMesh(oakTrunkGeos,oakTrunkM);batchMesh(oakLeafGeos,oakLeafM2);
+batchMesh(birchTrunkGeos,birchTrunkM);batchMesh(birchLeafGeos,birchLeafM2);
+batchMesh(willowTrunkGeos,willowTrunkM);batchMesh(willowLeafGeos,willowLeafM2);
+batchMesh(rockGeos,rockBatchM);batchMesh(bushGeos,bushBatchM);
+batchMesh(flowerGeos,flowerBatchM);batchMesh(meadowGeos,meadowBatchM);batchMesh(logGeos,logBatchM);
+
+// Beach umbrellas (kept as groups - small count)
 const umbColors=[0xff4444,0x4444ff,0xffff44,0xff8800,0x44ff44,0xff44ff];
-seedR(222);for(let i=0;i<35;i++){const x=CH+30+srand()*300,z=-600+srand()*1200,h=getH(x,z);
+seedR(222);for(let i=0;i<15;i++){const x=CH+30+srand()*200,z=-400+srand()*800,h=getH(x,z);
   if(h>-1&&h<3){const g=new THREE.Group();
     const pole=cyl(.03,.03,2.2,0x8B7355);pole.position.y=1.1;g.add(pole);
-    const top=new THREE.Mesh(new THREE.ConeGeometry(1.2,.6,8),new THREE.MeshStandardMaterial({color:umbColors[i%6],side:THREE.DoubleSide}));
+    const top=new THREE.Mesh(new THREE.ConeGeometry(1.2,.6,6),new THREE.MeshStandardMaterial({color:umbColors[i%6],side:THREE.DoubleSide}));
     top.position.y=2.2;top.rotation.x=.1;g.add(top);
     g.position.set(x,h,z);scene.add(g)}}
 
-// ══════════════ NATURE: PINES ══════════════
-const pineTM=new THREE.MeshStandardMaterial({color:0x5a3a20,roughness:.9});
-const pineLM=new THREE.MeshStandardMaterial({color:0x1a5a2a,roughness:.8});
-const snowPM=new THREE.MeshStandardMaterial({color:0x3a7a4a,roughness:.8});
-function mkPine(px,pz){const g=new THREE.Group(),h=getH(px,pz),th=2+hash2(px*.2,pz*.2)*3;
-  const t=new THREE.Mesh(new THREE.CylinderGeometry(.08,.15,th,4),pineTM);t.position.y=th/2;g.add(t);
-  const lM=h>50?snowPM:pineLM;for(let j=0;j<3;j++){const s=1-j*.25;
-    const c=new THREE.Mesh(new THREE.ConeGeometry(1.2*s,2.5*s,5),lM);c.position.y=th-.5+j*1.5;g.add(c)}
-  g.position.set(px,h,pz);return g}
-seedR(555);for(let i=0;i<220;i++){const x=-CH-30-srand()*1000,z=-1200+srand()*2400,h=getH(x,z);if(h>3&&h<90)scene.add(mkPine(x,z))}
-
-// Deciduous trees scattered in city
-const parkLeafMat=new THREE.MeshStandardMaterial({color:0x2a7a2a,roughness:.8});
-seedR(654);for(let i=0;i<80;i++){const x=-CH+srand()*CS,z=-CH+srand()*CS;
-  if(Math.abs(x%(BK))<3||Math.abs(z%(BK))<3)continue;
-  const g=new THREE.Group();const th=3+srand()*2;
-  g.add(cyl(.08,.12,th,0x6a4a2a));g.children[0].position.y=th/2;
-  const crown=new THREE.Mesh(new THREE.SphereGeometry(1.5+srand(),6,4),parkLeafMat);
-  crown.position.y=th+1;crown.scale.y=.7;g.add(crown);
-  g.position.set(x,getH(x,z),z);if(!colBldg(x,z))scene.add(g)}
-
-// ══════════════ NATURE: OAK TREES (green hills south of city) ══════════════
-const oakTM=new THREE.MeshStandardMaterial({color:0x4a3a1a,roughness:.9});
-const oakLM=new THREE.MeshStandardMaterial({color:0x2a6a1a,roughness:.8});
-function mkOak(px,pz){const g=new THREE.Group(),th=4+hash2(px*.2,pz*.2)*4;
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(.12,.2,th,5),oakTM));g.children[0].position.y=th/2;
-  // Wide rounded canopy
-  const c1=new THREE.Mesh(new THREE.SphereGeometry(2+hash2(px,pz),6,5),oakLM);c1.position.y=th+1;c1.scale.set(1,.6,1);g.add(c1);
-  const c2=new THREE.Mesh(new THREE.SphereGeometry(1.5,5,4),oakLM);c2.position.set(.8,th+.5,.5);c2.scale.set(1,.6,1);g.add(c2);
-  g.position.set(px,getH(px,pz),pz);return g}
-seedR(4440);for(let i=0;i<120;i++){const x=-CH+100+srand()*(CS-200),z=CH+20+srand()*400,h=getH(x,z);
-  if(h>-1&&h<15)scene.add(mkOak(x,z))}
-
-// ══════════════ NATURE: BIRCH TREES (north of city) ══════════════
-const birchTM=new THREE.MeshStandardMaterial({color:0xe8dcc8,roughness:.7});
-const birchLM=new THREE.MeshStandardMaterial({color:0x5aaa3a,roughness:.8});
-function mkBirch(px,pz){const g=new THREE.Group(),th=5+hash2(px*.15,pz*.15)*3;
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(.06,.1,th,5),birchTM));g.children[0].position.y=th/2;
-  // Oval leaf clusters
-  for(let j=0;j<3;j++){const lc=new THREE.Mesh(new THREE.SphereGeometry(.8+hash2(px+j*99,pz)*0.5,5,4),birchLM);
-    lc.position.set((hash2(px+j*33,pz)-.5)*1.2,th-.5+j*1.2,(hash2(px,pz+j*33)-.5)*1.2);lc.scale.y=1.3;g.add(lc)}
-  g.position.set(px,getH(px,pz),pz);return g}
-seedR(4441);for(let i=0;i<100;i++){const x=-CH+srand()*CS,z=-CH-20-srand()*400,h=getH(x,z);
-  if(h>-1&&h<15)scene.add(mkBirch(x,z))}
-
-// ══════════════ NATURE: ROCK FORMATIONS ══════════════
-const rockM=new THREE.MeshStandardMaterial({color:0x666666,roughness:.9});
-const rockM2=new THREE.MeshStandardMaterial({color:0x777770,roughness:.95});
-seedR(4442);for(let i=0;i<60;i++){
-  const side=srand()<.5?1:-1;
-  const x=side*(CH+30+srand()*500),z=-1000+srand()*2000,h=getH(x,z);
-  if(h<-2||h>80)continue;
-  const g=new THREE.Group();const rocks=2+Math.floor(srand()*4);
-  for(let r=0;r<rocks;r++){
-    const rs=.5+srand()*2,rx=srand()*3-1.5,rz=srand()*3-1.5;
-    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(rs,0),srand()>.5?rockM:rockM2);
-    rock.position.set(rx,rs*.4,rz);rock.rotation.set(srand(),srand(),srand());rock.scale.y=.5+srand()*.5;g.add(rock)}
-  g.position.set(x,h,z);scene.add(g)}
-
-// ══════════════ NATURE: FLOWER MEADOWS ══════════════
-const flowerColors=[0xff4466,0xffaa22,0xff66cc,0xaa44ff,0xff8844,0xffff44,0x44aaff,0xff2222];
-const meadowGrassM=new THREE.MeshStandardMaterial({color:0x4a9a3a,roughness:.9});
-seedR(4443);for(let i=0;i<25;i++){
-  const side=srand()<.3?1:(srand()<.5?-1:0);
-  const x=(side===0?(-CH+srand()*CS):(side*(CH+20+srand()*300)));
-  const z=side===0?(srand()<.5?CH+20+srand()*200:-CH-20-srand()*200):(-800+srand()*1600);
-  const h=getH(x,z);if(h<-1||h>20)continue;
-  // Grass patch
-  const gr=new THREE.Mesh(new THREE.CircleGeometry(4+srand()*4,8),meadowGrassM);
-  gr.rotation.x=-Math.PI/2;gr.position.set(x,h+.05,z);scene.add(gr);
-  // Flowers
-  for(let f=0;f<15+Math.floor(srand()*20);f++){
-    const fx=x-4+srand()*8,fz=z-4+srand()*8,fh=getH(fx,fz);
-    const fl=new THREE.Mesh(new THREE.SphereGeometry(.15+srand()*.15,4,3),
-      new THREE.MeshStandardMaterial({color:flowerColors[Math.floor(srand()*flowerColors.length)],roughness:.8}));
-    fl.position.set(fx,fh+.15,fz);scene.add(fl);
-    // Stem
-    const stem=cyl(.015,.015,.2+srand()*.15,0x2a6a1a);stem.position.set(fx,fh+.1,fz);scene.add(stem)}}
-
-// ══════════════ NATURE: WILLOW TREES (near water) ══════════════
-const willowTM=new THREE.MeshStandardMaterial({color:0x5a4a2a,roughness:.9});
-const willowLM=new THREE.MeshStandardMaterial({color:0x3a8a2a,roughness:.7,side:THREE.DoubleSide});
-function mkWillow(px,pz){const g=new THREE.Group(),th=5+hash2(px*.1,pz*.1)*3;
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(.15,.25,th,6),willowTM));g.children[0].position.y=th/2;
-  // Drooping branch canopy
-  const crown=new THREE.Mesh(new THREE.SphereGeometry(2.5,6,5),willowLM);crown.position.y=th;crown.scale.set(1,.8,1);g.add(crown);
-  // Hanging branches (cone shapes pointing down)
-  for(let b=0;b<6;b++){const a=b/6*Math.PI*2;
-    const br=new THREE.Mesh(new THREE.ConeGeometry(.6,3,4),willowLM);
-    br.position.set(Math.cos(a)*1.8,th-1.5,Math.sin(a)*1.8);g.add(br)}
-  g.position.set(px,getH(px,pz),pz);return g}
-seedR(4444);for(let i=0;i<30;i++){const x=CH+5+srand()*150,z=-600+srand()*1200,h=getH(x,z);
-  if(h>-2&&h<4)scene.add(mkWillow(x,z))}
-
-// ══════════════ NATURE: BUSHES & SHRUBS ══════════════
-const bushColors=[0x2a5a1a,0x3a7a2a,0x1a6a1a,0x4a6a2a,0x2a6a3a];
-seedR(4445);for(let i=0;i<150;i++){
-  const angle=srand()*Math.PI*2,dist=CH+20+srand()*500;
-  const x=Math.cos(angle)*dist,z=Math.sin(angle)*dist,h=getH(x,z);
-  if(h<-2||h>50)continue;
-  const bush=new THREE.Mesh(new THREE.SphereGeometry(.4+srand()*.6,5,4),
-    new THREE.MeshStandardMaterial({color:bushColors[Math.floor(srand()*5)],roughness:.9}));
-  bush.position.set(x,h+.3,z);bush.scale.set(1+srand()*.5,.6+srand()*.4,1+srand()*.5);scene.add(bush)}
-
-// ══════════════ NATURE: FALLEN LOGS ══════════════
-const logM=new THREE.MeshStandardMaterial({color:0x5a3a1a,roughness:.95});
-seedR(4446);for(let i=0;i<30;i++){
-  const angle=srand()*Math.PI*2,dist=CH+50+srand()*400;
-  const x=Math.cos(angle)*dist,z=Math.sin(angle)*dist,h=getH(x,z);
-  if(h<-1||h>40)continue;
-  const log=new THREE.Mesh(new THREE.CylinderGeometry(.12,.15,2+srand()*2,5),logM);
-  log.position.set(x,h+.1,z);log.rotation.z=Math.PI/2;log.rotation.y=srand()*Math.PI;scene.add(log)}
-
-// ══════════════ NATURE: MUSHROOM PATCHES ══════════════
-seedR(4447);for(let i=0;i<20;i++){
-  const x=-CH-50-srand()*400,z=-600+srand()*1200,h=getH(x,z);
-  if(h<2||h>30)continue;
-  for(let m=0;m<3+Math.floor(srand()*5);m++){
-    const mx=x+srand()*4-2,mz=z+srand()*4-2,mh=getH(mx,mz);
-    const g=new THREE.Group();
-    const stem=cyl(.04,.05,.15+srand()*.1,0xeeddcc);stem.position.y=.08;g.add(stem);
-    const cap=new THREE.Mesh(new THREE.SphereGeometry(.1+srand()*.08,6,4),
-      new THREE.MeshStandardMaterial({color:[0xcc2222,0xddaa44,0x886644,0xeeccaa][Math.floor(srand()*4)],roughness:.8}));
-    cap.position.y=.18+srand()*.05;cap.scale.y=.5;g.add(cap);
-    g.position.set(mx,mh,mz);scene.add(g)}}
-
 // ══════════════ CLOUDS ══════════════
 const clMat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.7,roughness:1});
-seedR(888);for(let i=0;i<30;i++){const g=new THREE.Group(),cx=-1800+srand()*3600,cz=-1800+srand()*3600,cy=200+srand()*300;
+seedR(888);for(let i=0;i<20;i++){const g=new THREE.Group(),cx=-1500+srand()*3000,cz=-1500+srand()*3000,cy=200+srand()*300;
   for(let j=0;j<3+Math.floor(srand()*3);j++){const s=10+srand()*20;
     const m=new THREE.Mesh(new THREE.SphereGeometry(s,5,4),clMat);m.position.set(srand()*30-15,srand()*5,srand()*30-15);m.scale.y=.35;g.add(m)}
   g.position.set(cx,cy,cz);scene.add(g)}
