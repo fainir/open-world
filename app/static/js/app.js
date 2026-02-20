@@ -94,7 +94,7 @@
 
   // ══════════ GAME IFRAME ══════════
 
-  function loadGameVersion(versionId) {
+  function loadGameVersion(versionId, versionNumber) {
     const iframe = document.getElementById('game-iframe');
     const loading = document.getElementById('game-loading');
     loading.style.display = 'flex';
@@ -102,11 +102,27 @@
     iframe.onload = () => {
       loading.style.display = 'none';
     };
+    // Track which version we're viewing
+    Chat.setCurrentVersionId(versionId);
+    updateVersionIndicator(versionNumber);
   }
 
   function loadBaseGame() {
     const iframe = document.getElementById('game-iframe');
     iframe.src = '/game/base';
+    Chat.setCurrentVersionId(null);
+    updateVersionIndicator(null);
+  }
+
+  function updateVersionIndicator(versionNumber) {
+    let indicator = document.getElementById('version-indicator');
+    if (versionNumber == null) {
+      if (indicator) indicator.style.display = 'none';
+      return;
+    }
+    if (!indicator) return;
+    indicator.style.display = 'flex';
+    indicator.querySelector('.vi-label').textContent = versionNumber === 0 ? 'Base' : `v${versionNumber}`;
   }
 
   window.toggleFullscreen = function () {
@@ -159,9 +175,9 @@
         let responseText = result.description || 'Changes applied!';
         addAssistantMessage(responseText, result.version_id, result.version_number);
 
-        // Load new version
+        // Load new version and auto-switch to it
         if (result.version_id) {
-          loadGameVersion(result.version_id);
+          loadGameVersion(result.version_id, result.version_number);
         }
 
         // Show suggestions
@@ -349,15 +365,16 @@
         const isActive = v.id === Chat.getCurrentVersionId();
         const time = v.created_at ? new Date(v.created_at).toLocaleString() : '';
         return `
-          <div class="version-item ${isActive ? 'active' : ''}" onclick="loadVersionFromList('${v.id}')">
+          <div class="version-item ${isActive ? 'active' : ''}">
             <div class="version-num">${v.version_number === 0 ? '0' : 'v' + v.version_number}</div>
-            <div class="version-info">
+            <div class="version-info" onclick="loadVersionFromList('${v.id}', ${v.version_number})" style="cursor:pointer">
               <div class="version-desc">${escapeHtml(v.description)}</div>
               <div class="version-time">${time}</div>
             </div>
             <div class="version-actions">
               ${v.is_saved ? '<span class="msg-version-badge">Saved</span>' : ''}
               ${v.is_shared ? '<span class="msg-version-badge">Shared</span>' : ''}
+              ${!isActive ? `<button class="msg-action-btn" onclick="branchFromVersion('${v.id}', ${v.version_number})" title="Switch to this version and make changes from here">Use</button>` : '<span class="msg-version-badge" style="background:var(--success);color:#fff">Active</span>'}
             </div>
           </div>
         `;
@@ -371,9 +388,18 @@
     document.getElementById('versions-modal').style.display = 'none';
   };
 
-  window.loadVersionFromList = function (versionId) {
-    loadGameVersion(versionId);
+  window.loadVersionFromList = function (versionId, versionNumber) {
+    loadGameVersion(versionId, versionNumber);
     closeVersionsModal();
+  };
+
+  // ══════════ BRANCH ══════════
+
+  window.branchFromVersion = function (versionId, versionNumber) {
+    loadGameVersion(versionId, versionNumber);
+    closeVersionsModal();
+    // Notify user
+    addMessageToUI('assistant', `Switched to v${versionNumber}. Your next changes will branch from this version.`);
   };
 
   // ══════════ HELPERS ══════════

@@ -26,6 +26,7 @@ const Chat = (() => {
   function getSessionId() { return sessionId; }
   function setSessionId(id) { sessionId = id; }
   function getCurrentVersionId() { return currentVersionId; }
+  function setCurrentVersionId(id) { currentVersionId = id; }
 
   async function sendMessage(message) {
     if (isProcessing) return null;
@@ -48,6 +49,7 @@ const Chat = (() => {
         body: JSON.stringify({
           message,
           session_id: sessionId,
+          current_version_id: currentVersionId,
           api_key: apiKey,
         }),
       });
@@ -106,7 +108,7 @@ const Chat = (() => {
 
   return {
     getApiKey, saveApiKey, loadApiKey,
-    getSessionId, setSessionId, getCurrentVersionId,
+    getSessionId, setSessionId, getCurrentVersionId, setCurrentVersionId,
     sendMessage, getVersions, saveVersion, shareVersion, getUserVersions,
     isWorking,
   };
