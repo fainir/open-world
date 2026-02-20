@@ -1036,12 +1036,27 @@ function update(dt){
       }
     } else {charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw)}
   } else if(currentVeh&&charG.visible){
-    // Rider visible on ride-on vehicles
+    // Rider visible on ride-on vehicles - follows vehicle rotation including tricks
     const ri=rideOnVeh[currentVeh.type];
     const ro=ri?ri.y:0;
-    charG.position.set(P.x,P.y+ro,P.z);
-    charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
-    lW.visible=rW.visible=lgW.visible=false;
+    // Character base rotation (no PI/2 offset unlike vehicle mesh)
+    const charBaseQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
+    if(trickActive){
+      const prog=trickTimer/trickDur;
+      const ct=currentVeh.def.tricks.find(t=>t.n===trickName);
+      if(ct){
+        const tQ=new THREE.Quaternion();
+        if(ct.ax==='x')tQ.setFromAxisAngle(new THREE.Vector3(0,0,1),ct.ag*Math.sin(prog*Math.PI));
+        else if(ct.ax==='y')tQ.setFromAxisAngle(new THREE.Vector3(0,1,0),ct.ag*prog);
+        else if(ct.ax==='z')tQ.setFromAxisAngle(new THREE.Vector3(1,0,0),ct.ag*Math.sin(prog*Math.PI));
+        charG.quaternion.copy(charBaseQ).multiply(tQ);
+      } else {charG.quaternion.copy(charBaseQ)}
+    } else {charG.quaternion.copy(charBaseQ)}
+    // Position: offset rider height, accounting for trick rotation
+    charG.position.copy(P);
+    const riderOffset=new THREE.Vector3(0,ro,0).applyQuaternion(charG.quaternion);
+    charG.position.add(riderOffset);
+    jetWing.visible=false;
     if(ri&&ri.pose==='sit'){
       // Sitting pose: legs bent forward, arms reaching forward (handlebars/reins)
       bdM.rotation.x=-.15;
