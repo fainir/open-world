@@ -25,13 +25,18 @@ canvas{display:block}
 #score{position:fixed;top:25px;right:30px;font-size:1.4em;color:#ffdd00;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(255,200,0,0.5)}
 #combo{position:fixed;top:55px;right:30px;font-size:0.9em;color:#ff8800;font-family:'Courier New',monospace;opacity:0}
 #trick-display{position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);font-size:2.8em;font-weight:bold;color:#ffee00;text-shadow:0 0 30px rgba(255,200,0,0.8),0 0 60px rgba(255,100,0,0.4);opacity:0;transition:opacity 0.2s;font-family:'Courier New',monospace;pointer-events:none;white-space:nowrap}
-#tricks-panel{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);display:flex;gap:12px;font-size:0.7em;color:#999;font-family:'Courier New',monospace}
-#tricks-panel span{background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:3px}
+#bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:6;pointer-events:none;display:none;flex-direction:column;align-items:center;padding-bottom:10px;gap:6px;font-family:'Courier New',monospace}
+#bottom-buttons{display:flex;gap:10px;pointer-events:all}
+#bottom-buttons button{background:linear-gradient(135deg,rgba(30,60,120,0.85),rgba(20,40,80,0.95));border:1px solid rgba(100,180,255,0.3);color:#fff;font-family:'Courier New',monospace;font-size:0.8em;padding:7px 16px;border-radius:6px;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;transition:all 0.2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#bottom-buttons button:hover{border-color:rgba(100,180,255,0.6);box-shadow:0 0 15px rgba(50,120,255,0.3)}
+#bottom-buttons button.wpn{background:linear-gradient(135deg,rgba(120,30,30,0.85),rgba(80,20,20,0.95));border-color:rgba(255,100,100,0.3)}
+#bottom-buttons button.wpn:hover{border-color:rgba(255,100,100,0.6);box-shadow:0 0 15px rgba(255,50,50,0.3)}
+#tricks-panel{display:flex;gap:10px;font-size:0.7em;color:#999}
+#tricks-panel span{background:rgba(255,255,255,0.1);padding:3px 8px;border-radius:3px}
 #tricks-panel .key{color:#ffaa00}
-#vehicle-prompt{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);font-size:0.95em;color:#44ff66;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:0 0 10px rgba(0,255,50,0.4)}
-#tip{position:fixed;bottom:160px;left:50%;transform:translateX(-50%);font-size:0.8em;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s}
-#veh-btn{position:fixed;bottom:30px;left:calc(50% - 100px);transform:translateX(-50%);z-index:6;pointer-events:all;background:linear-gradient(135deg,rgba(30,60,120,0.85),rgba(20,40,80,0.95));border:1px solid rgba(100,180,255,0.3);color:#fff;font-family:'Courier New',monospace;font-size:0.85em;padding:8px 20px;border-radius:6px;cursor:pointer;letter-spacing:0.15em;text-transform:uppercase;display:none;transition:all 0.2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-#veh-btn:hover{background:linear-gradient(135deg,rgba(40,80,160,0.95),rgba(30,60,120,0.95));border-color:rgba(100,180,255,0.6);box-shadow:0 0 20px rgba(50,120,255,0.3)}
+#controls-hint{font-size:0.6em;color:rgba(255,255,255,0.35);letter-spacing:0.05em}
+#vehicle-prompt{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);font-size:0.95em;color:#44ff66;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:0 0 10px rgba(0,255,50,0.4)}
+#tip{position:fixed;bottom:145px;left:50%;transform:translateX(-50%);font-size:0.8em;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s}
 #veh-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(0,8,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(100,180,255,0.2);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto}
 #veh-menu.open{display:flex}
 #veh-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#88ccff,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -47,8 +52,6 @@ canvas{display:block}
 .veh-item .veh-speed{font-size:0.7em;opacity:0.35}
 #veh-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #veh-close:hover{opacity:1}
-#wpn-btn{position:fixed;bottom:30px;left:calc(50% + 100px);transform:translateX(-50%);z-index:6;pointer-events:all;background:linear-gradient(135deg,rgba(120,30,30,0.85),rgba(80,20,20,0.95));border:1px solid rgba(255,100,100,0.3);color:#fff;font-family:'Courier New',monospace;font-size:0.85em;padding:8px 20px;border-radius:6px;cursor:pointer;letter-spacing:0.15em;text-transform:uppercase;display:none;transition:all 0.2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-#wpn-btn:hover{background:linear-gradient(135deg,rgba(160,40,40,0.95),rgba(120,30,30,0.95));border-color:rgba(255,100,100,0.6);box-shadow:0 0 20px rgba(255,50,50,0.3)}
 #wpn-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:80vw;max-height:70vh;z-index:20;display:none;background:rgba(20,5,5,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(255,80,80,0.25);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto}
 #wpn-menu.open{display:flex}
 #wpn-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#ff6644,#ffaa44);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -61,8 +64,9 @@ canvas{display:block}
 .wpn-item .wpn-info{flex:1}.wpn-item .wpn-name{font-weight:bold}.wpn-item .wpn-stats{font-size:0.7em;opacity:0.4;margin-top:2px}
 #wpn-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #wpn-close:hover{opacity:1}
-#weapon-hud{position:fixed;bottom:65px;right:30px;font-size:0.85em;color:#ff8844;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(255,100,0,0.4);display:none;text-align:right}
+#weapon-hud{position:fixed;bottom:55px;right:30px;font-size:0.85em;color:#ff8844;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(255,100,0,0.4);display:none;text-align:right}
 #weapon-hud .wpn-ammo{font-size:1.4em;color:#ffaa44}
+#aim-dot{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:4px;background:#fff;border-radius:50%;opacity:0.5;display:none;z-index:5;box-shadow:0 0 4px rgba(255,255,255,0.5)}
 </style>
 </head>
 <body>
@@ -87,12 +91,18 @@ Click - Shoot &nbsp;&bull;&nbsp; R - Reload &nbsp;&bull;&nbsp; 16+ Vehicles &bul
 <div id="score"></div>
 <div id="combo"></div>
 <div id="trick-display"></div>
-<div id="tricks-panel"></div>
 <div id="vehicle-prompt"></div>
 <div id="tip"></div>
 </div>
-<button id="veh-btn">&#9881; Vehicles [V]</button>
-<button id="wpn-btn">&#9876; Weapons [B]</button>
+<div id="aim-dot"></div>
+<div id="bottom-bar">
+<div id="tricks-panel"></div>
+<div id="bottom-buttons">
+<button id="veh-btn" onclick="event.stopPropagation()">&#9881; Vehicles [V]</button>
+<button id="wpn-btn" class="wpn" onclick="event.stopPropagation()">&#9876; Weapons [B]</button>
+</div>
+<div id="controls-hint">WASD-Move | SPACE-Jump/Fly | SHIFT-Boost | Click-Shoot | R-Reload | F-Mount Vehicle | 1-4 Tricks</div>
+</div>
 <div id="wpn-menu">
 <div id="wpn-close">&#10005;</div>
 <h2>WEAPONS</h2>
@@ -620,6 +630,17 @@ const rwShape=new THREE.Shape();rwShape.moveTo(0,0);rwShape.lineTo(1.2,-.3);rwSh
 const rW=new THREE.Mesh(new THREE.ShapeGeometry(rwShape),wgM);rW.position.set(.25,.95,.05);rW.rotation.y=Math.PI/2;rW.visible=false;charG.add(rW);
 // Leg wing - wider membrane between legs
 const lgW=new THREE.Mesh(new THREE.PlaneGeometry(.5,.7),wgM);lgW.position.set(0,.25,0);lgW.rotation.x=Math.PI/2;lgW.visible=false;charG.add(lgW);
+// Gun model attached to right arm
+const gunG=new THREE.Group();
+const gunMat=new THREE.MeshStandardMaterial({color:0x222222,metalness:.8,roughness:.3});
+const gunBody=box(.06,.08,.4,0x222222);gunBody.material=gunMat;gunBody.position.set(0,0,.15);gunG.add(gunBody);
+const gunBarrel=cyl(.02,.02,.35,0x333333);gunBarrel.material=gunMat;gunBarrel.rotation.x=Math.PI/2;gunBarrel.position.set(0,.02,.4);gunG.add(gunBarrel);
+const gunGrip=box(.04,.12,.06,0x3a2a1a);gunGrip.position.set(0,-.06,.08);gunG.add(gunGrip);
+const gunSight=box(.02,.04,.02,0xff4400);gunSight.position.set(0,.06,.25);gunG.add(gunSight);
+// Muzzle flash light
+const muzzleFlash=new THREE.PointLight(0xff6600,0,8);muzzleFlash.position.set(0,0,.55);gunG.add(muzzleFlash);
+gunG.position.set(.38,.85,.2);gunG.rotation.x=-Math.PI/6;
+charG.add(gunG);
 scene.add(charG);
 
 // ══════════════ PARTICLES ══════════════
@@ -659,15 +680,16 @@ const overlay=document.getElementById('overlay'),hud=document.getElementById('hu
 function startGame(){
   overlay.style.display='none';
   hud.style.display='block';
-  document.getElementById('veh-btn').style.display='block';
-  document.getElementById('wpn-btn').style.display='block';
+  document.getElementById('bottom-bar').style.display='flex';
   document.getElementById('weapon-hud').style.display='block';
+  document.getElementById('aim-dot').style.display='block';
   locked=true;
-  // Start from mountains, flying with wingsuit
-  P.set(-CH-60,getH(-CH-60,0)+80,0);
-  yaw=0; pitch=-0.15;
+  // Start from mountains, flying toward city
+  P.set(-CH-60,getH(-CH-60,0)+100,0);
+  yaw=Math.PI; pitch=-0.1;
   isFlying=true;mode='walk';
-  V.set(fwd().x*50,5,fwd().z*50);
+  const ff=fwd();
+  V.set(ff.x*60,8,ff.z*60);
   boostFuel=100;
   currentWeapon='pistol';
   try{canvas.requestPointerLock()}catch(e){}
@@ -675,10 +697,9 @@ function startGame(){
 function stopGame(){
   overlay.style.display='flex';
   hud.style.display='none';
-  document.getElementById('crosshair').style.display='none';
-  document.getElementById('veh-btn').style.display='none';
-  document.getElementById('wpn-btn').style.display='none';
+  document.getElementById('bottom-bar').style.display='none';
   document.getElementById('weapon-hud').style.display='none';
+  document.getElementById('aim-dot').style.display='none';
   locked=false;shooting=false;
 }
 
@@ -1054,6 +1075,7 @@ function update(dt){
           scene.add(tLine);bulletTrails.push({mesh:tLine,life:0.15});
         }
         // Muzzle flash
+        muzzleFlash.intensity=5;setTimeout(()=>muzzleFlash.intensity=0,60);
         for(let i=0;i<4;i++)emit(gunPos.clone().add(flyFwd().multiplyScalar(1)),flyFwd().clone().multiplyScalar(3));
       } else if(w.type==='projectile'){
         const dir=flyFwd().clone();
@@ -1061,6 +1083,7 @@ function update(dt){
         rMesh.position.copy(gunPos).add(dir.clone().multiplyScalar(2));
         scene.add(rMesh);
         projectiles.push({mesh:rMesh,vel:dir.multiplyScalar(w.speed),life:5,dmg:w.dmg,blastR:w.blastR});
+        muzzleFlash.intensity=8;setTimeout(()=>muzzleFlash.intensity=0,100);
         for(let i=0;i<3;i++)emit(rMesh.position.clone(),dir.clone().multiplyScalar(-2));
       }
     }
@@ -1122,6 +1145,10 @@ function update(dt){
   else if(isFlying)tricks=[{n:'Barrel Roll'},{n:'Front Flip'},{n:'Cork'},{n:'Superman'}];
   const tp=document.getElementById('tricks-panel');
   tp.innerHTML=tricks.map((t,i)=>`<span><span class="key">[${i+1}]</span> ${t.n}</span>`).join('');
+  // Gun model scale based on weapon
+  const gunScales={pistol:1,shotgun:1.4,rifle:1.6,rocket:1.8,minigun:1.5};
+  gunG.scale.setScalar(gunScales[currentWeapon]||1);
+  gunG.visible=charG.visible;
   // Weapon HUD
   const cw=WEAPONS[currentWeapon];
   document.getElementById('wpn-name-hud').textContent=`${cw.icon} ${cw.name}`;
