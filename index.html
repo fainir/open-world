@@ -168,7 +168,7 @@ const CS=1500,CH=750,BK=42,ST=12,GRAV=26,WSPD=22,JFORCE=14;
 // ══════════════ STATE ══════════════
 const keys={};let yaw=Math.PI,pitch=0,locked=false,boostFuel=100,score=0,comboCount=0,comboTimer=0;
 const P=new THREE.Vector3(0,2,0),V=new THREE.Vector3();
-let onGround=true,isFlying=false,mode='walk',currentVeh=null;
+let onGround=true,isFlying=false,mode='walk',currentVeh=null,climbing=false,climbBldg=null;
 let trickActive=false,trickTimer=0,trickDur=0,trickName='',trickRot=new THREE.Euler();
 let spaceJust=false,fJust=false;
 // Weapons state
@@ -278,6 +278,7 @@ cityGnd.rotation.x=-Math.PI/2;cityGnd.position.y=.08;cityGnd.receiveShadow=true;
 // ══════════════ COLLISION (defined early for use during world gen) ══════════════
 const bldgs=[];
 function colBldg(x,z,p=.4){for(const b of bldgs)if(x+p>b.minX&&x-p<b.maxX&&z+p>b.minZ&&z-p<b.maxZ)return b;return null}
+function colBldgY(x,z,py,p=.4){for(const b of bldgs)if(x+p>b.minX&&x-p<b.maxX&&z+p>b.minZ&&z-p<b.maxZ&&py<b.h-.3)return b;return null}
 function isOnWater(x){return x>CH+50}
 function isOnSnow(x,z){return getH(x,z)>25&&x<-CH+100}
 
@@ -799,8 +800,14 @@ function mkTramp(tx,tz,sc=1){
 }
 
 // Ramp/trampoline physical height at world position
+function getBldgRoofH(px,pz,py){
+  for(const b of bldgs)if(px>b.minX&&px<b.maxX&&pz>b.minZ&&pz<b.maxZ&&py>b.h*.5)return b.h;
+  return-Infinity}
 function getSurfaceH(px,pz){
   let h=-Infinity;
+  // Building rooftops — player can stand on them after climbing
+  const roofH=getBldgRoofH(px,pz,P.y);
+  if(roofH>-Infinity)h=Math.max(h,roofH);
   for(const r of ramps){
     const dx=px-r.x,dz=pz-r.z;
     // Transform to ramp-local coords (undo group rotation)
@@ -4122,19 +4129,47 @@ function update(dt){
     const spd=keys['ShiftLeft']||keys['ShiftRight']?WSPD*1.6:WSPD;
     const mv=new THREE.Vector3();
     if(kU())mv.add(fwd());if(kD())mv.sub(fwd());
+    // Wall climbing detection (colBldgY = height-aware: allows walking on rooftops)
+    let wallHit=null,movingFwd=kU();
     if(mv.lengthSq()>0){mv.normalize().multiplyScalar(spd*dt);
-      let nx=P.x+mv.x;if(!colBldg(nx,P.z))P.x=nx;
-      let nz=P.z+mv.z;if(!colBldg(P.x,nz))P.z=nz;walkBob+=dt*10}
+      let nx=P.x+mv.x,nz=P.z+mv.z;
+      const bx=colBldgY(nx,P.z,P.y),bz=colBldgY(P.x,nz,P.y);
+      if(bx&&P.y<bx.h-.2)wallHit=bx;
+      else if(!bx)P.x=nx;
+      if(bz&&P.y<bz.h-.2)wallHit=wallHit||bz;
+      else if(!bz)P.z=nz;
+      walkBob+=dt*10}
+    // Climbing: if pressing forward into a wall and player is below building top
+    if(wallHit&&movingFwd&&P.y<wallHit.h-.2){
+      if(!climbing){climbing=true;climbBldg=wallHit}
+      const climbSpd=keys['ShiftLeft']||keys['ShiftRight']?12:8;
+      V.y=0;P.y+=climbSpd*dt;onGround=false;
+      if(P.y>=wallHit.h-.2){
+        // Reached the top — vault onto roof
+        P.y=wallHit.h;
+        // Push player slightly onto the roof so they don't fall off the edge
+        const cx=(wallHit.minX+wallHit.maxX)/2,cz=(wallHit.minZ+wallHit.maxZ)/2;
+        const toCenter=new THREE.Vector3(cx-P.x,0,cz-P.z);
+        if(toCenter.length()>0.1)toCenter.normalize().multiplyScalar(1.2);
+        P.x+=toCenter.x;P.z+=toCenter.z;
+        V.y=0;onGround=true;climbing=false;climbBldg=null;
+        showTip('Climbed up!')}
+    }else{
+      if(climbing&&!wallHit){climbing=false;climbBldg=null}
+    }
     // Recalculate ground after movement
     const wgH=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
-    onGround=P.y<=wgH+.15&&V.y<=0;
-    if(onGround){P.y=wgH;V.y=0}
-    if(spaceJust&&onGround){V.y=JFORCE;onGround=false;spaceJust=false}
-    if(spaceJust&&!onGround&&P.y>wgH+1){isFlying=true;const s=Math.max(25,V.length());
+    if(!climbing){
+      onGround=P.y<=wgH+.15&&V.y<=0;
+      if(onGround){P.y=wgH;V.y=0}
+    }
+    if(spaceJust&&onGround){V.y=JFORCE;onGround=false;climbing=false;climbBldg=null;spaceJust=false}
+    if(spaceJust&&climbing){V.y=JFORCE*.6;climbing=false;climbBldg=null;onGround=false;spaceJust=false}
+    if(spaceJust&&!onGround&&!climbing&&P.y>wgH+1){isFlying=true;const s=Math.max(25,V.length());
       V.set(fwd().x*s,Math.max(V.y,2),fwd().z*s);showTip('Wingsuit! UP/DOWN=pitch LEFT/RIGHT=turn SHIFT=boost SPACE=rise');spaceJust=false}
     spaceJust=false;
-    if(!onGround){V.y-=GRAV*dt;P.y+=V.y*dt}
-    if(P.y<wgH){P.y=wgH;V.y=0;onGround=true}
+    if(!onGround&&!climbing){V.y-=GRAV*dt;P.y+=V.y*dt}
+    if(P.y<wgH){P.y=wgH;V.y=0;onGround=true;climbing=false;climbBldg=null}
     checkRT();
   }
 
@@ -4282,6 +4317,14 @@ function update(dt){
       lL.position.set(-.13,.35,0);lL.rotation.x=0;  // legs straight
       rL.position.set(.13,.35,0);rL.rotation.x=0;
     }
+    else if(climbing){
+      // Climbing animation: arms reaching up alternating, legs pumping
+      const ct=performance.now()*.006;
+      charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
+      lA.position.set(-.35,1,0);rA.position.set(.35,1,0);
+      lA.rotation.set(-2.5+Math.sin(ct)*.4,0,.2);rA.rotation.set(-2.5-Math.sin(ct)*.4,0,-.2);
+      lL.position.set(-.13,.35,0);rL.position.set(.13,.35,0);
+      lL.rotation.x=Math.sin(ct)*.6;rL.rotation.x=-Math.sin(ct)*.6;bdM.rotation.x=0}
     else{lA.position.set(-.35,1,0);lA.rotation.z=0;rA.position.set(.35,1,0);rA.rotation.z=0;
       lL.position.set(-.13,.35,0);rL.position.set(.13,.35,0);bdM.rotation.x=0;
       if(kU()||kD()||kL()||kR()){lA.rotation.x=Math.sin(walkBob)*.4;rA.rotation.x=-Math.sin(walkBob)*.4;
