@@ -13,7 +13,10 @@ canvas{display:block}
 #overlay .sub{font-size:1.2em;opacity:0.7;margin-bottom:1.5em}
 #overlay .click{font-size:1.5em;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
-#overlay .controls{margin-top:1.5em;font-size:0.8em;opacity:0.45;text-align:center;line-height:2.2}
+#overlay .controls{margin-top:1.8em;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,auto));gap:8px 16px;justify-content:center;justify-items:center;max-width:600px;padding:14px 20px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.1)}
+#overlay .controls .ctrl-key{font-size:0.85em;color:rgba(255,255,255,0.9)}
+#overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);padding:3px 8px}
+#overlay .controls .ctrl-key .cl{color:rgba(255,255,255,0.6)}
 #hud{position:fixed;z-index:5;pointer-events:none;display:none}
 #speed{position:fixed;bottom:30px;left:30px;font-size:2em;font-weight:bold;color:#fff;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(0,150,255,0.5)}
 #altitude{position:fixed;bottom:65px;left:30px;font-size:0.9em;color:#aaddff;opacity:0.8;font-family:'Courier New',monospace}
@@ -34,10 +37,10 @@ canvas{display:block}
 #tricks-panel{display:flex;gap:10px;font-size:0.7em;color:#999}
 #tricks-panel span{background:rgba(255,255,255,0.1);padding:3px 8px;border-radius:3px}
 #tricks-panel .key{color:#ffaa00}
-#controls-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:95vw}
-.ctrl-key{display:inline-flex;align-items:center;gap:4px;font-size:0.6em;color:rgba(255,255,255,0.7)}
-.ctrl-key kbd{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:3px;padding:1px 5px;font-family:'Courier New',monospace;font-size:1em;min-width:18px;text-align:center;color:#fff}
-.ctrl-key .cl{color:rgba(255,255,255,0.4);font-size:0.9em}
+#controls-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,auto));gap:8px 14px;justify-content:center;justify-items:center;max-width:90vw;padding:8px 16px;background:rgba(0,0,0,0.35);border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.ctrl-key{display:inline-flex;align-items:center;gap:5px;font-size:0.75em;color:rgba(255,255,255,0.95);white-space:nowrap}
+.ctrl-key kbd{background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.45);border-radius:4px;padding:2px 7px;font-family:'Courier New',monospace;font-size:1em;min-width:20px;text-align:center;color:#fff;text-shadow:0 0 4px rgba(255,255,255,0.3)}
+.ctrl-key .cl{color:rgba(255,255,255,0.7);font-size:0.9em}
 #vehicle-prompt{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);font-size:0.95em;color:#44ff66;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:0 0 10px rgba(0,255,50,0.4)}
 #tip{position:fixed;bottom:145px;left:50%;transform:translateX(-50%);font-size:0.8em;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s}
 #veh-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(0,8,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(100,180,255,0.2);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto}
@@ -77,10 +80,16 @@ canvas{display:block}
 <div class="sub">Vehicle Playground</div>
 <div class="click">Click to Play</div>
 <div class="controls">
-W/Up - Forward &nbsp;&bull;&nbsp; S/Down - Back &nbsp;&bull;&nbsp; A-D/Left-Right - Turn &nbsp;&bull;&nbsp; Mouse - Look (optional)<br>
-SPACE - Jump / Wingsuit / Rise &nbsp;&bull;&nbsp; SHIFT - Boost / Sprint<br>
-F - Enter/Exit Vehicles &nbsp;&bull;&nbsp; V - Vehicle Menu &nbsp;&bull;&nbsp; B - Weapons &nbsp;&bull;&nbsp; 1-4 - Tricks<br>
-Click - Shoot &nbsp;&bull;&nbsp; R - Reload &nbsp;&bull;&nbsp; 16+ Vehicles &bull; Weapons &bull; Trampolines &bull; Explore!
+<span class="ctrl-key"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="cl">Move</span></span>
+<span class="ctrl-key"><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd><span class="cl">Move</span></span>
+<span class="ctrl-key"><kbd>Space</kbd><span class="cl">Jump / Fly</span></span>
+<span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
+<span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
+<span class="ctrl-key"><kbd>F</kbd><span class="cl">Vehicle</span></span>
+<span class="ctrl-key"><kbd>V</kbd><span class="cl">Vehicle Menu</span></span>
+<span class="ctrl-key"><kbd>B</kbd><span class="cl">Weapons</span></span>
+<span class="ctrl-key"><kbd>R</kbd><span class="cl">Reload</span></span>
+<span class="ctrl-key"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span class="cl">Tricks</span></span>
 </div>
 </div>
 <div id="hud">
@@ -615,13 +624,13 @@ spawnV('snowboard',-CH-90,0,Math.PI);spawnV('snowboard',-CH-120,150,Math.PI);
 
 // ══════════════ CHARACTER ══════════════
 const charG=new THREE.Group();
-const suM=new THREE.MeshStandardMaterial({color:0x1a3a6a,roughness:.6});
-const acM=new THREE.MeshStandardMaterial({color:0xff4400,roughness:.5});
-const hmM=new THREE.MeshStandardMaterial({color:0x222222,roughness:.3,metalness:.5});
-const vsM=new THREE.MeshStandardMaterial({color:0x3388ff,roughness:.1,metalness:.8});
+const suM=new THREE.MeshStandardMaterial({color:0xe8e0d4,roughness:.5});
+const acM=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:.4});
+const hmM=new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.3,metalness:.5});
+const vsM=new THREE.MeshStandardMaterial({color:0x1a1a2a,roughness:.05,metalness:.9});
 const bdM=box(.5,.7,.3,0x1a3a6a);bdM.material=suM;bdM.position.y=1.05;charG.add(bdM);
-const st1=box(.52,.06,.31,0xff4400);st1.position.set(0,1.2,0);charG.add(st1);
-const st2=box(.52,.06,.31,0xff4400);st2.position.set(0,.9,0);charG.add(st2);
+const st1=box(.52,.06,.31,0x1a1a1a);st1.position.set(0,1.2,0);charG.add(st1);
+const st2=box(.52,.06,.31,0x1a1a1a);st2.position.set(0,.9,0);charG.add(st2);
 const hd=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),hmM);hd.position.y=1.58;charG.add(hd);
 const vis=new THREE.Mesh(new THREE.SphereGeometry(.12,8,5,0,Math.PI*2,0,Math.PI*.45),vsM);vis.position.set(0,1.55,.08);vis.rotation.x=.4;charG.add(vis);
 const lA=box(.14,.55,.14,0x1a3a6a);lA.material=suM;lA.position.set(-.38,1,0);charG.add(lA);
@@ -630,15 +639,34 @@ const lL=box(.17,.55,.17,0x1a3a6a);lL.material=suM;lL.position.set(-.14,.37,0);c
 const rL=box(.17,.55,.17,0x1a3a6a);rL.material=suM;rL.position.set(.14,.37,0);charG.add(rL);
 const lb=box(.18,.1,.26,0x1a1a1a);lb.position.set(-.14,.06,.03);charG.add(lb);
 const rb=box(.18,.1,.26,0x1a1a1a);rb.position.set(.14,.06,.03);charG.add(rb);
-const ep=box(.32,.28,.16,0x444444);ep.material=new THREE.MeshStandardMaterial({color:0x444444,metalness:.7,roughness:.3});ep.position.set(0,1.08,-.22);charG.add(ep);
-const wgM=new THREE.MeshStandardMaterial({color:0xff5500,side:THREE.DoubleSide,transparent:true,opacity:.75});
-// Arm wings - large triangular membranes
-const lwShape=new THREE.Shape();lwShape.moveTo(0,0);lwShape.lineTo(-1.2,-.3);lwShape.lineTo(-.2,-.8);lwShape.closePath();
-const lW=new THREE.Mesh(new THREE.ShapeGeometry(lwShape),wgM);lW.position.set(-.25,.95,.05);lW.rotation.y=Math.PI/2;lW.visible=false;charG.add(lW);
-const rwShape=new THREE.Shape();rwShape.moveTo(0,0);rwShape.lineTo(1.2,-.3);rwShape.lineTo(.2,-.8);rwShape.closePath();
-const rW=new THREE.Mesh(new THREE.ShapeGeometry(rwShape),wgM);rW.position.set(.25,.95,.05);rW.rotation.y=Math.PI/2;rW.visible=false;charG.add(rW);
-// Leg wing - wider membrane between legs
-const lgW=new THREE.Mesh(new THREE.PlaneGeometry(.5,.7),wgM);lgW.position.set(0,.25,0);lgW.rotation.x=Math.PI/2;lgW.visible=false;charG.add(lgW);
+const ep=box(.36,.32,.18,0x222222);ep.material=new THREE.MeshStandardMaterial({color:0x222222,metalness:.8,roughness:.2});ep.position.set(0,1.08,-.22);charG.add(ep);
+const epD=box(.28,.06,.12,0x333333);epD.position.set(0,.95,-.24);charG.add(epD);
+// Jetpack wing - rigid carbon fiber wing with jet engines (Jetman style)
+const jetWing=new THREE.Group();jetWing.visible=false;
+const _cwM=new THREE.MeshStandardMaterial({color:0x0a0a0a,metalness:.85,roughness:.15});
+// Main rigid wing spar
+const wSpar=box(2.6,.05,.4,0x0a0a0a);wSpar.material=_cwM;jetWing.add(wSpar);
+// Wing leading edge (rounded front)
+const wLead=cyl(.025,.025,2.6,0x111111);wLead.rotation.z=Math.PI/2;wLead.position.set(0,0,.2);jetWing.add(wLead);
+// Wingtips angled up
+const lTip=box(.25,.05,.3,0x0a0a0a);lTip.material=_cwM;lTip.position.set(-1.35,.04,-.02);lTip.rotation.z=.2;jetWing.add(lTip);
+const rTip=box(.25,.05,.3,0x0a0a0a);rTip.material=_cwM;rTip.position.set(1.35,.04,-.02);rTip.rotation.z=-.2;jetWing.add(rTip);
+// Vertical stabilizer (tail fin)
+const tailFin=box(.04,.3,.22,0x0a0a0a);tailFin.material=_cwM;tailFin.position.set(0,.18,-.18);jetWing.add(tailFin);
+// 4 Jet engines under the wing
+const _eM=new THREE.MeshStandardMaterial({color:0x2a2a2a,metalness:.9,roughness:.15});
+const engX=[-.5,-.18,.18,.5];
+for(let i=0;i<4;i++){const eg=cyl(.055,.045,.18,0x2a2a2a);eg.material=_eM;eg.rotation.x=Math.PI/2;eg.position.set(engX[i],-.06,.05);jetWing.add(eg);
+const ri=new THREE.Mesh(new THREE.TorusGeometry(.055,.012,6,12),_eM);ri.position.set(engX[i],-.06,.14);jetWing.add(ri);
+const nz=cyl(.04,.05,.04,0x444444);nz.rotation.x=Math.PI/2;nz.position.set(engX[i],-.06,-.06);jetWing.add(nz);}
+// Branding stripes
+const wStr1=box(1.8,.015,.05,0xddbb00);wStr1.position.set(0,.03,.05);jetWing.add(wStr1);
+const wStr2=box(.6,.015,.05,0xff4400);wStr2.position.set(0,.03,-.1);jetWing.add(wStr2);
+// Mount wing on character back
+jetWing.position.set(0,1.2,-.28);
+charG.add(jetWing);
+// Keep references for visibility toggle
+const lW=jetWing,rW=jetWing,lgW=jetWing;
 // Gun model attached to right arm
 const gunG=new THREE.Group();
 const gunMat=new THREE.MeshStandardMaterial({color:0x222222,metalness:.8,roughness:.3});
@@ -877,7 +905,7 @@ function update(dt){
     V.x*=Math.pow(.98,dt*60);V.z*=Math.pow(.98,dt*60);V.y*=Math.pow(.985,dt*60);
     // Boost
     if(keys['ShiftLeft']||keys['ShiftRight']){if(boostFuel>0){V.add(ff.clone().multiplyScalar(70*dt));V.y+=15*dt;boostFuel=Math.max(0,boostFuel-12*dt);engineOn=true;
-      const bd=ff.clone().multiplyScalar(-1),np=charG.localToWorld(new THREE.Vector3(0,1,-.35));for(let i=0;i<3;i++)emit(np,bd)}}
+      const bd=ff.clone().multiplyScalar(-1);for(let ei=0;ei<4;ei++){const ep2=charG.localToWorld(new THREE.Vector3(engX[ei],1.14,-.35));emit(ep2,bd)}}}
     if(keys['Space']){if(boostFuel>0){V.y+=28*dt;boostFuel=Math.max(0,boostFuel-8*dt);engineOn=true;
       emit(charG.localToWorld(new THREE.Vector3(0,.5,-.3)),new THREE.Vector3(0,-1,0))}}
     if(!keys['ShiftLeft']&&!keys['ShiftRight']&&!keys['Space'])boostFuel=Math.min(100,boostFuel+8*dt);
@@ -981,14 +1009,14 @@ function update(dt){
   // ═══ CHARACTER ═══
   if(!currentVeh){
     charG.position.copy(P);
-    lW.visible=rW.visible=lgW.visible=isFlying;
+    jetWing.visible=isFlying;gunG.visible=!isFlying;
     if(isFlying){
-      // Flying prone pose: body tilted forward, arms spread wide, legs together and back
-      bdM.rotation.x=-Math.PI/2.2-pitch*.3;
-      lA.position.set(-.55,1.05,.1);lA.rotation.set(-Math.PI/2.5,0,Math.PI/2.8);
-      rA.position.set(.55,1.05,.1);rA.rotation.set(-Math.PI/2.5,0,-Math.PI/2.8);
-      lL.position.set(-.1,.2,-.15);lL.rotation.x=Math.PI/3;
-      rL.position.set(.1,.2,-.15);rL.rotation.x=Math.PI/3;
+      // Jetman flying pose: body horizontal, arms forward/down, legs trailing back
+      bdM.rotation.x=-Math.PI/2-pitch*.3;
+      lA.position.set(-.35,1.1,.2);lA.rotation.set(-Math.PI/2.2,0,Math.PI/8);
+      rA.position.set(.35,1.1,.2);rA.rotation.set(-Math.PI/2.2,0,-Math.PI/8);
+      lL.position.set(-.12,.2,-.1);lL.rotation.x=Math.PI/2.5;
+      rL.position.set(.12,.2,-.1);rL.rotation.x=Math.PI/2.5;
     }
     else{lA.position.set(-.38,1,0);lA.rotation.z=0;rA.position.set(.38,1,0);rA.rotation.z=0;
       lL.position.set(-.14,.37,0);rL.position.set(.14,.37,0);bdM.rotation.x=0;
