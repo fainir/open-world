@@ -4197,7 +4197,10 @@ function update(dt){
     if(V.length()>160)V.setLength(160);
     P.add(V.clone().multiplyScalar(dt));
     if(P.y<gH+.5){P.y=gH+.5;if(V.y<-5){isFlying=false;V.set(0,0,0);showTip('Crash!')}else{V.y=0;isFlying=false}}
-    const bl=colBldg(P.x,P.z);if(bl&&P.y<bl.h+2){P.y=bl.h+2;V.y=Math.max(V.y,2)}
+    // Landing on rooftops: if descending onto a building, land on its roof
+    const bl=colBldg(P.x,P.z);
+    if(bl&&P.y<=bl.h+1.5&&V.y<=0){P.y=bl.h;V.set(0,0,0);isFlying=false;onGround=true;showTip('Rooftop landing!')}
+    else if(bl&&P.y<bl.h+2){P.y=bl.h+2;V.y=Math.max(V.y,2)}
     mode='walk';
   }
 
