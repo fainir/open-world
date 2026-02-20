@@ -30,8 +30,8 @@ canvas{display:block}
 #tricks-panel .key{color:#ffaa00}
 #vehicle-prompt{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);font-size:0.95em;color:#44ff66;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:0 0 10px rgba(0,255,50,0.4)}
 #tip{position:fixed;bottom:160px;left:50%;transform:translateX(-50%);font-size:0.8em;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s}
-#veh-btn{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:6;pointer-events:all;background:linear-gradient(135deg,rgba(30,60,120,0.85),rgba(20,40,80,0.95));border:1px solid rgba(100,180,255,0.3);color:#fff;font-family:'Courier New',monospace;font-size:0.85em;padding:8px 20px;border-radius:6px;cursor:pointer;letter-spacing:0.15em;text-transform:uppercase;display:none;transition:all 0.2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-#veh-btn:hover{background:linear-gradient(135deg,rgba(40,80,160,0.95),rgba(30,60,120,0.95));border-color:rgba(100,180,255,0.6);transform:translateX(-50%) scale(1.05);box-shadow:0 0 20px rgba(50,120,255,0.3)}
+#veh-btn{position:fixed;bottom:30px;left:calc(50% - 100px);transform:translateX(-50%);z-index:6;pointer-events:all;background:linear-gradient(135deg,rgba(30,60,120,0.85),rgba(20,40,80,0.95));border:1px solid rgba(100,180,255,0.3);color:#fff;font-family:'Courier New',monospace;font-size:0.85em;padding:8px 20px;border-radius:6px;cursor:pointer;letter-spacing:0.15em;text-transform:uppercase;display:none;transition:all 0.2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#veh-btn:hover{background:linear-gradient(135deg,rgba(40,80,160,0.95),rgba(30,60,120,0.95));border-color:rgba(100,180,255,0.6);box-shadow:0 0 20px rgba(50,120,255,0.3)}
 #veh-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(0,8,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(100,180,255,0.2);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto}
 #veh-menu.open{display:flex}
 #veh-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#88ccff,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -47,6 +47,22 @@ canvas{display:block}
 .veh-item .veh-speed{font-size:0.7em;opacity:0.35}
 #veh-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #veh-close:hover{opacity:1}
+#wpn-btn{position:fixed;bottom:30px;left:calc(50% + 100px);transform:translateX(-50%);z-index:6;pointer-events:all;background:linear-gradient(135deg,rgba(120,30,30,0.85),rgba(80,20,20,0.95));border:1px solid rgba(255,100,100,0.3);color:#fff;font-family:'Courier New',monospace;font-size:0.85em;padding:8px 20px;border-radius:6px;cursor:pointer;letter-spacing:0.15em;text-transform:uppercase;display:none;transition:all 0.2s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#wpn-btn:hover{background:linear-gradient(135deg,rgba(160,40,40,0.95),rgba(120,30,30,0.95));border-color:rgba(255,100,100,0.6);box-shadow:0 0 20px rgba(255,50,50,0.3)}
+#wpn-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:80vw;max-height:70vh;z-index:20;display:none;background:rgba(20,5,5,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(255,80,80,0.25);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto}
+#wpn-menu.open{display:flex}
+#wpn-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#ff6644,#ffaa44);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#wpn-menu .subtitle{font-size:0.75em;opacity:0.4;margin-bottom:1.5em;letter-spacing:0.2em}
+#wpn-list{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:700px}
+.wpn-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:8px;cursor:pointer;transition:all 0.15s;font-size:0.85em;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);min-width:180px}
+.wpn-item:hover{background:rgba(255,100,50,0.15);border-color:rgba(255,100,50,0.3);transform:translateY(-2px)}
+.wpn-item.active{border-color:rgba(255,150,50,0.6);background:rgba(255,100,50,0.2)}
+.wpn-item .wpn-icon{font-size:1.4em;width:28px;text-align:center}
+.wpn-item .wpn-info{flex:1}.wpn-item .wpn-name{font-weight:bold}.wpn-item .wpn-stats{font-size:0.7em;opacity:0.4;margin-top:2px}
+#wpn-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
+#wpn-close:hover{opacity:1}
+#weapon-hud{position:fixed;bottom:65px;right:30px;font-size:0.85em;color:#ff8844;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(255,100,0,0.4);display:none;text-align:right}
+#weapon-hud .wpn-ammo{font-size:1.4em;color:#ffaa44}
 </style>
 </head>
 <body>
@@ -57,8 +73,8 @@ canvas{display:block}
 <div class="controls">
 W/Up - Forward &nbsp;&bull;&nbsp; S/Down - Back &nbsp;&bull;&nbsp; A-D/Left-Right - Turn &nbsp;&bull;&nbsp; Mouse - Look (optional)<br>
 SPACE - Jump / Wingsuit / Rise &nbsp;&bull;&nbsp; SHIFT - Boost / Sprint<br>
-F - Enter/Exit Vehicles &nbsp;&bull;&nbsp; V - Vehicle Menu &nbsp;&bull;&nbsp; 1-4 - Tricks<br>
-16+ Vehicles &bull; Ramps &bull; Trampolines &bull; Parkour &bull; Explore Everything!
+F - Enter/Exit Vehicles &nbsp;&bull;&nbsp; V - Vehicle Menu &nbsp;&bull;&nbsp; B - Weapons &nbsp;&bull;&nbsp; 1-4 - Tricks<br>
+Click - Shoot &nbsp;&bull;&nbsp; R - Reload &nbsp;&bull;&nbsp; 16+ Vehicles &bull; Weapons &bull; Trampolines &bull; Explore!
 </div>
 </div>
 <div id="hud">
@@ -76,6 +92,14 @@ F - Enter/Exit Vehicles &nbsp;&bull;&nbsp; V - Vehicle Menu &nbsp;&bull;&nbsp; 1
 <div id="tip"></div>
 </div>
 <button id="veh-btn">&#9881; Vehicles [V]</button>
+<button id="wpn-btn">&#9876; Weapons [B]</button>
+<div id="wpn-menu">
+<div id="wpn-close">&#10005;</div>
+<h2>WEAPONS</h2>
+<div class="subtitle">Choose your weapon</div>
+<div id="wpn-list"></div>
+</div>
+<div id="weapon-hud"><div id="wpn-name-hud"></div><div class="wpn-ammo" id="wpn-ammo-hud"></div></div>
 <div id="veh-menu">
 <div id="veh-close">&#10005;</div>
 <h2>VEHICLES</h2>
@@ -117,6 +141,17 @@ const P=new THREE.Vector3(0,2,0),V=new THREE.Vector3();
 let onGround=true,isFlying=false,mode='walk',currentVeh=null;
 let trickActive=false,trickTimer=0,trickDur=0,trickName='',trickRot=new THREE.Euler();
 let spaceJust=false,fJust=false;
+// Weapons state
+let currentWeapon='pistol',fireCooldown=0,wpnMenuOpen=false,shooting=false;
+const weaponAmmo={pistol:Infinity,shotgun:30,rifle:90,rocket:10,minigun:300};
+const WEAPONS={
+  pistol:{name:'Pistol',icon:'\u{1F52B}',maxAmmo:Infinity,fireRate:3.5,dmg:25,type:'hitscan',range:250,spread:.015,sound:'bang'},
+  shotgun:{name:'Shotgun',icon:'\u{1F4A5}',maxAmmo:30,fireRate:1.2,dmg:12,type:'hitscan',range:60,spread:.09,pellets:8,sound:'boom'},
+  rifle:{name:'Rifle',icon:'\u{1F3AF}',maxAmmo:90,fireRate:6,dmg:35,type:'hitscan',range:500,spread:.005,sound:'crack'},
+  rocket:{name:'Rocket Launcher',icon:'\u{1F680}',maxAmmo:10,fireRate:.6,dmg:100,type:'projectile',speed:90,blastR:18,sound:'whoosh'},
+  minigun:{name:'Minigun',icon:'\u{26A1}',maxAmmo:300,fireRate:18,dmg:8,type:'hitscan',range:180,spread:.055,sound:'brrt'}
+};
+const projectiles=[],bulletTrails=[];
 const kU=()=>keys['KeyW']||keys['ArrowUp'],kD=()=>keys['KeyS']||keys['ArrowDown'];
 const kL=()=>keys['KeyA']||keys['ArrowLeft'],kR=()=>keys['KeyD']||keys['ArrowRight'];
 const clock=new THREE.Clock();
@@ -359,41 +394,27 @@ mkTramp(CH+40,-50,1);mkTramp(CH+60,200,1.2);mkTramp(CH+30,50,1.3);mkTramp(CH+70,
 mkTramp(-CH-50,0,1);mkTramp(-CH-80,150,1.1);mkTramp(-CH-30,-100,1.2);mkTramp(-CH-120,200,1.3);mkTramp(-CH-60,-200,1.1);mkTramp(-CH-100,-50,1.4);
 
 // ══════════════ VEHICLE DEFINITIONS ══════════════
+// Every vehicle: [Signature, Backflip, Barrel Roll, 360 Spin]
+const flipB={n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},flipF={n:'Front Flip',d:1,ax:'x',ag:Math.PI*2};
+const roll={n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},spin={n:'360 Spin',d:.8,ax:'y',ag:Math.PI*2};
 const VDEFS={
-  car:{pt:'ground',ms:65,ac:35,tn:2.5,sz:[2.5,1,1.2],
-    tricks:[{n:'Drift',d:.8,ax:'y',ag:Math.PI},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
-  motorcycle:{pt:'ground',ms:80,ac:45,tn:3,sz:[1.8,.8,.6],
-    tricks:[{n:'Wheelie',d:.8,ax:'x',ag:-.4},{n:'Stoppie',d:.8,ax:'x',ag:.5},{n:'Superman',d:1,ax:'x',ag:-.3},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2}]},
-  bike:{pt:'ground',ms:32,ac:20,tn:3.5,sz:[1.5,.9,.5],
-    tricks:[{n:'Bunny Hop',d:.6,ax:'y',ag:0},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
-  skateboard:{pt:'wearable',ms:28,ac:18,tn:4,sz:[.8,.1,.3],
-    tricks:[{n:'Kickflip',d:.6,ax:'z',ag:Math.PI*2},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
-  rollerblades:{pt:'wearable',ms:25,ac:15,tn:4,sz:[.3,.3,.8],
-    tricks:[{n:'Spin',d:.7,ax:'y',ag:Math.PI*2},{n:'Grind',d:1,ax:'x',ag:0},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Split',d:.8,ax:'z',ag:.5}]},
-  pogo:{pt:'ground',ms:15,ac:10,tn:5,sz:[.2,1.5,.2],
-    tricks:[{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'360',d:.8,ax:'y',ag:Math.PI*2},{n:'Super Bounce',d:1.2,ax:'y',ag:0},{n:'No Hands',d:.8,ax:'z',ag:.3}]},
-  horse:{pt:'ground',ms:45,ac:25,tn:2,sz:[2.5,1.5,1],
-    tricks:[{n:'Rear Up',d:1,ax:'x',ag:-.5},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
-  airplane:{pt:'air',ms:130,ac:50,tn:2,sz:[3,1,8],
-    tricks:[{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},{n:'Loop',d:1.5,ax:'x',ag:Math.PI*2},{n:'Immelmann',d:1.2,ax:'x',ag:Math.PI},{n:'Split-S',d:1.2,ax:'x',ag:-Math.PI}]},
-  helicopter:{pt:'air',ms:65,ac:30,tn:3,sz:[2.5,1.5,2],
-    tricks:[{n:'360 Spin',d:1,ax:'y',ag:Math.PI*2},{n:'Nose Dive',d:.8,ax:'x',ag:.6},{n:'Side Slide',d:.8,ax:'z',ag:.4},{n:'Flip',d:1.2,ax:'x',ag:Math.PI*2}]},
-  boat:{pt:'water',ms:55,ac:30,tn:2.5,sz:[3,.8,1.2],
-    tricks:[{n:'Donut',d:1,ax:'y',ag:Math.PI*2},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
-  jetski:{pt:'water',ms:70,ac:40,tn:3.5,sz:[2,.6,.8],
-    tricks:[{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Submarine',d:.8,ax:'x',ag:.5},{n:'360',d:.8,ax:'y',ag:Math.PI*2}]},
-  yacht:{pt:'water',ms:28,ac:12,tn:1.5,sz:[6,2,2.5],
-    tricks:[{n:'Cruise',d:1.5,ax:'y',ag:0},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
-  surfboard:{pt:'water',ms:22,ac:15,tn:4,sz:[2,.1,.5],
-    tricks:[{n:'Cutback',d:.8,ax:'y',ag:Math.PI},{n:'Aerial',d:1,ax:'x',ag:-Math.PI*2},{n:'Tube Ride',d:1.2,ax:'y',ag:0},{n:'360',d:.8,ax:'y',ag:Math.PI*2}]},
-  waterski:{pt:'water',ms:50,ac:25,tn:3,sz:[1.5,.1,.3],
-    tricks:[{n:'Jump',d:.8,ax:'x',ag:-.3},{n:'Slalom',d:.6,ax:'y',ag:Math.PI},{n:'Flip',d:1,ax:'x',ag:-Math.PI*2},{n:'Spray',d:.6,ax:'z',ag:.3}]},
-  ski:{pt:'snow',ms:55,ac:20,tn:3,sz:[1.5,.05,.2],
-    tricks:[{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},{n:'360',d:.8,ax:'y',ag:Math.PI*2}]},
-  snowboard:{pt:'snow',ms:50,ac:18,tn:3.5,sz:[1.5,.05,.4],
-    tricks:[{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'360',d:.8,ax:'y',ag:Math.PI*2},{n:'Grab',d:.7,ax:'z',ag:.3},{n:'Grind',d:1,ax:'z',ag:0}]},
-  wingsuit:{pt:'flysuit',ms:120,ac:40,tn:2.5,sz:[1,.5,.5],
-    tricks:[{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Cork',d:1.2,ax:'z',ag:Math.PI*2},{n:'Superman',d:.8,ax:'x',ag:-.3}]},
+  car:{pt:'ground',ms:65,ac:35,tn:2.5,sz:[2.5,1,1.2],tricks:[{n:'Drift',d:.8,ax:'y',ag:Math.PI},flipB,roll,spin]},
+  motorcycle:{pt:'ground',ms:80,ac:45,tn:3,sz:[1.8,.8,.6],tricks:[{n:'Wheelie',d:.8,ax:'x',ag:-.4},flipB,roll,spin]},
+  bike:{pt:'ground',ms:32,ac:20,tn:3.5,sz:[1.5,.9,.5],tricks:[{n:'Bunny Hop',d:.6,ax:'y',ag:0},flipB,roll,spin]},
+  skateboard:{pt:'wearable',ms:28,ac:18,tn:4,sz:[.8,.1,.3],tricks:[{n:'Kickflip',d:.6,ax:'z',ag:Math.PI*2},flipB,flipF,spin]},
+  rollerblades:{pt:'wearable',ms:25,ac:15,tn:4,sz:[.3,.3,.8],tricks:[{n:'Grind',d:1,ax:'x',ag:0},flipB,roll,spin]},
+  pogo:{pt:'ground',ms:15,ac:10,tn:5,sz:[.2,1.5,.2],tricks:[{n:'Super Bounce',d:1.2,ax:'y',ag:0},flipB,roll,spin]},
+  horse:{pt:'ground',ms:45,ac:25,tn:2,sz:[2.5,1.5,1],tricks:[{n:'Rear Up',d:1,ax:'x',ag:-.5},flipB,roll,spin]},
+  airplane:{pt:'air',ms:130,ac:50,tn:2,sz:[3,1,8],tricks:[{n:'Loop',d:1.5,ax:'x',ag:Math.PI*2},flipB,roll,spin]},
+  helicopter:{pt:'air',ms:65,ac:30,tn:3,sz:[2.5,1.5,2],tricks:[{n:'Nose Dive',d:.8,ax:'x',ag:.6},flipB,roll,spin]},
+  boat:{pt:'water',ms:55,ac:30,tn:2.5,sz:[3,.8,1.2],tricks:[{n:'Donut',d:1,ax:'y',ag:Math.PI*2},flipB,roll,spin]},
+  jetski:{pt:'water',ms:70,ac:40,tn:3.5,sz:[2,.6,.8],tricks:[{n:'Submarine',d:.8,ax:'x',ag:.5},flipB,roll,spin]},
+  yacht:{pt:'water',ms:28,ac:12,tn:1.5,sz:[6,2,2.5],tricks:[{n:'Cruise',d:1.5,ax:'y',ag:0},flipB,roll,spin]},
+  surfboard:{pt:'water',ms:22,ac:15,tn:4,sz:[2,.1,.5],tricks:[{n:'Cutback',d:.8,ax:'y',ag:Math.PI},flipB,roll,spin]},
+  waterski:{pt:'water',ms:50,ac:25,tn:3,sz:[1.5,.1,.3],tricks:[{n:'Slalom',d:.6,ax:'y',ag:Math.PI},flipB,roll,spin]},
+  ski:{pt:'snow',ms:55,ac:20,tn:3,sz:[1.5,.05,.2],tricks:[flipF,flipB,roll,spin]},
+  snowboard:{pt:'snow',ms:50,ac:18,tn:3.5,sz:[1.5,.05,.4],tricks:[{n:'Grab',d:.7,ax:'z',ag:.3},flipB,roll,spin]},
+  wingsuit:{pt:'flysuit',ms:120,ac:40,tn:2.5,sz:[1,.5,.5],tricks:[{n:'Cork',d:1.2,ax:'z',ag:Math.PI*2},flipB,flipF,spin]},
 };
 // Parkour tricks
 const parkourTricks=[{n:'Front Flip',d:.7,ax:'x',ag:Math.PI*2},{n:'Backflip',d:.8,ax:'x',ag:-Math.PI*2},{n:'Spin',d:.6,ax:'y',ag:Math.PI*2},{n:'Wall Run',d:.9,ax:'x',ag:Math.PI}];
@@ -621,9 +642,12 @@ document.addEventListener('keydown',e=>{keys[e.code]=true;
   if(e.code==='KeyF'&&!keys._fp){keys._fp=true;fJust=true}
   if(e.code==='Digit1')tryTrick(0);if(e.code==='Digit2')tryTrick(1);
   if(e.code==='Digit3')tryTrick(2);if(e.code==='Digit4')tryTrick(3);
+  if(e.code==='KeyR')reloadWeapon();
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });
 document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')keys._sp=false;if(e.code==='KeyF')keys._fp=false});
+document.addEventListener('mousedown',e=>{if(e.button===0&&locked&&!menuOpen&&!wpnMenuOpen)shooting=true});
+document.addEventListener('mouseup',e=>{if(e.button===0)shooting=false});
 document.addEventListener('mousemove',e=>{
   if(!locked)return;
   const mx=e.movementX||0,my=e.movementY||0;
@@ -636,7 +660,16 @@ function startGame(){
   overlay.style.display='none';
   hud.style.display='block';
   document.getElementById('veh-btn').style.display='block';
+  document.getElementById('wpn-btn').style.display='block';
+  document.getElementById('weapon-hud').style.display='block';
   locked=true;
+  // Start from mountains, flying with wingsuit
+  P.set(-CH-60,getH(-CH-60,0)+80,0);
+  yaw=0; pitch=-0.15;
+  isFlying=true;mode='walk';
+  V.set(fwd().x*50,5,fwd().z*50);
+  boostFuel=100;
+  currentWeapon='pistol';
   try{canvas.requestPointerLock()}catch(e){}
 }
 function stopGame(){
@@ -644,7 +677,9 @@ function stopGame(){
   hud.style.display='none';
   document.getElementById('crosshair').style.display='none';
   document.getElementById('veh-btn').style.display='none';
-  locked=false;
+  document.getElementById('wpn-btn').style.display='none';
+  document.getElementById('weapon-hud').style.display='none';
+  locked=false;shooting=false;
 }
 
 overlay.addEventListener('click',startGame);
@@ -984,6 +1019,88 @@ function update(dt){
   // Water time
   wMat.uniforms.time.value+=dt;
 
+  // ═══ WEAPONS ═══
+  if(fireCooldown>0)fireCooldown-=dt;
+  if(shooting&&fireCooldown<=0&&locked){
+    const w=WEAPONS[currentWeapon];
+    if(weaponAmmo[currentWeapon]>0||w.maxAmmo===Infinity){
+      if(w.maxAmmo!==Infinity)weaponAmmo[currentWeapon]--;
+      fireCooldown=1/w.fireRate;
+      const gunPos=new THREE.Vector3().copy(P).add(new THREE.Vector3(0,1.2,0));
+      if(w.type==='hitscan'){
+        const pellets=w.pellets||1;
+        for(let p=0;p<pellets;p++){
+          const dir=flyFwd().clone();
+          dir.x+=(Math.random()-.5)*w.spread;dir.y+=(Math.random()-.5)*w.spread;dir.z+=(Math.random()-.5)*w.spread;
+          dir.normalize();
+          const end=gunPos.clone().add(dir.multiplyScalar(w.range));
+          // Check target hits
+          for(let ti=targets.length-1;ti>=0;ti--){
+            const tgt=targets[ti];if(!tgt.alive)continue;
+            const toT=new THREE.Vector3().subVectors(tgt.mesh.position,gunPos);
+            const proj=toT.dot(dir)/dir.length();
+            if(proj>0&&proj<w.range){
+              const closest=gunPos.clone().add(dir.clone().normalize().multiplyScalar(proj));
+              if(closest.distanceTo(tgt.mesh.position)<tgt.r+.5){
+                tgt.hp-=w.dmg;
+                for(let e=0;e<5;e++)emit(tgt.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random()*2,(Math.random()-.5)*2)),new THREE.Vector3((Math.random()-.5)*10,Math.random()*10,(Math.random()-.5)*10));
+                if(tgt.hp<=0){destroyTarget(ti);score+=50;comboCount++;comboTimer=2}
+              }
+            }
+          }
+          // Bullet trail
+          const tGeo=new THREE.BufferGeometry().setFromPoints([gunPos.clone(),end]);
+          const tLine=new THREE.Line(tGeo,new THREE.LineBasicMaterial({color:0xffaa44,transparent:true,opacity:.6}));
+          scene.add(tLine);bulletTrails.push({mesh:tLine,life:0.15});
+        }
+        // Muzzle flash
+        for(let i=0;i<4;i++)emit(gunPos.clone().add(flyFwd().multiplyScalar(1)),flyFwd().clone().multiplyScalar(3));
+      } else if(w.type==='projectile'){
+        const dir=flyFwd().clone();
+        const rMesh=new THREE.Mesh(new THREE.SphereGeometry(.2,6,4),new THREE.MeshStandardMaterial({color:0xff4400,emissive:0xff2200,emissiveIntensity:2}));
+        rMesh.position.copy(gunPos).add(dir.clone().multiplyScalar(2));
+        scene.add(rMesh);
+        projectiles.push({mesh:rMesh,vel:dir.multiplyScalar(w.speed),life:5,dmg:w.dmg,blastR:w.blastR});
+        for(let i=0;i<3;i++)emit(rMesh.position.clone(),dir.clone().multiplyScalar(-2));
+      }
+    }
+  }
+  // Update projectiles
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p=projectiles[i];p.life-=dt;
+    p.mesh.position.add(p.vel.clone().multiplyScalar(dt));
+    p.vel.y-=9*dt;// gravity
+    // Trail
+    emit(p.mesh.position.clone(),p.vel.clone().multiplyScalar(-.1));
+    const ph=getH(p.mesh.position.x,p.mesh.position.z);
+    const hitGround=p.mesh.position.y<=ph;
+    const hitBldg=colBldg(p.mesh.position.x,p.mesh.position.z,.5);
+    if(hitGround||hitBldg||p.life<=0){
+      // Explosion
+      for(let e=0;e<30;e++){
+        const ep=p.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*4,Math.random()*4,(Math.random()-.5)*4));
+        emit(ep,new THREE.Vector3((Math.random()-.5)*20,Math.random()*15,(Math.random()-.5)*20));
+      }
+      // Blast radius damage to targets
+      for(let ti=targets.length-1;ti>=0;ti--){
+        const tgt=targets[ti];if(!tgt.alive)continue;
+        if(p.mesh.position.distanceTo(tgt.mesh.position)<p.blastR){
+          tgt.hp-=p.dmg;
+          if(tgt.hp<=0){destroyTarget(ti);score+=100;comboCount++;comboTimer=2}
+        }
+      }
+      scene.remove(p.mesh);projectiles.splice(i,1);
+    }
+  }
+  // Update bullet trails
+  for(let i=bulletTrails.length-1;i>=0;i--){
+    bulletTrails[i].life-=dt;
+    bulletTrails[i].mesh.material.opacity=bulletTrails[i].life*4;
+    if(bulletTrails[i].life<=0){scene.remove(bulletTrails[i].mesh);bulletTrails.splice(i,1)}
+  }
+  // Respawn targets periodically
+  if(Math.random()<dt*.1)spawnTarget();
+
   // ═══ HUD ═══
   const spd=currentVeh?Math.abs(currentVeh.speed)*3.6:V.length()*3.6;
   document.getElementById('speed').textContent=`${spd|0} km/h`;
@@ -1005,6 +1122,11 @@ function update(dt){
   else if(isFlying)tricks=[{n:'Barrel Roll'},{n:'Front Flip'},{n:'Cork'},{n:'Superman'}];
   const tp=document.getElementById('tricks-panel');
   tp.innerHTML=tricks.map((t,i)=>`<span><span class="key">[${i+1}]</span> ${t.n}</span>`).join('');
+  // Weapon HUD
+  const cw=WEAPONS[currentWeapon];
+  document.getElementById('wpn-name-hud').textContent=`${cw.icon} ${cw.name}`;
+  const ammo=weaponAmmo[currentWeapon];
+  document.getElementById('wpn-ammo-hud').textContent=ammo===Infinity?'\u{221E}':`${ammo}`;
 }
 
 // ══════════════ VEHICLE MENU ══════════════
@@ -1106,17 +1228,91 @@ function closeVehMenu(){
 vehBtn.addEventListener('click',e=>{e.stopPropagation();if(menuOpen)closeVehMenu();else openVehMenu()});
 document.getElementById('veh-close').addEventListener('click',closeVehMenu);
 document.addEventListener('keydown',e=>{
-  if(e.code==='KeyV'&&locked&&!menuOpen){e.preventDefault();openVehMenu()}
+  if(e.code==='KeyV'&&locked&&!menuOpen&&!wpnMenuOpen){e.preventDefault();openVehMenu()}
   else if(e.code==='KeyV'&&menuOpen){e.preventDefault();closeVehMenu()}
   else if(e.code==='Escape'&&menuOpen){e.preventDefault();closeVehMenu()}
 });
 
+// ══════════════ TARGETS (destructible crates/barrels) ══════════════
+const targets=[];const tgtMats=[0xaa5522,0xcc3333,0x44aa44,0x4466cc];
+function spawnTarget(){
+  if(targets.length>40)return;
+  const x=-CH+100+Math.random()*(CS-200),z=-CH+100+Math.random()*(CS-200);
+  if(colBldg(x,z,2))return;
+  const isBarrel=Math.random()>.5;
+  const h=getH(x,z);
+  let mesh;
+  if(isBarrel){
+    mesh=cyl(.6,.6,1.2,tgtMats[Math.floor(Math.random()*tgtMats.length)]);
+    mesh.position.set(x,h+.6,z);
+  } else {
+    mesh=box(1,1,1,tgtMats[Math.floor(Math.random()*tgtMats.length)]);
+    mesh.position.set(x,h+.5,z);mesh.rotation.y=Math.random()*Math.PI;
+  }
+  mesh.castShadow=true;scene.add(mesh);
+  targets.push({mesh,hp:50,r:isBarrel?.6:0.7,alive:true});
+}
+function destroyTarget(idx){
+  const t=targets[idx];t.alive=false;
+  // Explosion particles
+  for(let i=0;i<20;i++){
+    const p=t.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random()*2,(Math.random()-.5)*2));
+    emit(p,new THREE.Vector3((Math.random()-.5)*15,Math.random()*12+5,(Math.random()-.5)*15));
+  }
+  scene.remove(t.mesh);targets.splice(idx,1);
+}
+// Spawn initial targets
+for(let i=0;i<25;i++)spawnTarget();
+
+// ══════════════ WEAPON MENU ══════════════
+const wpnMenu=document.getElementById('wpn-menu');
+const wpnBtn=document.getElementById('wpn-btn');
+const wpnList=document.getElementById('wpn-list');
+
+function buildWpnMenu(){
+  wpnList.innerHTML='';
+  for(const[id,w] of Object.entries(WEAPONS)){
+    const item=document.createElement('div');
+    item.className='wpn-item'+(id===currentWeapon?' active':'');
+    const ammoStr=w.maxAmmo===Infinity?'\u{221E}':weaponAmmo[id]+'/'+w.maxAmmo;
+    item.innerHTML=`<span class="wpn-icon">${w.icon}</span><div class="wpn-info"><div class="wpn-name">${w.name}</div><div class="wpn-stats">DMG:${w.dmg} | ROF:${w.fireRate}/s | Ammo:${ammoStr}</div></div>`;
+    item.addEventListener('click',()=>{currentWeapon=id;closeWpnMenu();showTip(w.name+' equipped!')});
+    wpnList.appendChild(item);
+  }
+}
+function openWpnMenu(){
+  if(wpnMenuOpen)return;
+  wpnMenuOpen=true;shooting=false;
+  buildWpnMenu();
+  wpnMenu.classList.add('open');
+  document.exitPointerLock?.();
+}
+function closeWpnMenu(){
+  if(!wpnMenuOpen)return;
+  wpnMenuOpen=false;
+  wpnMenu.classList.remove('open');
+  try{canvas.requestPointerLock()}catch(e){}
+}
+function reloadWeapon(){
+  const w=WEAPONS[currentWeapon];
+  if(w.maxAmmo===Infinity)return;
+  weaponAmmo[currentWeapon]=w.maxAmmo;
+  showTip('Reloaded '+w.name+'!');
+}
+wpnBtn.addEventListener('click',e=>{e.stopPropagation();if(wpnMenuOpen)closeWpnMenu();else openWpnMenu()});
+document.getElementById('wpn-close').addEventListener('click',closeWpnMenu);
+document.addEventListener('keydown',e=>{
+  if(e.code==='KeyB'&&locked&&!wpnMenuOpen&&!menuOpen){e.preventDefault();openWpnMenu()}
+  else if(e.code==='KeyB'&&wpnMenuOpen){e.preventDefault();closeWpnMenu()}
+  else if(e.code==='Escape'&&wpnMenuOpen){e.preventDefault();closeWpnMenu()}
+});
+
 // ══════════════ LOOP ══════════════
-function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();if(locked&&!menuOpen)update(dt);R.render(scene,cam)}
+function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();if(locked&&!menuOpen&&!wpnMenuOpen)update(dt);R.render(scene,cam)}
 animate();
 
 window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
-setTimeout(()=>{if(locked)showTip('SPACE=jump, then SPACE again for wingsuit! F=enter vehicles! 1-4=tricks!')},2000);
+setTimeout(()=>{if(locked)showTip('Flying from the mountains! Click to shoot, B=weapons, V=vehicles')},1500);
 </script>
 </body>
 </html>
