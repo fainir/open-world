@@ -180,6 +180,20 @@ const WEAPONS={
   minigun:{name:'Minigun',icon:'\u{26A1}',maxAmmo:300,fireRate:18,dmg:8,type:'hitscan',range:180,spread:.055,sound:'brrt'}
 };
 const projectiles=[],bulletTrails=[];
+
+// ══════════════ NPC SYSTEM ══════════════
+const NPC_TYPES={
+  pedestrian:{speed:3,armed:false,veh:null},
+  jogger:{speed:8,armed:false,veh:null},
+  guard:{speed:2,armed:true,veh:null},
+  biker:{speed:18,armed:false,veh:'motorcycle'},
+  cyclist:{speed:10,armed:false,veh:'bike'},
+  driver:{speed:22,armed:false,veh:'car'},
+  festivalGoer:{speed:1.5,armed:false,veh:null}
+};
+const NPC_COLORS=[0x2244aa,0xaa2222,0x22aa44,0xaa8822,0x6622aa,0x228888,0x884422,0xdd6644,0x4466aa,0x335533,0xcc4488,0x6688bb,0x996633,0x448844,0x774411];
+const npcs=[];
+const MAX_NPCS=35;
 const kU=()=>keys['KeyW']||keys['ArrowUp'],kD=()=>keys['KeyS']||keys['ArrowDown'];
 const kL=()=>keys['KeyA']||keys['ArrowLeft'],kR=()=>keys['KeyD']||keys['ArrowRight'];
 const clock=new THREE.Clock();
@@ -586,6 +600,107 @@ const VFACTORY={car:mkCar,motorcycle:mkMotorcycle,bike:mkBike,skateboard:mkSkate
   helicopter:mkHelicopter,boat:mkBoat,jetski:mkJetski,yacht:mkYacht,surfboard:mkSurfboard,
   waterski:mkWaterski,ski:mkSki,snowboard:mkSnowboard,wingsuit:mkWingsuit};
 
+// ══════════════ NPC MESH & AI ══════════════
+function mkNPCMesh(colorIdx,armed){
+  const g=new THREE.Group();
+  const col=NPC_COLORS[colorIdx%NPC_COLORS.length];
+  const nS=new THREE.MeshStandardMaterial({color:col,roughness:.5});
+  const skM=new THREE.MeshStandardMaterial({color:0xd4a574,roughness:.6});
+  // Body
+  const bd=box(.5,.7,.3,col);bd.material=nS;bd.position.y=1.05;g.add(bd);
+  // Stripes
+  const s1=box(.52,.06,.31,0x222222);s1.position.set(0,1.2,0);g.add(s1);
+  const s2=box(.52,.06,.31,0x222222);s2.position.set(0,.9,0);g.add(s2);
+  // Head (skin)
+  const hd=new THREE.Mesh(new THREE.SphereGeometry(.17,8,6),skM);hd.position.y=1.55;g.add(hd);
+  // Hair/hat variation
+  if(colorIdx%3===0){const hat=cyl(.2,.18,.08,col);hat.position.y=1.68;g.add(hat);
+    const brim=cyl(.25,.25,.02,col);brim.position.y=1.64;g.add(brim)}
+  else if(colorIdx%3===1){const hair=new THREE.Mesh(new THREE.SphereGeometry(.19,6,5),
+    new THREE.MeshStandardMaterial({color:0x332211,roughness:.8}));hair.position.set(0,1.62,-.02);hair.scale.set(1,.6,1);g.add(hair)}
+  // Arms
+  const la=box(.14,.55,.14,col);la.material=nS;la.position.set(-.38,1,0);g.add(la);g.userData.lA=la;
+  const ra=box(.14,.55,.14,col);ra.material=nS;ra.position.set(.38,1,0);g.add(ra);g.userData.rA=ra;
+  // Legs
+  const ll=box(.17,.55,.17,col);ll.material=nS;ll.position.set(-.14,.37,0);g.add(ll);g.userData.lL=ll;
+  const rl=box(.17,.55,.17,col);rl.material=nS;rl.position.set(.14,.37,0);g.add(rl);g.userData.rL=rl;
+  // Boots
+  const lb2=box(.18,.1,.26,0x1a1a1a);lb2.position.set(-.14,.06,.03);g.add(lb2);
+  const rb2=box(.18,.1,.26,0x1a1a1a);rb2.position.set(.14,.06,.03);g.add(rb2);
+  // Backpack for some
+  if(colorIdx%4===0){const bp=box(.28,.24,.14,0x444444);bp.position.set(0,1.05,-.2);g.add(bp)}
+  // Gun for armed NPCs
+  if(armed){const gun=new THREE.Group();
+    const gM=new THREE.MeshStandardMaterial({color:0x333333,metalness:.7,roughness:.3});
+    const gb=box(.05,.06,.35,0x333333);gb.material=gM;gb.position.set(0,0,.12);gun.add(gb);
+    const bl=cyl(.015,.015,.25,0x444444);bl.rotation.x=Math.PI/2;bl.position.set(0,.01,.3);gun.add(bl);
+    gun.position.set(.38,.85,.2);gun.rotation.x=-Math.PI/6;g.add(gun)}
+  return g}
+
+function pickNewTarget(npc){
+  if(npc.type==='festivalGoer'){npc.targetX=-80+Math.random()*160;npc.targetZ=660+Math.random()*140;return}
+  // City street waypoint
+  const bx=-CH+BK*2+Math.floor(Math.random()*((CS-BK*4)/BK))*BK;
+  const bz=-CH+BK*2+Math.floor(Math.random()*((CS-BK*4)/BK))*BK;
+  npc.targetX=bx+(Math.random()-.5)*ST*.5;
+  npc.targetZ=bz+(Math.random()-.5)*ST*.5}
+
+function spawnNPC(type,x,z,ry){
+  if(npcs.length>=MAX_NPCS)return;
+  const cfg=NPC_TYPES[type];
+  const ci=Math.floor(Math.random()*NPC_COLORS.length);
+  const mesh=mkNPCMesh(ci,cfg.armed);
+  const h=getH(x,z);
+  mesh.position.set(x,h,z);mesh.rotation.y=ry||0;
+  scene.add(mesh);
+  let vM=null;
+  if(cfg.veh){seedR(Math.abs(x*73+z*31+type.length*17)|0);
+    vM=VFACTORY[cfg.veh]();vM.position.set(x,h,z);vM.rotation.y=(ry||0)+Math.PI/2;scene.add(vM)}
+  const npc={type,mesh,vehMesh:vM,x,y:h,z,ry:ry||0,speed:cfg.speed,
+    targetX:x,targetZ:z,state:'wander',stateTimer:2+Math.random()*4,
+    walkBob:Math.random()*Math.PI*2,colorIdx:ci};
+  pickNewTarget(npc);npcs.push(npc)}
+
+function updateNPCs(dt){
+  for(const npc of npcs){
+    const camD=Math.sqrt((npc.x-P.x)**2+(npc.z-P.z)**2);
+    if(camD>300)continue;
+    npc.stateTimer-=dt;
+    const cfg=NPC_TYPES[npc.type];
+    if(npc.state==='idle'){
+      if(npc.stateTimer<=0){npc.state='wander';npc.stateTimer=4+Math.random()*6;pickNewTarget(npc)}
+    }else{
+      const dx=npc.targetX-npc.x,dz=npc.targetZ-npc.z;
+      const dist=Math.sqrt(dx*dx+dz*dz);
+      if(dist<2||npc.stateTimer<=0){npc.state='idle';npc.stateTimer=1+Math.random()*3}
+      else{
+        const tRy=Math.atan2(-dx,-dz);
+        // Smooth angle lerp
+        let diff=tRy-npc.ry;while(diff>Math.PI)diff-=Math.PI*2;while(diff<-Math.PI)diff+=Math.PI*2;
+        npc.ry+=diff*Math.min(1,3*dt);
+        const spd=cfg.speed,mx=-Math.sin(npc.ry)*spd*dt,mz=-Math.cos(npc.ry)*spd*dt;
+        const nx=npc.x+mx,nz2=npc.z+mz;
+        if(!colBldg(nx,nz2,.8)){npc.x=nx;npc.z=nz2}else{pickNewTarget(npc)}
+        npc.y=getH(npc.x,npc.z);npc.walkBob+=dt*8}}
+    // Update mesh
+    npc.mesh.position.set(npc.x,npc.y,npc.z);npc.mesh.rotation.y=npc.ry;
+    const la=npc.mesh.userData.lA,ra=npc.mesh.userData.rA,ll=npc.mesh.userData.lL,rl=npc.mesh.userData.rL;
+    if(npc.state==='wander'&&!cfg.veh){const b=npc.walkBob;
+      if(la)la.rotation.x=Math.sin(b)*.4;if(ra)ra.rotation.x=-Math.sin(b)*.4;
+      if(ll)ll.rotation.x=-Math.sin(b)*.5;if(rl)rl.rotation.x=Math.sin(b)*.5}
+    else{if(la)la.rotation.x=0;if(ra)ra.rotation.x=0;if(ll)ll.rotation.x=0;if(rl)rl.rotation.x=0}
+    // Vehicle riders
+    if(npc.vehMesh){
+      npc.vehMesh.position.set(npc.x,npc.y,npc.z);npc.vehMesh.rotation.y=npc.ry+Math.PI/2;
+      const ri=rideOnVeh[cfg.veh];
+      if(ri){npc.mesh.position.y=npc.y+ri.y;
+        if(ri.pose==='sit'){
+          if(la){la.position.set(-.32,1.05,.2);la.rotation.set(-.6,0,0)}
+          if(ra){ra.position.set(.32,1.05,.2);ra.rotation.set(-.6,0,0)}
+          if(ll){ll.position.set(-.14,.25,.15);ll.rotation.x=-.9}
+          if(rl){rl.position.set(.14,.25,.15);rl.rotation.x=-.9}}}}
+  }}
+
 // ══════════════ SPAWN VEHICLES ══════════════
 const vehicles=[];
 function spawnV(type,x,z,ry=0,yOverride=null){
@@ -621,6 +736,137 @@ spawnV('waterski',CH+180,150,0);
 // Mountain
 spawnV('ski',-CH-80,50,Math.PI);spawnV('ski',-CH-100,-100,Math.PI);
 spawnV('snowboard',-CH-90,0,Math.PI);spawnV('snowboard',-CH-120,150,Math.PI);
+
+// ══════════════ FESTIVAL AREA ══════════════
+let festivalData=null;
+(function buildFestival(){
+  const FX=0,FZ=730;
+  // Ground pad
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(300,200),
+    new THREE.MeshStandardMaterial({color:0x554433,roughness:.85}));
+  gnd.rotation.x=-Math.PI/2;gnd.position.set(FX,.05,FZ);scene.add(gnd);
+
+  // ─── STAGE ───
+  const stg=box(20,2,10,0x3a3a3a);stg.position.set(FX,1,FZ-30);scene.add(stg);
+  const stgBack=box(20,8,.3,0x222222);stgBack.position.set(FX,5,FZ-34.5);scene.add(stgBack);
+  const stgRoof=box(22,.3,12,0x333333);stgRoof.position.set(FX,9,FZ-30);scene.add(stgRoof);
+  for(const sx of[-9.5,9.5])for(const sz of[FZ-24,FZ-35]){
+    const p=cyl(.15,.15,9,0x555555);p.position.set(FX+sx,4.5,sz);scene.add(p)}
+  // Stage lights
+  const sLC=[0xff0044,0x4400ff,0x00ff44,0xffaa00,0xff00ff,0x00aaff];
+  for(let i=0;i<6;i++){const lx=FX-8+i*3.2;
+    const lM=new THREE.Mesh(new THREE.CylinderGeometry(.3,.5,.6,6),
+      new THREE.MeshStandardMaterial({color:sLC[i],emissive:sLC[i],emissiveIntensity:2}));
+    lM.position.set(lx,8.6,FZ-30);lM.rotation.x=Math.PI;scene.add(lM);
+    if(i<3){const pl=new THREE.PointLight(sLC[i],2,25);pl.position.set(lx,7,FZ-30);scene.add(pl)}}
+  // Speaker stacks
+  for(const sx of[-11,11])for(let j=0;j<3;j++){
+    const spk=box(2,1.5,1.5,0x1a1a1a);spk.position.set(FX+sx,1+j*1.5,FZ-30);scene.add(spk);
+    const cn=cyl(.4,.4,.1,0x333333);cn.rotation.x=Math.PI/2;cn.position.set(FX+sx,1+j*1.5,FZ-29.2);scene.add(cn)}
+
+  // ─── FERRIS WHEEL ───
+  const fwG=new THREE.Group();const fwR=12;
+  // Support legs
+  for(const sx of[-.4,.4]){const leg=cyl(.25,.3,fwR+4,0x666666);
+    leg.position.set(sx*6,(fwR+3)/2,0);leg.rotation.z=sx*.15;fwG.add(leg)}
+  // Rotating wheel sub-group
+  const wheelGrp=new THREE.Group();wheelGrp.position.y=fwR+3;
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(fwR,.15,6,24),
+    new THREE.MeshStandardMaterial({color:0xcc3333,metalness:.4,roughness:.4}));
+  wheelGrp.add(rim);
+  const axle=cyl(.3,.3,1.5,0x888888);axle.rotation.x=Math.PI/2;wheelGrp.add(axle);
+  const gColors=[0xffaa00,0x44aaff,0xff4488,0x44ff44];
+  for(let i=0;i<12;i++){const a=(i/12)*Math.PI*2;
+    const spoke=cyl(.06,.06,fwR,0x888888);
+    spoke.position.set(Math.cos(a)*fwR/2,Math.sin(a)*fwR/2,0);
+    spoke.rotation.z=a+Math.PI/2;wheelGrp.add(spoke);
+    const gon=box(1,1.2,.8,gColors[i%4]);gon.position.set(Math.cos(a)*fwR,Math.sin(a)*fwR,0);wheelGrp.add(gon);
+    const led=new THREE.Mesh(new THREE.SphereGeometry(.15,4,3),
+      new THREE.MeshStandardMaterial({color:sLC[i%6],emissive:sLC[i%6],emissiveIntensity:1.5}));
+    led.position.set(Math.cos(a)*fwR,Math.sin(a)*fwR,.25);wheelGrp.add(led)}
+  fwG.add(wheelGrp);
+  fwG.position.set(FX,0,FZ+15);scene.add(fwG);
+
+  // ─── TENTS/BOOTHS ───
+  const tC=[0xcc2222,0x2266cc,0xccaa22,0x22cc66,0xcc44aa,0x44cccc];
+  function mkTent(tx,tz,tc){const tg=new THREE.Group();
+    for(const dx of[-1.5,1.5])for(const dz of[-1.5,1.5]){
+      const p=cyl(.06,.06,3,0x888888);p.position.set(dx,1.5,dz);tg.add(p)}
+    const canopy=box(3.5,.1,3.5,tc);canopy.material=new THREE.MeshStandardMaterial({color:tc,side:THREE.DoubleSide,roughness:.8});
+    canopy.position.y=3;tg.add(canopy);
+    const peak=new THREE.Mesh(new THREE.ConeGeometry(.5,.8,4),new THREE.MeshStandardMaterial({color:tc,roughness:.8}));
+    peak.position.y=3.4;tg.add(peak);
+    const counter=box(3,.1,.8,0x8B7355);counter.position.set(0,1,1.6);tg.add(counter);
+    tg.position.set(tx,getH(tx,tz),tz);scene.add(tg)}
+  mkTent(FX-40,FZ-20,tC[0]);mkTent(FX+40,FZ-20,tC[1]);
+  mkTent(FX-40,FZ+20,tC[2]);mkTent(FX+40,FZ+20,tC[3]);
+  mkTent(FX-60,FZ,tC[4]);mkTent(FX+60,FZ,tC[5]);
+
+  // ─── FOOD TRUCKS ───
+  function mkFoodTruck(fx,fz,fry,color){const ftg=new THREE.Group();
+    const body=box(3.5,2,1.8,color);body.position.y=1.5;ftg.add(body);
+    const win=box(1.5,.8,.05,0x88bbff);win.material=new THREE.MeshStandardMaterial({color:0x88bbff,transparent:true,opacity:.4});
+    win.position.set(.3,2,.93);ftg.add(win);
+    const awning=box(2,.05,1,color);awning.position.set(.3,2.6,1.4);awning.rotation.x=.3;ftg.add(awning);
+    for(let i=0;i<4;i++){const wh=cyl(.35,.35,.15,0x222222,8);wh.rotation.x=Math.PI/2;
+      wh.position.set(i<2?1.2:-1.2,.35,i%2===0?.85:-.85);ftg.add(wh)}
+    const sign=box(1.5,.8,.08,0xffffcc);sign.material=new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffeeaa,emissiveIntensity:.3});
+    sign.position.set(0,3.1,.93);ftg.add(sign);
+    ftg.position.set(fx,getH(fx,fz),fz);ftg.rotation.y=fry;scene.add(ftg)}
+  mkFoodTruck(FX-30,FZ+50,Math.PI/4,0xff6644);
+  mkFoodTruck(FX+30,FZ+50,-Math.PI/4,0x44aaff);
+  mkFoodTruck(FX,FZ+55,0,0x66cc44);
+
+  // ─── DANCE FLOOR ───
+  const dfC=[0xff0066,0x6600ff,0x00ff66,0xff6600,0x0066ff,0xff00ff];
+  const dfTiles=[];
+  for(let ix=-3;ix<=3;ix++)for(let iz=-3;iz<=3;iz++){
+    const tc=dfC[(Math.abs(ix)+Math.abs(iz))%dfC.length];
+    const tile=box(1.9,.05,1.9,tc);
+    tile.material=new THREE.MeshStandardMaterial({color:tc,emissive:tc,emissiveIntensity:.3,roughness:.2,metalness:.3});
+    tile.position.set(FX+ix*2,.06,FZ+iz*2);scene.add(tile);dfTiles.push(tile)}
+
+  // ─── STRING LIGHTS ───
+  const slM=new THREE.MeshStandardMaterial({color:0xffeeaa,emissive:0xffdd88,emissiveIntensity:1.5});
+  const poles=[[-80,FZ-40],[-40,FZ-40],[0,FZ-40],[40,FZ-40],[80,FZ-40],
+    [80,FZ],[80,FZ+40],[40,FZ+60],[0,FZ+60],[-40,FZ+60],[-80,FZ+40],[-80,FZ]];
+  for(let i=0;i<poles.length;i++){const[px,pz]=poles[i];const[nx,nz]=poles[(i+1)%poles.length];
+    const pole=cyl(.05,.05,5,0x666666);pole.position.set(px,2.5,pz);scene.add(pole);
+    for(let s=0;s<=6;s++){const t=s/6;const bx=px+(nx-px)*t,bz2=pz+(nz-pz)*t;
+      const sag=-Math.sin(t*Math.PI)*.8;
+      const bulb=new THREE.Mesh(new THREE.SphereGeometry(.12,4,3),slM);
+      bulb.position.set(bx,5+sag,bz2);scene.add(bulb)}}
+
+  // ─── ENTRANCE ARCH ───
+  const archL=cyl(.15,.15,6,0xcc3333);archL.position.set(FX-6,3,FZ-55);scene.add(archL);
+  const archR=cyl(.15,.15,6,0xcc3333);archR.position.set(FX+6,3,FZ-55);scene.add(archR);
+  const archTop=box(12.5,.4,1,0xcc3333);archTop.position.set(FX,6,FZ-55);scene.add(archTop);
+  // Sign
+  const archSign=box(8,.08,1.5,0xffffcc);archSign.material=new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffeeaa,emissiveIntensity:.5});
+  archSign.position.set(FX,5.2,FZ-55);scene.add(archSign);
+
+  // ─── PARKED VEHICLES ───
+  spawnV('car',FX-20,FZ-55,Math.PI/6);spawnV('car',FX-10,FZ-55,0);
+  spawnV('motorcycle',FX+5,FZ-55,-Math.PI/4);spawnV('motorcycle',FX+15,FZ-55,0);
+  spawnV('bike',FX+25,FZ-55,Math.PI/3);
+
+  festivalData={wheelGrp,dfTiles};
+})();
+
+// ══════════════ NPC SPAWNS ══════════════
+seedR(4444);
+for(let i=0;i<15;i++){const x=-CH+BK*3+srand()*(CS-BK*6),z=-CH+BK*3+srand()*(CS-BK*6);
+  if(!colBldg(x,z,1)){const types=['pedestrian','pedestrian','pedestrian','jogger','guard'];
+    spawnNPC(types[i%types.length],x,z,srand()*Math.PI*2)}}
+// Vehicle NPCs
+seedR(5555);
+for(let i=0;i<5;i++){const x=-CH+BK*3+srand()*(CS-BK*6),z=-CH+BK*3+srand()*(CS-BK*6);
+  if(!colBldg(x,z,2)){const types=['biker','cyclist','driver','biker','cyclist'];
+    spawnNPC(types[i%types.length],x,z,srand()*Math.PI*2)}}
+// Festival NPCs
+seedR(6666);
+for(let i=0;i<12;i++){const x=-80+srand()*160,z=660+srand()*140;
+  spawnNPC('festivalGoer',x,z,srand()*Math.PI*2)}
 
 // ══════════════ CHARACTER ══════════════
 const charG=new THREE.Group();
@@ -1201,6 +1447,18 @@ function update(dt){
   }
   // Respawn targets periodically
   if(Math.random()<dt*.1)spawnTarget();
+
+  // ═══ NPCs & FESTIVAL ═══
+  updateNPCs(dt);
+  if(festivalData){
+    // Ferris wheel rotation
+    festivalData.wheelGrp.rotation.z+=dt*.2;
+    // Dance floor color cycling
+    const t=clock.elapsedTime;
+    for(let i=0;i<festivalData.dfTiles.length;i++){
+      const phase=t*2+i*.5;
+      festivalData.dfTiles[i].material.emissiveIntensity=.15+Math.sin(phase)*.35}
+  }
 
   // ═══ HUD ═══
   const spd=currentVeh?Math.abs(currentVeh.speed)*3.6:V.length()*3.6;
