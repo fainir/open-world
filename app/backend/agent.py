@@ -67,6 +67,30 @@ Large structure clusters are wrapped in THREE.Groups with visibility toggling:
 - When adding large new areas (20+ meshes), wrap them in a Group and add proximity toggling in the update loop
 - Vehicles spawned in these areas must be placed OUTSIDE the group so they remain visible when driven away
 
+#### Map Expansion & Biome System
+The world extends far beyond the city grid (CH=750). The terrain plane is 8000x8000 with biome-specific terrain and colors:
+- **City**: center area within ±CH — flat, gray ground, buildings
+- **Mountains**: west (x < -CH) — rising terrain with fbm noise, rocky heights
+- **Beach**: east (x > CH) — gradual slope down to water level
+- **Desert**: south (z < -CH) — gentle dunes with sand-colored vertex colors
+- **Rolling Hills**: north (z > CH+200) — smooth hills with grass
+
+Five biome areas are built as proximity-culled Groups:
+- `forestGroup` (west, center -1800,0) — dense pine forest with campfire clearing
+- `desertGroup` (south, center 0,-1800) — cacti, rock arches, desert outpost
+- `harborGroup` (east, center 1800,0) — docks, warehouses, shipping containers, lighthouse
+- `mountainGroup` (northwest, center -1400,1400) — log cabins, snow-capped pines, stone well
+- `beachGroup` (southeast, center 1400,-1400) — umbrellas, tiki bar, lifeguard tower, palms
+
+When adding new areas to the map:
+1. Place them outside the city grid (|x| > CH or |z| > CH) in unused space
+2. Wrap in a Group with proximity toggling (Manhattan distance ~1200 for biomes, ~400 for city areas)
+3. Use merged geometry (`geoAt` + `mergeGeometries`) for repeated objects (trees, rocks, etc.)
+4. Add the proximity toggle in the update loop near the other biome toggles
+5. Keep individual mesh counts reasonable (~50-200 per group before merging)
+6. Use `getH(x,z)` for ground height — it handles biome-specific terrain automatically
+7. Add terrain height variation in `getH` if needed for new biome regions
+
 #### Renderer & Camera Settings (do NOT change without reason)
 - Pixel ratio capped at 1.0 (`Math.min(devicePixelRatio, 1)`)
 - Shadow map: `PCFShadowMap` (NOT PCFSoftShadowMap — too expensive)
