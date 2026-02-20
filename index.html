@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wingsuit City - Open World</title>
+<title>Open World</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif}
@@ -32,12 +32,12 @@ canvas{display:block}
 #tip{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);font-size:0.8em;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s}
 #veh-btn{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:6;pointer-events:all;background:linear-gradient(135deg,rgba(30,60,120,0.85),rgba(20,40,80,0.95));border:1px solid rgba(100,180,255,0.3);color:#fff;font-family:'Courier New',monospace;font-size:0.85em;padding:8px 20px;border-radius:6px;cursor:pointer;letter-spacing:0.15em;text-transform:uppercase;display:none;transition:all 0.2s;backdrop-filter:blur(8px)}
 #veh-btn:hover{background:linear-gradient(135deg,rgba(40,80,160,0.95),rgba(30,60,120,0.95));border-color:rgba(100,180,255,0.6);transform:translateX(-50%) scale(1.05);box-shadow:0 0 20px rgba(50,120,255,0.3)}
-#veh-menu{position:fixed;top:0;left:0;width:100%;height:100%;z-index:20;display:none;background:rgba(0,8,20,0.92);backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:'Courier New',monospace}
+#veh-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(0,8,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(100,180,255,0.2);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto}
 #veh-menu.open{display:flex}
 #veh-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#88ccff,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #veh-menu .subtitle{font-size:0.75em;opacity:0.4;margin-bottom:1.5em;letter-spacing:0.2em}
-#veh-categories{display:flex;gap:30px;flex-wrap:wrap;justify-content:center;max-width:900px;padding:0 20px}
-.veh-cat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;min-width:160px}
+#veh-categories{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:850px;padding:0 10px}
+.veh-cat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;min-width:150px}
 .veh-cat h3{font-size:0.75em;letter-spacing:0.2em;margin-bottom:10px;text-align:center;opacity:0.5;text-transform:uppercase}
 .veh-cat.ground h3{color:#44ff66}.veh-cat.water h3{color:#44aaff}.veh-cat.air h3{color:#ffaa44}.veh-cat.snow h3{color:#ccddff}.veh-cat.wearable h3{color:#ff88ff}
 .veh-item{display:flex;align-items:center;gap:8px;padding:7px 10px;margin:3px 0;border-radius:5px;cursor:pointer;transition:all 0.15s;font-size:0.8em;letter-spacing:0.05em;border:1px solid transparent}
@@ -45,14 +45,14 @@ canvas{display:block}
 .veh-item .veh-icon{font-size:1.2em;width:24px;text-align:center}
 .veh-item .veh-name{flex:1}
 .veh-item .veh-speed{font-size:0.7em;opacity:0.35}
-#veh-close{position:absolute;top:20px;right:30px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
+#veh-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #veh-close:hover{opacity:1}
 </style>
 </head>
 <body>
 <div id="overlay">
-<h1>WINGSUIT CITY</h1>
-<div class="sub">Open World Vehicle Playground</div>
+<h1>OPEN WORLD</h1>
+<div class="sub">Vehicle Playground</div>
 <div class="click">Click to Play</div>
 <div class="controls">
 W/Up - Forward &nbsp;&bull;&nbsp; S/Down - Back &nbsp;&bull;&nbsp; A-D/Left-Right - Turn &nbsp;&bull;&nbsp; Mouse - Look (optional)<br>
@@ -347,45 +347,49 @@ for(let i=0;i<6;i++){const x=-CH+BK*2+srand()*(CS-BK*4),z=-CH+BK*2+srand()*(CS-B
 mkRamp(CH+50,100,Math.PI/2,1);mkRamp(CH+80,-150,0,1.2);
 // Mountain ramps
 mkRamp(-CH-100,50,Math.PI*.8,1);mkRamp(-CH-200,-100,Math.PI*.6,1.3);
-// City trampolines
-for(let i=0;i<4;i++){const x=-CH+BK*3+srand()*(CS-BK*6),z=-CH+BK*3+srand()*(CS-BK*6);
+// City trampolines (many!)
+for(let i=0;i<14;i++){const x=-CH+BK*3+srand()*(CS-BK*6),z=-CH+BK*3+srand()*(CS-BK*6);
   if(!colBldg(x,z))mkTramp(x,z,.8+srand()*.5)}
-// Beach/mountain trampolines
-mkTramp(CH+40,-50,1);mkTramp(CH+60,200,1.2);
-mkTramp(-CH-50,0,1);mkTramp(-CH-80,150,1.1);
+// Big city trampolines
+mkTramp(0,0,1.5);mkTramp(100,100,1.3);mkTramp(-100,-100,1.3);mkTramp(200,-50,1.2);mkTramp(-200,50,1.2);
+mkTramp(50,-200,1.1);mkTramp(-50,200,1.1);mkTramp(300,200,1.4);mkTramp(-300,-200,1.4);
+// Beach trampolines
+mkTramp(CH+40,-50,1);mkTramp(CH+60,200,1.2);mkTramp(CH+30,50,1.3);mkTramp(CH+70,-200,1.1);mkTramp(CH+100,0,1.5);mkTramp(CH+50,300,1.2);
+// Mountain trampolines
+mkTramp(-CH-50,0,1);mkTramp(-CH-80,150,1.1);mkTramp(-CH-30,-100,1.2);mkTramp(-CH-120,200,1.3);mkTramp(-CH-60,-200,1.1);mkTramp(-CH-100,-50,1.4);
 
 // ══════════════ VEHICLE DEFINITIONS ══════════════
 const VDEFS={
   car:{pt:'ground',ms:65,ac:35,tn:2.5,sz:[2.5,1,1.2],
-    tricks:[{n:'Drift',d:.8,ax:'y',ag:Math.PI},{n:'Handbrake 180',d:1,ax:'y',ag:Math.PI*2},{n:'Burnout',d:1.2,ax:'x',ag:0},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
+    tricks:[{n:'Drift',d:.8,ax:'y',ag:Math.PI},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
   motorcycle:{pt:'ground',ms:80,ac:45,tn:3,sz:[1.8,.8,.6],
     tricks:[{n:'Wheelie',d:.8,ax:'x',ag:-.4},{n:'Stoppie',d:.8,ax:'x',ag:.5},{n:'Superman',d:1,ax:'x',ag:-.3},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2}]},
   bike:{pt:'ground',ms:32,ac:20,tn:3.5,sz:[1.5,.9,.5],
-    tricks:[{n:'Bunny Hop',d:.6,ax:'y',ag:0},{n:'Manual',d:.8,ax:'x',ag:-.3},{n:'Tailwhip',d:.8,ax:'y',ag:Math.PI*2},{n:'360',d:1,ax:'y',ag:Math.PI*2}]},
+    tricks:[{n:'Bunny Hop',d:.6,ax:'y',ag:0},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
   skateboard:{pt:'wearable',ms:28,ac:18,tn:4,sz:[.8,.1,.3],
-    tricks:[{n:'Kickflip',d:.6,ax:'z',ag:Math.PI*2},{n:'Heelflip',d:.6,ax:'z',ag:-Math.PI*2},{n:'360 Flip',d:.8,ax:'y',ag:Math.PI*2},{n:'Grind',d:1,ax:'x',ag:0}]},
+    tricks:[{n:'Kickflip',d:.6,ax:'z',ag:Math.PI*2},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
   rollerblades:{pt:'wearable',ms:25,ac:15,tn:4,sz:[.3,.3,.8],
     tricks:[{n:'Spin',d:.7,ax:'y',ag:Math.PI*2},{n:'Grind',d:1,ax:'x',ag:0},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Split',d:.8,ax:'z',ag:.5}]},
   pogo:{pt:'ground',ms:15,ac:10,tn:5,sz:[.2,1.5,.2],
     tricks:[{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'360',d:.8,ax:'y',ag:Math.PI*2},{n:'Super Bounce',d:1.2,ax:'y',ag:0},{n:'No Hands',d:.8,ax:'z',ag:.3}]},
   horse:{pt:'ground',ms:45,ac:25,tn:2,sz:[2.5,1.5,1],
-    tricks:[{n:'Rear Up',d:1,ax:'x',ag:-.5},{n:'Jump',d:.8,ax:'y',ag:0},{n:'Gallop',d:1,ax:'x',ag:-.2},{n:'Side Step',d:.7,ax:'z',ag:.3}]},
+    tricks:[{n:'Rear Up',d:1,ax:'x',ag:-.5},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
   airplane:{pt:'air',ms:130,ac:50,tn:2,sz:[3,1,8],
     tricks:[{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},{n:'Loop',d:1.5,ax:'x',ag:Math.PI*2},{n:'Immelmann',d:1.2,ax:'x',ag:Math.PI},{n:'Split-S',d:1.2,ax:'x',ag:-Math.PI}]},
   helicopter:{pt:'air',ms:65,ac:30,tn:3,sz:[2.5,1.5,2],
     tricks:[{n:'360 Spin',d:1,ax:'y',ag:Math.PI*2},{n:'Nose Dive',d:.8,ax:'x',ag:.6},{n:'Side Slide',d:.8,ax:'z',ag:.4},{n:'Flip',d:1.2,ax:'x',ag:Math.PI*2}]},
   boat:{pt:'water',ms:55,ac:30,tn:2.5,sz:[3,.8,1.2],
-    tricks:[{n:'Donut',d:1,ax:'y',ag:Math.PI*2},{n:'Wave Jump',d:.8,ax:'x',ag:-.3},{n:'Drift',d:1,ax:'y',ag:Math.PI},{n:'Hydroplane',d:1.2,ax:'x',ag:-.2}]},
+    tricks:[{n:'Donut',d:1,ax:'y',ag:Math.PI*2},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
   jetski:{pt:'water',ms:70,ac:40,tn:3.5,sz:[2,.6,.8],
     tricks:[{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Submarine',d:.8,ax:'x',ag:.5},{n:'360',d:.8,ax:'y',ag:Math.PI*2}]},
   yacht:{pt:'water',ms:28,ac:12,tn:1.5,sz:[6,2,2.5],
-    tricks:[{n:'Cruise',d:1.5,ax:'y',ag:0},{n:'Drift',d:1,ax:'y',ag:Math.PI},{n:'Horn',d:.5,ax:'y',ag:0},{n:'Wave Ride',d:1,ax:'z',ag:.2}]},
+    tricks:[{n:'Cruise',d:1.5,ax:'y',ag:0},{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2}]},
   surfboard:{pt:'water',ms:22,ac:15,tn:4,sz:[2,.1,.5],
     tricks:[{n:'Cutback',d:.8,ax:'y',ag:Math.PI},{n:'Aerial',d:1,ax:'x',ag:-Math.PI*2},{n:'Tube Ride',d:1.2,ax:'y',ag:0},{n:'360',d:.8,ax:'y',ag:Math.PI*2}]},
   waterski:{pt:'water',ms:50,ac:25,tn:3,sz:[1.5,.1,.3],
     tricks:[{n:'Jump',d:.8,ax:'x',ag:-.3},{n:'Slalom',d:.6,ax:'y',ag:Math.PI},{n:'Flip',d:1,ax:'x',ag:-Math.PI*2},{n:'Spray',d:.6,ax:'z',ag:.3}]},
   ski:{pt:'snow',ms:55,ac:20,tn:3,sz:[1.5,.05,.2],
-    tricks:[{n:'Jump',d:.8,ax:'x',ag:-.5},{n:'360',d:.8,ax:'y',ag:Math.PI*2},{n:'Mogul',d:.5,ax:'z',ag:.3},{n:'Tuck',d:1,ax:'x',ag:0}]},
+    tricks:[{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'Front Flip',d:1,ax:'x',ag:Math.PI*2},{n:'Barrel Roll',d:1,ax:'z',ag:Math.PI*2},{n:'360',d:.8,ax:'y',ag:Math.PI*2}]},
   snowboard:{pt:'snow',ms:50,ac:18,tn:3.5,sz:[1.5,.05,.4],
     tricks:[{n:'Backflip',d:1,ax:'x',ag:-Math.PI*2},{n:'360',d:.8,ax:'y',ag:Math.PI*2},{n:'Grab',d:.7,ax:'z',ag:.3},{n:'Grind',d:1,ax:'z',ag:0}]},
   wingsuit:{pt:'flysuit',ms:120,ac:40,tn:2.5,sz:[1,.5,.5],
