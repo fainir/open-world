@@ -11,8 +11,8 @@ canvas{display:block}
 #overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;cursor:pointer;background:linear-gradient(135deg,#050a1e 0%,#0a1530 40%,#0f1a3a 100%)}
 #overlay h1{font-size:2.6em;letter-spacing:0.3em;margin-bottom:0.15em;background:linear-gradient(90deg,#fff,#88ccff,#ffaa44);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #overlay .sub{font-size:1.1em;opacity:0.6;margin-bottom:1.2em}
-#overlay .click{font-size:1.3em;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+#overlay .click{font-size:1.3em;color:#fff;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:0.7}50%{opacity:1}}
 #overlay .controls{margin-top:1.4em;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,auto));gap:8px 16px;justify-content:center;justify-items:center;max-width:100%;padding:14px 20px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.1)}
 #overlay .controls .ctrl-key{font-size:0.82em;color:rgba(255,255,255,0.9)}
 #overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);padding:3px 8px;border-radius:4px}
@@ -72,7 +72,7 @@ canvas{display:block}
 <div id="overlay">
 <h1>OPEN WORLD</h1>
 <div class="sub">Vehicle Playground</div>
-<div class="click">Click to Play</div>
+<div class="click">Click or press anything to start</div>
 <div class="controls">
 <span class="ctrl-key"><kbd>WASD</kbd><span class="cl">/</span><kbd>Arrows</kbd><span class="cl">Move</span></span>
 <span class="ctrl-key"><kbd>Space</kbd><span class="cl">Jump / Fly</span></span>
@@ -3967,6 +3967,7 @@ function stopGame(){
 }
 
 overlay.addEventListener('click',startGame);
+document.addEventListener('keydown',()=>{if(overlay.style.display!=='none')startGame()},{once:true});
 canvas.addEventListener('click',()=>{if(!locked)startGame();});
 document.addEventListener('pointerlockchange',()=>{
   const pl=document.pointerLockElement===canvas;
