@@ -338,13 +338,13 @@ const Auth={
 function openPanel(){
   document.exitPointerLock&&document.exitPointerLock();
   panel.classList.add('ow-open');panelOpen=true;
-  fab.innerHTML='&times; Close';fab.classList.add('ow-fab-close');fab.title='Close Chat';
+  fab.style.display='none';
   localStorage.setItem(SK.PANEL,'true');
   input.focus();
 }
 function closePanel(){
   panel.classList.remove('ow-open');panelOpen=false;
-  fab.innerHTML='<span class="ow-fab-icon">&#9830;</span> Chat';fab.classList.remove('ow-fab-close');fab.title='Open Chat';
+  fab.style.display='flex';
   localStorage.setItem(SK.PANEL,'false');
 }
 
