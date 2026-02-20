@@ -8,15 +8,17 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif}
 canvas{display:block}
-#overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(0,10,30,0.88),rgba(0,20,50,0.88));display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:10;cursor:pointer}
-#overlay h1{font-size:3.2em;letter-spacing:0.3em;margin-bottom:0.2em;background:linear-gradient(90deg,#fff,#88ccff,#ffaa44);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-#overlay .sub{font-size:1.2em;opacity:0.7;margin-bottom:1.5em}
-#overlay .click{font-size:1.5em;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
-#overlay .controls{margin-top:1.8em;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,auto));gap:8px 16px;justify-content:center;justify-items:center;max-width:600px;padding:14px 20px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.1)}
-#overlay .controls .ctrl-key{font-size:0.85em;color:rgba(255,255,255,0.9)}
-#overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);padding:3px 8px}
-#overlay .controls .ctrl-key .cl{color:rgba(255,255,255,0.6)}
+#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;cursor:pointer;background:rgba(0,0,0,0.4)}
+#overlay .popup-card{background:rgba(5,10,30,0.92);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:36px 40px;text-align:center;max-width:480px;width:90%;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:popUp 0.4s ease}
+@keyframes popUp{from{opacity:0;transform:scale(0.92) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#overlay h1{font-size:2.6em;letter-spacing:0.3em;margin-bottom:0.15em;background:linear-gradient(90deg,#fff,#88ccff,#ffaa44);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#overlay .sub{font-size:1.1em;opacity:0.6;margin-bottom:1.2em}
+#overlay .click{font-size:1.3em;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+#overlay .controls{margin-top:1.4em;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,auto));gap:8px 16px;justify-content:center;justify-items:center;max-width:100%;padding:14px 20px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.1)}
+#overlay .controls .ctrl-key{font-size:0.82em;color:rgba(255,255,255,0.9)}
+#overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);padding:3px 8px;border-radius:4px}
+#overlay .controls .ctrl-key .cl{color:rgba(255,255,255,0.5)}
 #hud{position:fixed;z-index:5;pointer-events:none;display:none}
 #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(255,255,255,0.3);display:none;font-family:monospace}
 #score{position:fixed;top:25px;right:30px;font-size:1.4em;color:#ffdd00;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(255,200,0,0.5)}
@@ -70,6 +72,7 @@ canvas{display:block}
 </head>
 <body>
 <div id="overlay">
+<div class="popup-card">
 <h1>OPEN WORLD</h1>
 <div class="sub">Vehicle Playground</div>
 <div class="click">Click to Play</div>
@@ -85,6 +88,7 @@ canvas{display:block}
 <span class="ctrl-key"><kbd>B</kbd><span class="cl">Weapons</span></span>
 <span class="ctrl-key"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span class="cl">Tricks</span></span>
 <span class="ctrl-key"><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd><kbd>8</kbd><span class="cl">Fight</span></span>
+</div>
 </div>
 </div>
 <div id="hud">
@@ -3957,9 +3961,6 @@ function stopGame(){
 
 overlay.addEventListener('click',startGame);
 canvas.addEventListener('click',()=>{if(!locked)startGame();});
-// Auto-start when embedded in iframe (Open World Studio)
-if(window!==window.top){startGame();}
-window.addEventListener('message',e=>{if(e.data==='startGame'&&!locked)startGame();});
 document.addEventListener('pointerlockchange',()=>{
   const pl=document.pointerLockElement===canvas;
   if(!pl&&locked){/* pointer lock lost - keep game running, click canvas to re-lock */}
