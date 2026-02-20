@@ -954,10 +954,10 @@ function updateNPCs(dt){
       const ri=rideOnVeh[cfg.veh];
       if(ri){npc.mesh.position.y=npc.y+ri.y;
         if(ri.pose==='sit'){
-          if(la){la.position.set(-.32,1.05,.2);la.rotation.set(-.6,0,0)}
-          if(ra){ra.position.set(.32,1.05,.2);ra.rotation.set(-.6,0,0)}
-          if(ll){ll.position.set(-.14,.25,.15);ll.rotation.x=-.9}
-          if(rl){rl.position.set(.14,.25,.15);rl.rotation.x=-.9}}}}
+          if(la){la.position.set(-.3,.95,.18);la.rotation.set(-.5,0,.1)}
+          if(ra){ra.position.set(.3,.95,.18);ra.rotation.set(-.5,0,-.1)}
+          if(ll){ll.position.set(-.13,.55,.1);ll.rotation.x=-.8}
+          if(rl){rl.position.set(.13,.55,.1);rl.rotation.x=-.8}}}}
   }}
 
 // ══════════════ SPAWN VEHICLES ══════════════
@@ -1359,19 +1359,26 @@ const suM=new THREE.MeshStandardMaterial({color:0xe8e0d4,roughness:.5});
 const acM=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:.4});
 const hmM=new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.3,metalness:.5});
 const vsM=new THREE.MeshStandardMaterial({color:0x1a1a2a,roughness:.05,metalness:.9});
-const bdM=box(.5,.7,.3,0x1a3a6a);bdM.material=suM;bdM.position.y=1.05;charG.add(bdM);
-const st1=box(.52,.06,.31,0x1a1a1a);st1.position.set(0,1.2,0);charG.add(st1);
-const st2=box(.52,.06,.31,0x1a1a1a);st2.position.set(0,.9,0);charG.add(st2);
+const bdM=box(.5,.8,.3,0xe8e0d4);bdM.material=suM;bdM.position.y=1;charG.add(bdM);
+// Subtle accent stripes (same width as body, subtle color)
+const st1=box(.5,.04,.31,0xc8c0b4);st1.position.set(0,1.22,0);charG.add(st1);
+const st2=box(.5,.04,.31,0xc8c0b4);st2.position.set(0,.82,0);charG.add(st2);
+// Waist connector so torso meets legs seamlessly
+const waist=box(.42,.2,.25,0xe8e0d4);waist.material=suM;waist.position.set(0,.68,0);charG.add(waist);
 const hd=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),hmM);hd.position.y=1.58;charG.add(hd);
 const vis=new THREE.Mesh(new THREE.SphereGeometry(.12,8,5,0,Math.PI*2,0,Math.PI*.45),vsM);vis.position.set(0,1.55,.08);vis.rotation.x=.4;charG.add(vis);
-const lA=box(.14,.55,.14,0x1a3a6a);lA.material=suM;lA.position.set(-.38,1,0);charG.add(lA);
-const rA=box(.14,.55,.14,0x1a3a6a);rA.material=suM;rA.position.set(.38,1,0);charG.add(rA);
-const lL=box(.17,.55,.17,0x1a3a6a);lL.material=suM;lL.position.set(-.14,.37,0);charG.add(lL);
-const rL=box(.17,.55,.17,0x1a3a6a);rL.material=suM;rL.position.set(.14,.37,0);charG.add(rL);
-const lb=box(.18,.1,.26,0x1a1a1a);lb.position.set(-.14,.06,.03);charG.add(lb);
-const rb=box(.18,.1,.26,0x1a1a1a);rb.position.set(.14,.06,.03);charG.add(rb);
-const ep=box(.36,.32,.18,0x222222);ep.material=new THREE.MeshStandardMaterial({color:0x222222,metalness:.8,roughness:.2});ep.position.set(0,1.08,-.22);charG.add(ep);
-const epD=box(.28,.06,.12,0x333333);epD.position.set(0,.95,-.24);charG.add(epD);
+// Neck
+const neck=cyl(.08,.08,.12,0xd4a574);neck.position.set(0,1.46,0);charG.add(neck);
+const lA=box(.15,.55,.15,0xe8e0d4);lA.material=suM;lA.position.set(-.35,1,0);charG.add(lA);
+const rA=box(.15,.55,.15,0xe8e0d4);rA.material=suM;rA.position.set(.35,1,0);charG.add(rA);
+// Shoulder pads to fill arm-body gap
+const lSh=new THREE.Mesh(new THREE.SphereGeometry(.1,5,4),suM);lSh.position.set(-.3,1.25,0);charG.add(lSh);
+const rSh=new THREE.Mesh(new THREE.SphereGeometry(.1,5,4),suM);rSh.position.set(.3,1.25,0);charG.add(rSh);
+const lL=box(.18,.55,.18,0xe8e0d4);lL.material=suM;lL.position.set(-.13,.35,0);charG.add(lL);
+const rL=box(.18,.55,.18,0xe8e0d4);rL.material=suM;rL.position.set(.13,.35,0);charG.add(rL);
+const lb=box(.19,.1,.26,0x333333);lb.position.set(-.13,.06,.03);charG.add(lb);
+const rb=box(.19,.1,.26,0x333333);rb.position.set(.13,.06,.03);charG.add(rb);
+const ep=box(.36,.32,.18,0x333333);ep.material=new THREE.MeshStandardMaterial({color:0x333333,metalness:.6,roughness:.3});ep.position.set(0,1.05,-.2);charG.add(ep);
 // Jetpack wing - rigid carbon fiber wing with jet engines (Jetman style)
 const jetWing=new THREE.Group();jetWing.visible=false;
 const _cwM=new THREE.MeshStandardMaterial({color:0x0a0a0a,metalness:.85,roughness:.15});
@@ -1754,15 +1761,15 @@ function update(dt){
     charG.position.copy(P);
     jetWing.visible=isFlying;gunG.visible=!isFlying;
     if(isFlying){
-      // Jetman flying pose: body horizontal, arms forward/down, legs trailing back
+      // Jetman flying pose: body horizontal, arms along body, legs tight behind
       bdM.rotation.x=-Math.PI/2-pitch*.3;
-      lA.position.set(-.35,1.1,.2);lA.rotation.set(-Math.PI/2.2,0,Math.PI/8);
-      rA.position.set(.35,1.1,.2);rA.rotation.set(-Math.PI/2.2,0,-Math.PI/8);
-      lL.position.set(-.12,.2,-.1);lL.rotation.x=Math.PI/2.5;
-      rL.position.set(.12,.2,-.1);rL.rotation.x=Math.PI/2.5;
+      lA.position.set(-.3,.95,.05);lA.rotation.set(-Math.PI/2.5,0,Math.PI/10);
+      rA.position.set(.3,.95,.05);rA.rotation.set(-Math.PI/2.5,0,-Math.PI/10);
+      lL.position.set(-.13,.55,-.05);lL.rotation.x=Math.PI/4;
+      rL.position.set(.13,.55,-.05);rL.rotation.x=Math.PI/4;
     }
-    else{lA.position.set(-.38,1,0);lA.rotation.z=0;rA.position.set(.38,1,0);rA.rotation.z=0;
-      lL.position.set(-.14,.37,0);rL.position.set(.14,.37,0);bdM.rotation.x=0;
+    else{lA.position.set(-.35,1,0);lA.rotation.z=0;rA.position.set(.35,1,0);rA.rotation.z=0;
+      lL.position.set(-.13,.35,0);rL.position.set(.13,.35,0);bdM.rotation.x=0;
       if(kU()||kD()||kL()||kR()){lA.rotation.x=Math.sin(walkBob)*.4;rA.rotation.x=-Math.sin(walkBob)*.4;
         lL.rotation.x=-Math.sin(walkBob)*.5;rL.rotation.x=Math.sin(walkBob)*.5}
       else{lA.rotation.x=rA.rotation.x=lL.rotation.x=rL.rotation.x=0}}
@@ -1802,18 +1809,18 @@ function update(dt){
     jetWing.visible=false;
     if(ri&&ri.pose==='sit'){
       // Sitting pose: legs bent forward, arms reaching forward (handlebars/reins)
-      bdM.rotation.x=-.15;
-      lA.position.set(-.32,1.05,.2);lA.rotation.set(-.6,0,0);
-      rA.position.set(.32,1.05,.2);rA.rotation.set(-.6,0,0);
-      lL.position.set(-.14,.25,.15);lL.rotation.x=-.9;
-      rL.position.set(.14,.25,.15);rL.rotation.x=-.9;
+      bdM.rotation.x=-.1;
+      lA.position.set(-.3,.95,.18);lA.rotation.set(-.5,0,.1);
+      rA.position.set(.3,.95,.18);rA.rotation.set(-.5,0,-.1);
+      lL.position.set(-.13,.55,.1);lL.rotation.x=-.8;
+      rL.position.set(.13,.55,.1);rL.rotation.x=-.8;
     } else {
       // Standing pose
       bdM.rotation.x=0;
-      lA.position.set(-.38,1,0);lA.rotation.set(0,0,0);
-      rA.position.set(.38,1,0);rA.rotation.set(0,0,0);
-      lL.position.set(-.14,.37,0);lL.rotation.x=0;
-      rL.position.set(.14,.37,0);rL.rotation.x=0;
+      lA.position.set(-.35,1,0);lA.rotation.set(0,0,0);
+      rA.position.set(.35,1,0);rA.rotation.set(0,0,0);
+      lL.position.set(-.13,.35,0);lL.rotation.x=0;
+      rL.position.set(.13,.35,0);rL.rotation.x=0;
     }
   }
 
