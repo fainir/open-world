@@ -3894,6 +3894,24 @@ gameAPI.ui=zoneUI;
 const zoneManager=new ZoneManager(gameAPI);
 zoneManager.init(buildZones(enterableSpots));
 
+// Glowing entry circles at zone doorways
+const _circleGeo=new THREE.RingGeometry(1.2,2,24);
+const _circleMat=new THREE.MeshBasicMaterial({color:0x00ccff,transparent:true,opacity:0.5,side:THREE.DoubleSide});
+const _circleInnerGeo=new THREE.CircleGeometry(1.2,24);
+const _circleInnerMat=new THREE.MeshBasicMaterial({color:0x00ccff,transparent:true,opacity:0.15,side:THREE.DoubleSide});
+const zoneCircles=[];
+for(const z of zoneManager.zones){
+  const grp=new THREE.Group();
+  const ring=new THREE.Mesh(_circleGeo,_circleMat.clone());
+  ring.rotation.x=-Math.PI/2;grp.add(ring);
+  const inner=new THREE.Mesh(_circleInnerGeo,_circleInnerMat.clone());
+  inner.rotation.x=-Math.PI/2;inner.position.y=0.01;grp.add(inner);
+  const h=getH(z.position[0],z.position[2]);
+  grp.position.set(z.position[0],h+0.08,z.position[2]);
+  scene.add(grp);
+  zoneCircles.push({grp,ring,inner,zone:z});
+}
+
 // Floating markers above enterable zones
 const zoneMarkers=[];
 for(const z of zoneManager.zones){
@@ -4081,13 +4099,37 @@ function update(dt){
   dt=Math.min(dt,.05);
   // Zone system — if inside a zone, only run zone update
   if(zoneManager.activeZone){zoneManager.update(dt);return}
-  // Zone proximity check
+  // Zone proximity check — auto-enter when stepping on glowing circle
   if(!currentVeh&&mode==='walk'&&!menuOpen&&!wpnMenuOpen){
     zoneManager.update(dt);
-    if(zoneManager.nearestZone)zoneUI.showPrompt('Press E \u2014 '+zoneManager.nearestZone.label);
+    // Check if player is standing on a zone circle (radius 2)
+    if(!zoneManager.activeZone&&!zoneManager.transitioning){
+      for(const zc of zoneCircles){
+        const dx=P.x-zc.zone.position[0],dz=P.z-zc.zone.position[2];
+        if(dx*dx+dz*dz<4){// radius 2 squared
+          zoneManager.enterZone(zc.zone);break;
+        }
+      }
+    }
+    if(zoneManager.nearestZone)zoneUI.showPrompt(zoneManager.nearestZone.label);
     else zoneUI.hidePrompt();
   }else zoneUI.hidePrompt();
-  if(!zoneManager.activeZone)updateZoneMarkers();
+  // Animate zone entry circles
+  if(!zoneManager.activeZone){
+    const t=clock.elapsedTime;
+    for(const zc of zoneCircles){
+      const dx=P.x-zc.zone.position[0],dz=P.z-zc.zone.position[2];
+      const d2=dx*dx+dz*dz;
+      const vis=d2<22500;// 150^2
+      zc.grp.visible=vis;
+      if(vis){
+        const pulse=0.35+Math.sin(t*3)*0.2;
+        zc.ring.material.opacity=pulse;
+        zc.inner.material.opacity=pulse*0.3;
+      }
+    }
+    updateZoneMarkers();
+  }
 
   const tH=getH(P.x,P.z),sH=getSurfaceH(P.x,P.z),gH=Math.max(tH,sH);
   engineOn=false;
