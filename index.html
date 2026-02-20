@@ -3927,15 +3927,19 @@ function updateZoneMarkers(){
   for(const m of zoneMarkers){
     const dx=m.zone.position[0]-P.x,dz=m.zone.position[2]-P.z;
     const dist2=dx*dx+dz*dz;
-    if(dist2>225){m.el.style.opacity='0';continue}// only show within 15 units of circle
-    _zmVec.set(m.zone.position[0],m.zone.position[1]+4,m.zone.position[2]);
+    if(dist2>2500){m.el.style.opacity='0';continue}// within 50 units
+    // Project circle position above ground to screen
+    const h=getH(m.zone.position[0],m.zone.position[2]);
+    _zmVec.set(m.zone.position[0],h+3,m.zone.position[2]);
     const sp=_zmVec.project(cam);
     if(sp.z>1||sp.z<-1){m.el.style.opacity='0';continue}
     const sx=sp.x*w2+w2,sy=-sp.y*h2+h2;
-    if(sx<-40||sx>innerWidth+40||sy<-40||sy>innerHeight+40){m.el.style.opacity='0';continue}
+    // Only show when looking at it — must be within center 60% of screen
+    const marginX=innerWidth*.2,marginY=innerHeight*.2;
+    if(sx<marginX||sx>innerWidth-marginX||sy<marginY||sy>innerHeight-marginY){m.el.style.opacity='0';continue}
     const dist=Math.sqrt(dist2);
     m.el.style.left=sx+'px';m.el.style.top=sy+'px';
-    m.el.style.opacity=dist<5?'1':String(1-(dist-5)/10);
+    m.el.style.opacity=dist<10?'1':String(Math.max(0,1-(dist-10)/30));
   }
 }
 
