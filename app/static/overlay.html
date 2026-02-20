@@ -413,10 +413,8 @@ async function sendMessage(){
         localStorage.setItem(SK.VERSION,currentVersionId);
         showSuggestions(data.suggestions||[]);
         saveChatHistory();
-        // Show "new version ready" banner — don't interrupt gameplay
-        pendingVersionUrl='/v/'+data.version_id;
-        $('ow-new-version').classList.add('ow-show');
-        fab.classList.add('ow-has-update');
+        // Auto-reload with new version once ready
+        window.location.href='/v/'+data.version_id;
       }
     }
     setStatus('Done!','ow-success');setTimeout(()=>setStatus(''),2000);
