@@ -31,14 +31,62 @@ The world is one continuous open map. Structures like skateparks, ramps, half-pi
 The game is a single HTML file (~4800 lines) containing all CSS, HTML, and JavaScript. It runs entirely in the browser with NO server-side logic.
 
 ### Performance is CRITICAL
-This is a lightweight browser game. It must run smoothly on average hardware and mobile browsers. Always:
-- Minimize draw calls - use instanced meshes or merged geometries for repeated objects
+This is a lightweight browser game. It must run smoothly on average hardware and mobile browsers. The game has been extensively optimized — you MUST preserve these patterns and follow them for any new code.
+
+#### General Rules
+- Minimize draw calls — use merged geometries or Groups for repeated/clustered objects
 - Use low-poly geometries (BoxGeometry, SphereGeometry with low segments)
-- Avoid expensive per-frame computations - cache calculations where possible
+- Avoid expensive per-frame computations — cache calculations where possible
 - Use object pooling for particles, projectiles, etc.
 - Keep texture usage minimal (prefer MeshStandardMaterial colors over textures)
 - Dispose of Three.js objects (geometry, material, texture) when removing them
-- Avoid memory leaks - remove event listeners and clear references on cleanup
+- Avoid memory leaks — remove event listeners and clear references on cleanup
+- Do NOT add PointLights freely — each one costs a fragment shader pass. Use emissive materials instead for glowing effects
+
+#### Collision Detection — Spatial Hash Grid
+Collision detection uses a spatial hash grid for O(1) lookups instead of O(n) brute force:
+- `_addBldg(b)` — registers a building in both the `bldgs` array AND the spatial grid. Always use this instead of `bldgs.push()` directly
+- `colBldg(x, z, padding)` — checks collision at a point using the grid
+- `colBldgY(x, z, y, padding)` — checks collision with height check
+- Grid cell size is 40 units (`_CELL=40`)
+- When adding new buildings/obstacles, ALWAYS use `_addBldg()` so they get indexed in the grid
+
+#### Merged Static Geometry (do NOT break these)
+Many repeated static objects are merged into single draw calls using `mergeGeometries()`:
+- Street lamps (~430 meshes → 2 batched meshes)
+- Sidewalks (~130 boxes → 1 mesh)
+- Bus stops (→ 2 meshes), parking lot lines (→ 1 mesh)
+- Pond border stones (→ 1 mesh), clouds (→ 1 mesh)
+- Pattern: `geoAt(templateGeo, x, y, z)` creates a positioned clone, collect into array, merge with `mergeGeometries()`
+- When adding new repeated objects (trees, poles, barriers, etc.), follow this same merge pattern
+
+#### Proximity-Culled Groups
+Large structure clusters are wrapped in THREE.Groups with visibility toggling:
+- **Festival area** (75 meshes): `festivalGroup` — visible when Manhattan distance < 400 from (0, 850)
+- **Sports complex** (210 meshes): `sportsGroup` — visible when Manhattan distance < 400 from (380, 850)
+- When adding large new areas (20+ meshes), wrap them in a Group and add proximity toggling in the update loop
+- Vehicles spawned in these areas must be placed OUTSIDE the group so they remain visible when driven away
+
+#### Renderer & Camera Settings (do NOT change without reason)
+- Pixel ratio capped at 1.0 (`Math.min(devicePixelRatio, 1)`)
+- Shadow map: `PCFShadowMap` (NOT PCFSoftShadowMap — too expensive)
+- Shadow map size: 1024x1024, frustum ±100
+- Camera far plane: 2500 (fog hides the cutoff)
+- Exponential fog: `FogExp2(0x88bbdd, 0.00045)`
+- Terrain: 80x80 segments. Water: 50x50 segments. Sky sphere: 16x10 segments
+
+#### Animation & Update Loop Optimizations
+- Festival animations (ferris wheel, dance floor tiles) are distance-gated — only run within 250 units
+- Zone marker DOM updates are throttled to every 3rd frame
+- Tricks panel innerHTML is cached — only updates DOM when the string actually changes
+- NPC limit: 20, visibility distance: 200 units
+- Zone entry circle animations are distance-gated (visible within 150 units)
+
+#### Memory Leak Prevention
+- Bullet trails: geometry + material disposed on removal
+- Projectile explosions: lights disposed after timeout
+- Projectile meshes: traverse and dispose all children
+- When removing objects from the scene, ALWAYS dispose geometry and materials
 
 ### Zone System (Modular Loading)
 The game uses a ZONE SYSTEM for performance. The world is divided into zones that are loaded/unloaded based on player proximity:
