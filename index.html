@@ -81,7 +81,8 @@ canvas{display:block}
 <div class="click">Click to Play</div>
 <div class="controls">
 <span class="ctrl-key"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="cl">Move</span></span>
-<span class="ctrl-key"><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd><span class="cl">Move</span></span>
+<span class="ctrl-key"><kbd>&uarr;</kbd><kbd>&darr;</kbd><span class="cl">Move / Pitch</span></span>
+<span class="ctrl-key"><kbd>&larr;</kbd><kbd>&rarr;</kbd><span class="cl">Turn</span></span>
 <span class="ctrl-key"><kbd>Space</kbd><span class="cl">Jump / Fly</span></span>
 <span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
 <span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
@@ -110,7 +111,8 @@ canvas{display:block}
 <div id="bottom-bar">
 <div id="controls-bar">
 <span class="ctrl-key"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="cl">Move</span></span>
-<span class="ctrl-key"><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd><span class="cl">Move</span></span>
+<span class="ctrl-key"><kbd>&uarr;</kbd><kbd>&darr;</kbd><span class="cl">Move/Pitch</span></span>
+<span class="ctrl-key"><kbd>&larr;</kbd><kbd>&rarr;</kbd><span class="cl">Turn</span></span>
 <span class="ctrl-key"><kbd>Space</kbd><span class="cl">Jump/Fly</span></span>
 <span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
 <span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
@@ -287,25 +289,281 @@ for(let ti=0;ti<20;ti++){
   texPool.push(new THREE.CanvasTexture(c));
 }
 seedR(777);
+const emptyLots=[];
 for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
-  if(srand()<.08)continue;
+  const cx=bx+(BK-ST)/2,cz=bz+(BK-ST)/2;
+  if(srand()<.14){emptyLots.push({cx,cz,bx,bz});continue}
   const dist=Math.sqrt(bx*bx+bz*bz)/CH,maxH=lerp(160,12,Math.pow(dist,.55));
   const h=8+srand()*maxH,w=BK-ST-2-srand()*5,d=BK-ST-2-srand()*5;
-  const cx=bx+(BK-ST)/2,cz=bz+(BK-ST)/2;
   const ti=clamp(Math.floor(h/8),0,19);
   const tex=texPool[ti];
   const sM=new THREE.MeshStandardMaterial({map:tex,roughness:.7});
   const tM=new THREE.MeshStandardMaterial({color:0x333340,roughness:.6});
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),[sM,sM,tM,sM,sM,sM]);
-  m.position.set(cx,h/2,cz);m.castShadow=true;m.receiveShadow=true;scene.add(m);
-  // Rooftop antenna on tall buildings only
+  const bType=srand();
+  // ─── Cylindrical tower ───
+  if(bType<.1&&h>35){
+    const r=Math.min(w,d)/2;
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),sM);
+    m.position.set(cx,h/2,cz);m.castShadow=true;scene.add(m);
+    // Glass top
+    const gTop=new THREE.Mesh(new THREE.CylinderGeometry(r+.2,.2,3,12),
+      new THREE.MeshStandardMaterial({color:0x88bbff,transparent:true,opacity:.4,metalness:.8}));
+    gTop.position.set(cx,h+1.5,cz);scene.add(gTop);
+    bldgs.push({minX:cx-r-.3,maxX:cx+r+.3,minZ:cz-r-.3,maxZ:cz+r+.3,h});
+  }
+  // ─── Stepped/tiered building ───
+  else if(bType<.2&&h>25){
+    const tiers=2+Math.floor(srand()*2);
+    const tierH=h/tiers;
+    for(let t=0;t<tiers;t++){const sc=1-t*.2;
+      const tw=w*sc,td=d*sc,th=tierH;
+      const m=new THREE.Mesh(new THREE.BoxGeometry(tw,th,td),[sM,sM,tM,sM,sM,sM]);
+      m.position.set(cx,t*tierH+th/2,cz);m.castShadow=true;scene.add(m)}
+    bldgs.push({minX:cx-w/2-.3,maxX:cx+w/2+.3,minZ:cz-d/2-.3,maxZ:cz+d/2+.3,h});
+  }
+  // ─── Building with ground-floor shops ───
+  else if(bType<.38){
+    // Shop base
+    const shopH=4;
+    const shopM=new THREE.MeshStandardMaterial({color:[0x8B4513,0xcc8844,0x996644,0x667788][Math.floor(srand()*4)],roughness:.6});
+    const base=new THREE.Mesh(new THREE.BoxGeometry(w+.2,shopH,d+.2),shopM);
+    base.position.set(cx,shopH/2,cz);scene.add(base);
+    // Shop windows
+    const winM=new THREE.MeshStandardMaterial({color:0xaaddff,transparent:true,opacity:.5,metalness:.5});
+    for(const side of[-1,1]){const win=new THREE.Mesh(new THREE.PlaneGeometry(w*.35,2.5),winM);
+      win.position.set(cx,2,cz+side*(d/2+.12));win.rotation.y=side>0?0:Math.PI;scene.add(win)}
+    // Awning
+    const awC=[0xcc2222,0x2255aa,0x22aa55,0xaaaa22][Math.floor(srand()*4)];
+    const aw=box(w*.4,.05,1.2,awC);aw.position.set(cx,3.5,cz+d/2+.6);aw.rotation.x=.2;scene.add(aw);
+    // Upper building
+    const upH=h-shopH;
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,upH,d),[sM,sM,tM,sM,sM,sM]);
+    m.position.set(cx,shopH+upH/2,cz);m.castShadow=true;scene.add(m);
+    bldgs.push({minX:cx-w/2-.3,maxX:cx+w/2+.3,minZ:cz-d/2-.3,maxZ:cz+d/2+.3,h});
+  }
+  // ─── Standard box building ───
+  else{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),[sM,sM,tM,sM,sM,sM]);
+    m.position.set(cx,h/2,cz);m.castShadow=true;m.receiveShadow=true;scene.add(m);
+    bldgs.push({minX:cx-w/2-.3,maxX:cx+w/2+.3,minZ:cz-d/2-.3,maxZ:cz+d/2+.3,h});
+  }
+  // Rooftop details
   if(h>80&&srand()>.5){const ant=cyl(.03,.03,5,0xaa0000);ant.position.set(cx,h+2.5,cz);scene.add(ant)}
-  bldgs.push({minX:cx-w/2-.3,maxX:cx+w/2+.3,minZ:cz-d/2-.3,maxZ:cz+d/2+.3,h});
+  if(h>40&&srand()>.7){// AC units
+    for(let i=0;i<2+Math.floor(srand()*3);i++){
+      const ac=box(1,.6,.8,0x888888);ac.position.set(cx-w/3+srand()*w*.6,h+.3,cz-d/3+srand()*d*.6);scene.add(ac)}}
+  if(h>60&&srand()>.8){// Rooftop helipad marking
+    const hp=new THREE.Mesh(new THREE.RingGeometry(2.5,3,16),
+      new THREE.MeshStandardMaterial({color:0xffff00,side:THREE.DoubleSide}));
+    hp.rotation.x=-Math.PI/2;hp.position.set(cx,h+.05,cz);scene.add(hp)}
+}
+
+// ══════════════ CITY FEATURES ══════════════
+const grassM=new THREE.MeshStandardMaterial({color:0x3a8a3a,roughness:.9});
+const pathM=new THREE.MeshStandardMaterial({color:0x998877,roughness:.85});
+const benchM=new THREE.MeshStandardMaterial({color:0x6a4a2a,roughness:.7});
+const waterPondM=new THREE.MeshStandardMaterial({color:0x2266aa,transparent:true,opacity:.7,metalness:.5,roughness:.2});
+
+// ─── PARKS ───
+seedR(3333);
+const parkCount=Math.min(emptyLots.length,8);
+for(let i=0;i<parkCount;i++){
+  const lot=emptyLots[i];const px=lot.cx,pz=lot.cz;
+  // Grass ground
+  const grass=new THREE.Mesh(new THREE.PlaneGeometry(BK-ST,BK-ST),grassM);
+  grass.rotation.x=-Math.PI/2;grass.position.set(px,.1,pz);scene.add(grass);
+  // Diagonal path
+  const path=new THREE.Mesh(new THREE.PlaneGeometry(2,BK-ST),pathM);
+  path.rotation.x=-Math.PI/2;path.rotation.z=Math.PI/4;path.position.set(px,.12,pz);scene.add(path);
+  // Trees (3-6)
+  for(let t=0;t<3+Math.floor(srand()*4);t++){
+    const tx=px-8+srand()*16,tz=pz-8+srand()*16;
+    const g=new THREE.Group();const th=3+srand()*2;
+    g.add(cyl(.08,.12,th,0x6a4a2a));g.children[0].position.y=th/2;
+    const crown=new THREE.Mesh(new THREE.SphereGeometry(1.2+srand()*.8,6,4),
+      new THREE.MeshStandardMaterial({color:0x2a7a2a+Math.floor(srand()*0x001a00),roughness:.8}));
+    crown.position.y=th+.8;crown.scale.y=.7;g.add(crown);
+    g.position.set(tx,.1,tz);scene.add(g)}
+  // Benches (2-3)
+  for(let b=0;b<2+Math.floor(srand()*2);b++){
+    const ba=srand()*Math.PI*2;const bx=px+Math.cos(ba)*6,bz2=pz+Math.sin(ba)*6;
+    const bench=new THREE.Group();
+    bench.add(box(1.5,.05,.5,0x6a4a2a));bench.children[0].position.y=.45;
+    bench.add(box(1.5,.4,.05,0x6a4a2a));bench.children[1].position.set(0,.65,-.22);
+    const leg1=box(.08,.4,.05,0x444444);leg1.position.set(-.6,.2,0);bench.add(leg1);
+    const leg2=box(.08,.4,.05,0x444444);leg2.position.set(.6,.2,0);bench.add(leg2);
+    bench.position.set(bx,.1,bz2);bench.rotation.y=ba;scene.add(bench)}
+  // Flower beds
+  if(srand()>.4){const fbC=[0xff4466,0xffaa22,0xff66cc,0xaa44ff];
+    for(let f=0;f<8;f++){const fx=px-4+srand()*8,fz=pz-4+srand()*8;
+      const fl=new THREE.Mesh(new THREE.SphereGeometry(.3,4,3),
+        new THREE.MeshStandardMaterial({color:fbC[f%4],roughness:.9}));
+      fl.position.set(fx,.25,fz);fl.scale.y=.5;scene.add(fl)}}
+}
+
+// ─── SPORTS AREAS ───
+seedR(4321);
+const sportsLots=emptyLots.slice(parkCount,parkCount+4);
+const courtDefs=[
+  {name:'basketball',color:0xcc7744,lineColor:0xffffff,w:15,d:28},
+  {name:'soccer',color:0x2a7a2a,lineColor:0xffffff,w:20,d:30},
+  {name:'tennis',color:0x2266aa,lineColor:0xffffff,w:11,d:24}
+];
+for(let i=0;i<Math.min(sportsLots.length,3);i++){
+  const lot=sportsLots[i];const sx=lot.cx,sz=lot.cz;
+  const cd=courtDefs[i];
+  // Court surface
+  const court=new THREE.Mesh(new THREE.PlaneGeometry(cd.w,cd.d),
+    new THREE.MeshStandardMaterial({color:cd.color,roughness:.75}));
+  court.rotation.x=-Math.PI/2;court.position.set(sx,.12,sz);scene.add(court);
+  // Court lines
+  const lnM=new THREE.MeshStandardMaterial({color:cd.lineColor});
+  // Border
+  const lb=new THREE.Mesh(new THREE.PlaneGeometry(cd.w+.4,.15),lnM);lb.rotation.x=-Math.PI/2;lb.position.set(sx,.13,sz-cd.d/2);scene.add(lb);
+  const lt=new THREE.Mesh(new THREE.PlaneGeometry(cd.w+.4,.15),lnM);lt.rotation.x=-Math.PI/2;lt.position.set(sx,.13,sz+cd.d/2);scene.add(lt);
+  const ll=new THREE.Mesh(new THREE.PlaneGeometry(.15,cd.d),lnM);ll.rotation.x=-Math.PI/2;ll.position.set(sx-cd.w/2,.13,sz);scene.add(ll);
+  const lr=new THREE.Mesh(new THREE.PlaneGeometry(.15,cd.d),lnM);lr.rotation.x=-Math.PI/2;lr.position.set(sx+cd.w/2,.13,sz);scene.add(lr);
+  // Center line
+  const cl=new THREE.Mesh(new THREE.PlaneGeometry(cd.w,.12),lnM);cl.rotation.x=-Math.PI/2;cl.position.set(sx,.13,sz);scene.add(cl);
+  // Sport-specific features
+  if(cd.name==='basketball'){
+    // Hoops
+    for(const sz2 of[-cd.d/2+1,cd.d/2-1]){
+      const pole=cyl(.08,.08,3.5,0x888888);pole.position.set(sx,1.75,sz+sz2);scene.add(pole);
+      const backboard=box(1.2,.8,.05,0xffffff);backboard.position.set(sx,3.2,sz+sz2);scene.add(backboard);
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(.23,.02,6,12),
+        new THREE.MeshStandardMaterial({color:0xff4400}));
+      rim.rotation.x=Math.PI/2;rim.position.set(sx,3,sz+sz2+(sz2>0?-.3:.3));scene.add(rim)}
+  }else if(cd.name==='soccer'){
+    // Goals
+    for(const gz of[-cd.d/2,cd.d/2]){const goW=5,goH=2.5;
+      const gMat=new THREE.MeshStandardMaterial({color:0xffffff});
+      const gl=cyl(.04,.04,goH,0xffffff);gl.position.set(sx-goW/2,goH/2,sz+gz);scene.add(gl);
+      const gr=cyl(.04,.04,goH,0xffffff);gr.position.set(sx+goW/2,goH/2,sz+gz);scene.add(gr);
+      const gt=box(goW,.04,.04,0xffffff);gt.position.set(sx,goH,sz+gz);scene.add(gt);
+      // Net (simple mesh)
+      const net=new THREE.Mesh(new THREE.PlaneGeometry(goW,goH),
+        new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.3,side:THREE.DoubleSide}));
+      net.position.set(sx,goH/2,sz+gz+(gz>0?.5:-.5));scene.add(net)}
+  }else if(cd.name==='tennis'){
+    // Net
+    const netPoleL=cyl(.04,.04,1.2,0x666666);netPoleL.position.set(sx-cd.w/2-.3,.6,sz);scene.add(netPoleL);
+    const netPoleR=cyl(.04,.04,1.2,0x666666);netPoleR.position.set(sx+cd.w/2+.3,.6,sz);scene.add(netPoleR);
+    const netMesh=new THREE.Mesh(new THREE.PlaneGeometry(cd.w+.6,1),
+      new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.4,side:THREE.DoubleSide}));
+    netMesh.position.set(sx,.7,sz);scene.add(netMesh)}
+  // Fence around courts
+  const fenceM=new THREE.MeshStandardMaterial({color:0x888888,transparent:true,opacity:.3,side:THREE.DoubleSide});
+  for(const fz of[-cd.d/2-1,cd.d/2+1]){
+    const f=new THREE.Mesh(new THREE.PlaneGeometry(cd.w+2,2.5),fenceM);
+    f.position.set(sx,1.25,sz+fz);scene.add(f)}
+  for(const fx of[-cd.w/2-1,cd.w/2+1]){
+    const f=new THREE.Mesh(new THREE.PlaneGeometry(cd.d+2,2.5),fenceM);
+    f.rotation.y=Math.PI/2;f.position.set(sx+fx,1.25,sz);scene.add(f)}
+}
+
+// ─── SMALL LAKES/PONDS ───
+seedR(7777);
+const pondLots=emptyLots.slice(parkCount+4,parkCount+7);
+for(let i=0;i<Math.min(pondLots.length,3);i++){
+  const lot=pondLots[i];const lx=lot.cx,lz=lot.cz;
+  const pr=6+srand()*4;
+  // Water surface
+  const pond=new THREE.Mesh(new THREE.CircleGeometry(pr,16),waterPondM);
+  pond.rotation.x=-Math.PI/2;pond.position.set(lx,.02,lz);scene.add(pond);
+  // Stone border
+  for(let s=0;s<12;s++){const a=s/12*Math.PI*2;
+    const stone=new THREE.Mesh(new THREE.SphereGeometry(.3+srand()*.2,5,4),
+      new THREE.MeshStandardMaterial({color:0x777777,roughness:.9}));
+    stone.position.set(lx+Math.cos(a)*(pr+.2),.15,lz+Math.sin(a)*(pr+.2));
+    stone.scale.y=.5;scene.add(stone)}
+  // Vegetation around pond
+  for(let v=0;v<6;v++){const a=srand()*Math.PI*2;
+    const bush=new THREE.Mesh(new THREE.SphereGeometry(.5+srand()*.3,5,4),
+      new THREE.MeshStandardMaterial({color:0x2a6a2a,roughness:.9}));
+    bush.position.set(lx+Math.cos(a)*(pr+1),.3,lz+Math.sin(a)*(pr+1));bush.scale.y=.6;scene.add(bush)}
+}
+
+// ─── CENTRAL PLAZA WITH FOUNTAIN ───
+if(!colBldg(0,0,8)){
+  const plazaR=12;
+  const plaza=new THREE.Mesh(new THREE.CircleGeometry(plazaR,24),
+    new THREE.MeshStandardMaterial({color:0x998877,roughness:.7}));
+  plaza.rotation.x=-Math.PI/2;plaza.position.set(0,.11,0);scene.add(plaza);
+  // Fountain base
+  const fBase=cyl(3,3.5,.8,0x999999,16);fBase.position.set(0,.4,0);scene.add(fBase);
+  const fPool=cyl(2.5,2.5,.3,0x2266aa,16);fPool.material=waterPondM;fPool.position.set(0,.65,0);scene.add(fPool);
+  // Fountain center pillar
+  const fPillar=cyl(.2,.15,3,0x888888);fPillar.position.set(0,2.3,0);scene.add(fPillar);
+  const fTop=new THREE.Mesh(new THREE.SphereGeometry(.4,8,6),
+    new THREE.MeshStandardMaterial({color:0x888888,metalness:.6,roughness:.3}));
+  fTop.position.set(0,4,0);scene.add(fTop);
+  // Benches around fountain
+  for(let b=0;b<6;b++){const a=b/6*Math.PI*2;
+    const bench=new THREE.Group();
+    bench.add(box(1.5,.05,.5,0x6a4a2a));bench.children[0].position.y=.45;
+    bench.add(box(1.5,.4,.05,0x6a4a2a));bench.children[1].position.set(0,.65,-.22);
+    bench.add(box(.08,.4,.05,0x444444));bench.children[2].position.set(-.6,.2,0);
+    bench.add(box(.08,.4,.05,0x444444));bench.children[3].position.set(.6,.2,0);
+    bench.position.set(Math.cos(a)*(plazaR-2),.1,Math.sin(a)*(plazaR-2));
+    bench.rotation.y=a+Math.PI;scene.add(bench)}
+}
+
+// ─── SMALL PLAZAS AT INTERSECTIONS ───
+seedR(9876);
+for(let i=0;i<5;i++){
+  const px=-CH+BK*4+srand()*(CS-BK*8),pz=-CH+BK*4+srand()*(CS-BK*8);
+  if(colBldg(px,pz,3))continue;
+  // Paved circle
+  const pR=4+srand()*3;
+  const pv=new THREE.Mesh(new THREE.CircleGeometry(pR,12),
+    new THREE.MeshStandardMaterial({color:0xaa9988,roughness:.7}));
+  pv.rotation.x=-Math.PI/2;pv.position.set(px,.11,pz);scene.add(pv);
+  // Statue/monument
+  const pedestal=box(1.2,1.5,1.2,0x888888);pedestal.position.set(px,.75,pz);scene.add(pedestal);
+  const statue=cyl(.3,.2,2,0x777777);statue.position.set(px,2.5,pz);scene.add(statue);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.25,6,5),
+    new THREE.MeshStandardMaterial({color:0x777777}));
+  head.position.set(px,3.7,pz);scene.add(head)}
+
+// ─── SIDEWALKS & BUS STOPS ───
+seedR(1111);
+for(let x=-CH+ST;x<CH;x+=BK)for(let z=-CH+ST;z<CH;z+=BK){
+  // Sidewalk strips along building edges
+  if(srand()>.6){const sw=box(BK-ST,.08,.8,0x888888);sw.position.set(x+(BK-ST)/2,.04,z+.4);scene.add(sw)}
+  if(srand()>.6){const sw=box(.8,.08,BK-ST,0x888888);sw.position.set(x+.4,.04,z+(BK-ST)/2);scene.add(sw)}
+}
+// Bus stops
+for(let i=0;i<8;i++){
+  const bx=-CH+BK*3+srand()*(CS-BK*6),bz=-CH+BK*3+srand()*(CS-BK*6);
+  if(colBldg(bx,bz,1))continue;
+  const bg=new THREE.Group();
+  bg.add(cyl(.05,.05,2.8,0x666666));bg.children[0].position.set(-.8,1.4,0);
+  bg.add(cyl(.05,.05,2.8,0x666666));bg.children[1].position.set(.8,1.4,0);
+  const roof=box(2,.05,1.2,0x3388aa);roof.position.y=2.8;bg.add(roof);
+  const back=box(2,1.5,.05,0x44aacc);back.material=new THREE.MeshStandardMaterial({color:0x44aacc,transparent:true,opacity:.4});
+  back.position.set(0,1.5,-.55);bg.add(back);
+  const seat=box(1.5,.05,.4,0x666666);seat.position.set(0,.7,0);bg.add(seat);
+  bg.position.set(bx,.1,bz);bg.rotation.y=srand()*Math.PI*2;scene.add(bg)}
+
+// ─── PARKING LOTS ───
+const parkingM=new THREE.MeshStandardMaterial({color:0x444444,roughness:.9});
+const lineM=new THREE.MeshStandardMaterial({color:0xffffff});
+seedR(2222);
+const parkingLots=emptyLots.slice(parkCount+7,parkCount+11);
+for(let i=0;i<Math.min(parkingLots.length,3);i++){
+  const lot=parkingLots[i];const lx=lot.cx,lz=lot.cz;
+  const pg=new THREE.Mesh(new THREE.PlaneGeometry(BK-ST-2,BK-ST-2),parkingM);
+  pg.rotation.x=-Math.PI/2;pg.position.set(lx,.1,lz);scene.add(pg);
+  // Parking lines
+  for(let p=-4;p<=4;p++){
+    const ln=new THREE.Mesh(new THREE.PlaneGeometry(.1,4),lineM);
+    ln.rotation.x=-Math.PI/2;ln.position.set(lx+p*2.5,.11,lz-3);scene.add(ln)}
 }
 
 // ══════════════ STREET LAMPS ══════════════
 const glowMat=new THREE.MeshStandardMaterial({color:0xffeecc,emissive:0xffddaa,emissiveIntensity:2});
-for(let x=-CH+ST;x<CH;x+=BK*5)for(let z=-CH+ST;z<CH;z+=BK*5){
+for(let x=-CH+ST;x<CH;x+=BK*3)for(let z=-CH+ST;z<CH;z+=BK*3){
   const lx=x+2,lz=z+2;
   const pole=cyl(.06,.06,5,0x666666);pole.position.set(lx,2.5,lz);scene.add(pole);
   const arm=box(.05,0.05,1.5,0x666666);arm.position.set(lx,5,lz+.75);scene.add(arm);
@@ -344,9 +602,9 @@ function mkPine(px,pz){const g=new THREE.Group(),h=getH(px,pz),th=2+hash2(px*.2,
   g.position.set(px,h,pz);return g}
 seedR(555);for(let i=0;i<150;i++){const x=-CH-30-srand()*800,z=-1000+srand()*2000,h=getH(x,z);if(h>3&&h<90)scene.add(mkPine(x,z))}
 
-// Deciduous trees in city parks
+// Deciduous trees scattered in city
 const parkLeafMat=new THREE.MeshStandardMaterial({color:0x2a7a2a,roughness:.8});
-seedR(654);for(let i=0;i<25;i++){const x=-CH+srand()*CS,z=-CH+srand()*CS;
+seedR(654);for(let i=0;i<50;i++){const x=-CH+srand()*CS,z=-CH+srand()*CS;
   if(Math.abs(x%(BK))<3||Math.abs(z%(BK))<3)continue;
   const g=new THREE.Group();const th=3+srand()*2;
   g.add(cyl(.08,.12,th,0x6a4a2a));g.children[0].position.y=th/2;
@@ -1130,7 +1388,7 @@ function update(dt){
     if(onGround){P.y=wgH;V.y=0}
     if(spaceJust&&onGround){V.y=JFORCE;onGround=false;spaceJust=false}
     if(spaceJust&&!onGround&&P.y>wgH+1){isFlying=true;const s=Math.max(25,V.length());
-      V.set(fwd().x*s,Math.max(V.y,2),fwd().z*s);showTip('Wingsuit deployed! SHIFT=boost SPACE=rise');spaceJust=false}
+      V.set(fwd().x*s,Math.max(V.y,2),fwd().z*s);showTip('Wingsuit! UP/DOWN=pitch LEFT/RIGHT=turn SHIFT=boost SPACE=rise');spaceJust=false}
     spaceJust=false;
     if(!onGround){V.y-=GRAV*dt;P.y+=V.y*dt}
     if(P.y<wgH){P.y=wgH;V.y=0;onGround=true}
@@ -1139,13 +1397,16 @@ function update(dt){
 
   // ═══ WINGSUIT FLYING ═══
   if(isFlying&&!currentVeh){
-    // Left/Right turn
+    // Arrow keys: Left/Right=yaw, Up/Down=pitch
     if(kL())yaw+=2.5*dt;
     if(kR())yaw-=2.5*dt;
+    if(kU())pitch=clamp(pitch+1.8*dt,-Math.PI/2.5,Math.PI/2.5);
+    if(kD())pitch=clamp(pitch-1.8*dt,-Math.PI/2.5,Math.PI/2.5);
+    if(!kU()&&!kD())pitch*=Math.pow(.12,dt); // auto-level when no input
     const ff=flyFwd();
-    const sf=35;
-    if(kU())V.add(ff.clone().multiplyScalar(sf*dt));
-    if(kD())V.sub(ff.clone().multiplyScalar(sf*.5*dt));
+    // Constant forward glide + extra thrust from speed
+    const sf=25;
+    V.add(ff.clone().multiplyScalar(sf*dt));
     V.y-=GRAV*.35*dt;
     const hs=Math.sqrt(V.x*V.x+V.z*V.z);V.y+=clamp(hs*.08,0,12)*dt;
     V.x*=Math.pow(.98,dt*60);V.z*=Math.pow(.98,dt*60);V.y*=Math.pow(.985,dt*60);
@@ -1171,11 +1432,20 @@ function update(dt){
     if(kL())yaw+=d.tn*dt;
     if(kR())yaw-=d.tn*dt;
 
-    // Acceleration
+    // Air vehicles: Up/Down = pitch, auto-accelerate
+    if(pt==='air'){
+      if(kU())pitch=clamp(pitch+1.5*dt,-Math.PI/2.5,Math.PI/2.5);
+      else if(kD())pitch=clamp(pitch-1.5*dt,-Math.PI/2.5,Math.PI/2.5);
+      else pitch*=Math.pow(.15,dt);
+      v.speed=Math.min(v.speed+d.ac*.5*dt,d.ms);
+      if(keys['ShiftLeft']||keys['ShiftRight'])v.speed=Math.min(v.speed+d.ac*2*dt,d.ms*1.5);
+    }
+    // Ground/water: Up/Down = accel/brake
+    else{
     if(kU())v.speed=Math.min(v.speed+d.ac*dt,d.ms);
     else if(kD())v.speed=Math.max(v.speed-d.ac*1.5*dt,-d.ms*.3);
     else v.speed*=(1-.8*dt);
-    if(Math.abs(v.speed)<.1&&!kU()&&!kD())v.speed=0;
+    if(Math.abs(v.speed)<.1&&!kU()&&!kD())v.speed=0;}
 
     // Boost
     if((keys['ShiftLeft']||keys['ShiftRight'])&&boostFuel>0){v.speed=Math.min(v.speed+d.ac*2*dt,d.ms*1.5);boostFuel=Math.max(0,boostFuel-15*dt);engineOn=true;
@@ -1541,7 +1811,7 @@ function spawnAndMount(type){
     const spd=Math.max(30,V.length());
     V.set(fwd().x*spd,5,fwd().z*spd);
     boostFuel=100;
-    showTip('Wingsuit deployed! SHIFT=boost SPACE=rise, LEFT/RIGHT=turn');
+    showTip('Wingsuit! UP/DOWN=pitch LEFT/RIGHT=turn SHIFT=boost SPACE=rise, LEFT/RIGHT=turn');
     try{canvas.requestPointerLock()}catch(e){}
     return;
   }
