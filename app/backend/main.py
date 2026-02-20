@@ -50,6 +50,7 @@ def healthz():
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
+    current_version_id: Optional[str] = None
     api_key: str
 
 
@@ -116,20 +117,28 @@ async def api_chat(
     db.add(user_msg)
     db.commit()
 
-    # Find current latest version path
-    latest_version = (
-        db.query(GameVersion)
-        .filter(GameVersion.session_id == session.id)
-        .order_by(GameVersion.version_number.desc())
-        .first()
-    )
+    # Find the version to modify: use the selected version, or fall back to latest
     current_path = None
-    if latest_version:
-        current_path = os.path.join(VERSIONS_DIR, latest_version.file_path)
+    parent_version_id = None
+    if req.current_version_id:
+        selected = db.query(GameVersion).filter(GameVersion.id == req.current_version_id).first()
+        if selected:
+            current_path = os.path.join(VERSIONS_DIR, selected.file_path)
+            parent_version_id = selected.id
+    if not current_path:
+        latest_version = (
+            db.query(GameVersion)
+            .filter(GameVersion.session_id == session.id)
+            .order_by(GameVersion.version_number.desc())
+            .first()
+        )
+        if latest_version:
+            current_path = os.path.join(VERSIONS_DIR, latest_version.file_path)
+            parent_version_id = latest_version.id
 
     # Run agent in thread to not block the event loop
     result = await asyncio.to_thread(
-        run_agent, req.api_key, req.message, session, db, current_path
+        run_agent, req.api_key, req.message, session, db, current_path, parent_version_id
     )
 
     if result.get("error"):

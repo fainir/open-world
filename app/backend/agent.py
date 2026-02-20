@@ -53,6 +53,7 @@ def run_agent(
     session: ChatSession,
     db: Session,
     current_version_path: Optional[str] = None,
+    parent_version_id: Optional[str] = None,
 ) -> dict:
     """Run the Claude agent to modify the game code.
 
@@ -185,7 +186,7 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
         version_number=version_number,
         description=description,
         file_path=version_filename,
-        parent_version_id=None,
+        parent_version_id=parent_version_id,
     )
     db.add(version)
 

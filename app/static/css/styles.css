@@ -119,11 +119,35 @@ html, body {
   position: relative;
   background: #000;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#version-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.vi-label {
+  padding: 2px 8px;
+  background: var(--accent);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+.vi-hint {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 #game-iframe {
   width: 100%;
-  height: 100%;
+  flex: 1;
   border: none;
   display: block;
 }
