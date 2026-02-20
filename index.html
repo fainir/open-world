@@ -591,10 +591,14 @@ const rL=box(.17,.55,.17,0x1a3a6a);rL.material=suM;rL.position.set(.14,.37,0);ch
 const lb=box(.18,.1,.26,0x1a1a1a);lb.position.set(-.14,.06,.03);charG.add(lb);
 const rb=box(.18,.1,.26,0x1a1a1a);rb.position.set(.14,.06,.03);charG.add(rb);
 const ep=box(.32,.28,.16,0x444444);ep.material=new THREE.MeshStandardMaterial({color:0x444444,metalness:.7,roughness:.3});ep.position.set(0,1.08,-.22);charG.add(ep);
-const wgM=new THREE.MeshStandardMaterial({color:0xff5500,side:THREE.DoubleSide,transparent:true,opacity:.65});
-const lW=new THREE.Mesh(new THREE.PlaneGeometry(.6,.7),wgM);lW.position.set(-.42,.85,0);lW.rotation.y=Math.PI/2;lW.visible=false;charG.add(lW);
-const rW=new THREE.Mesh(new THREE.PlaneGeometry(.6,.7),wgM);rW.position.set(.42,.85,0);rW.rotation.y=Math.PI/2;rW.visible=false;charG.add(rW);
-const lgW=new THREE.Mesh(new THREE.PlaneGeometry(.35,.5),wgM);lgW.position.set(0,.35,0);lgW.rotation.x=Math.PI/2;lgW.visible=false;charG.add(lgW);
+const wgM=new THREE.MeshStandardMaterial({color:0xff5500,side:THREE.DoubleSide,transparent:true,opacity:.75});
+// Arm wings - large triangular membranes
+const lwShape=new THREE.Shape();lwShape.moveTo(0,0);lwShape.lineTo(-1.2,-.3);lwShape.lineTo(-.2,-.8);lwShape.closePath();
+const lW=new THREE.Mesh(new THREE.ShapeGeometry(lwShape),wgM);lW.position.set(-.25,.95,.05);lW.rotation.y=Math.PI/2;lW.visible=false;charG.add(lW);
+const rwShape=new THREE.Shape();rwShape.moveTo(0,0);rwShape.lineTo(1.2,-.3);rwShape.lineTo(.2,-.8);rwShape.closePath();
+const rW=new THREE.Mesh(new THREE.ShapeGeometry(rwShape),wgM);rW.position.set(.25,.95,.05);rW.rotation.y=Math.PI/2;rW.visible=false;charG.add(rW);
+// Leg wing - wider membrane between legs
+const lgW=new THREE.Mesh(new THREE.PlaneGeometry(.5,.7),wgM);lgW.position.set(0,.25,0);lgW.rotation.x=Math.PI/2;lgW.visible=false;charG.add(lgW);
 scene.add(charG);
 
 // ══════════════ PARTICLES ══════════════
@@ -631,7 +635,6 @@ const overlay=document.getElementById('overlay'),hud=document.getElementById('hu
 function startGame(){
   overlay.style.display='none';
   hud.style.display='block';
-  document.getElementById('crosshair').style.display='block';
   document.getElementById('veh-btn').style.display='block';
   locked=true;
   try{canvas.requestPointerLock()}catch(e){}
@@ -916,8 +919,14 @@ function update(dt){
   if(!currentVeh){
     charG.position.copy(P);
     lW.visible=rW.visible=lgW.visible=isFlying;
-    if(isFlying){lA.position.set(-.5,1.1,0);lA.rotation.z=Math.PI/3;rA.position.set(.5,1.1,0);rA.rotation.z=-Math.PI/3;
-      lL.position.set(-.08,.37,0);rL.position.set(.08,.37,0);bdM.rotation.x=-pitch*.5}
+    if(isFlying){
+      // Flying prone pose: body tilted forward, arms spread wide, legs together and back
+      bdM.rotation.x=-Math.PI/2.2-pitch*.3;
+      lA.position.set(-.55,1.05,.1);lA.rotation.set(-Math.PI/2.5,0,Math.PI/2.8);
+      rA.position.set(.55,1.05,.1);rA.rotation.set(-Math.PI/2.5,0,-Math.PI/2.8);
+      lL.position.set(-.1,.2,-.15);lL.rotation.x=Math.PI/3;
+      rL.position.set(.1,.2,-.15);rL.rotation.x=Math.PI/3;
+    }
     else{lA.position.set(-.38,1,0);lA.rotation.z=0;rA.position.set(.38,1,0);rA.rotation.z=0;
       lL.position.set(-.14,.37,0);rL.position.set(.14,.37,0);bdM.rotation.x=0;
       if(kU()||kD()||kL()||kR()){lA.rotation.x=Math.sin(walkBob)*.4;rA.rotation.x=-Math.sin(walkBob)*.4;
@@ -961,12 +970,12 @@ function update(dt){
 
   // ═══ CAMERA ═══
   const cv=currentVeh;
-  let camD=6,camH=2.5;
-  if(isFlying){camD=lerp(12,25,clamp(V.length()/100,0,1));camH=3}
-  if(cv){camD=cv.def.pt==='air'?18:cv.type==='yacht'?20:10;camH=cv.def.pt==='air'?5:cv.type==='yacht'?8:3}
+  let camD=3.5,camH=1.8;
+  if(isFlying){camD=lerp(6,14,clamp(V.length()/100,0,1));camH=2}
+  if(cv){camD=cv.def.pt==='air'?12:cv.type==='yacht'?14:6;camH=cv.def.pt==='air'?3:cv.type==='yacht'?5:2}
   const ideal=new THREE.Vector3(P.x+Math.sin(yaw)*camD,P.y+camH+(isFlying?-Math.sin(pitch)*camD*.3:0),P.z+Math.cos(yaw)*camD);
   cam.position.lerp(ideal,1-Math.pow(.01,dt));
-  const look=new THREE.Vector3(P.x-Math.sin(yaw)*5,P.y+1.3+(isFlying?Math.sin(pitch)*3:0),P.z-Math.cos(yaw)*5);
+  const look=new THREE.Vector3(P.x-Math.sin(yaw)*3,P.y+1.2+(isFlying?Math.sin(pitch)*3:0),P.z-Math.cos(yaw)*3);
   cam.lookAt(look);
 
   // Shadow follow
@@ -985,7 +994,7 @@ function update(dt){
   const mEl=document.getElementById('mode-display');mEl.textContent=mStr;
   mEl.style.color=engineOn?'#ff6600':isFlying?'#44aaff':currentVeh?'#44ff66':'#fff';
   document.getElementById('boost-fill').style.width=boostFuel+'%';
-  document.getElementById('crosshair').style.display=(isFlying||currentVeh?.def.pt==='air')?'block':'none';
+  document.getElementById('crosshair').style.display='none';
   document.getElementById('score').textContent=score>0?`${score} PTS`:'';
   const cEl=document.getElementById('combo');
   if(comboCount>1){cEl.textContent=`COMBO x${comboCount}`;cEl.style.opacity='1'}else cEl.style.opacity='0';
