@@ -20,6 +20,12 @@
       overlay.classList.add('hidden');
       setTimeout(() => overlay.remove(), 400);
     }
+    // Focus the game iframe and tell it to start
+    const iframe = document.getElementById('game-iframe');
+    if (iframe) {
+      iframe.focus();
+      iframe.contentWindow.postMessage('startGame', '*');
+    }
   };
 
   // ══════════ AUTH UI ══════════
