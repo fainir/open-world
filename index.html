@@ -221,7 +221,7 @@ const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.5,2500);
 
 // ══════════════ SKY ══════════════
 const sunDir=new THREE.Vector3(0.45,0.55,-0.3).normalize();
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(3500,16,10),new THREE.ShaderMaterial({
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(5000,16,10),new THREE.ShaderMaterial({
 uniforms:{sunDir:{value:sunDir}},side:THREE.BackSide,depthWrite:false,
 vertexShader:`varying vec3 vD;void main(){vD=normalize((modelMatrix*vec4(position,1.0)).xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
 fragmentShader:`uniform vec3 sunDir;varying vec3 vD;void main(){vec3 d=normalize(vD);float y=d.y;vec3 top=vec3(0.12,0.32,0.78),mid=vec3(0.38,0.62,0.92),hor=vec3(0.72,0.82,0.92);vec3 col=y>0.0?mix(hor,mix(mid,top,pow(y,0.45)),smoothstep(0.0,0.35,y)):mix(hor,vec3(0.25,0.35,0.5),min(-y*2.0,1.0));float sd=dot(d,sunDir);col+=vec3(1,0.95,0.8)*pow(max(sd,0.0),900.0)*3.0;col+=vec3(1,0.85,0.5)*pow(max(sd,0.0),80.0)*0.5;col+=vec3(1,0.7,0.3)*pow(max(sd,0.0),8.0)*0.12;col=mix(col,vec3(0.9,0.85,0.78),pow(1.0-abs(y),10.0)*0.5);gl_FragColor=vec4(col,1);}`
@@ -239,15 +239,23 @@ scene.add(new THREE.HemisphereLight(0x88bbff,0x556633,0.8));
 // ══════════════ TERRAIN ══════════════
 function getH(x,z){
   const cityB=1-smoothstep(CH-20,CH+120,Math.max(Math.abs(x),Math.abs(z)));
+  // Mountains (west, x < -CH)
   let mt=0;if(x<-CH+50){const d=clamp((-x-CH+50)/600,0,1.5);mt=d*d*140+fbm(x*0.004,z*0.004,5)*100*d+Math.max(0,fbm(x*0.002+5,z*0.002+5,4)-0.35)*280*d}
+  // Beach slope (east, x > CH)
   let bc=0;if(x>CH-50){const d=clamp((x-CH+50)/300,0,3);bc=-d*4+fbm(x*0.01,z*0.01,2)*.8*d}
-  return lerp(mt+bc+fbm(x*0.007,z*0.007,3)*3,0,cityB);
+  // Desert dunes (south, z < -CH)
+  let ds=0;if(z<-CH+50){const d=clamp((-z-CH+50)/400,0,1.2);ds=d*8+Math.sin(x*.02+z*.015)*4*d+fbm(x*0.006,z*0.006,3)*6*d}
+  // Rolling hills (north, z > CH+200)
+  let nh=0;if(z>CH+200){const d=clamp((z-CH-200)/500,0,1.2);nh=fbm(x*0.005,z*0.005,4)*25*d+Math.sin(x*.008)*8*d}
+  return lerp(mt+bc+ds+nh+fbm(x*0.007,z*0.007,3)*3,0,cityB);
 }
-const tG=new THREE.PlaneGeometry(4000,4000,80,80);tG.rotateX(-Math.PI/2);
+const tG=new THREE.PlaneGeometry(8000,8000,80,80);tG.rotateX(-Math.PI/2);
 const tP=tG.attributes.position,tC=new Float32Array(tP.count*3);
 for(let i=0;i<tP.count;i++){const x=tP.getX(i),z=tP.getZ(i),h=getH(x,z);tP.setY(i,h);
   let r,g,b;if(h>110){r=0.95;g=0.96;b=1}else if(h>70){const t=(h-70)/40;r=lerp(.48,.95,t);g=lerp(.44,.96,t);b=lerp(.4,1,t)}
-  else if(h>25){r=.48;g=.44;b=.4}else if(h>5){const n=fbm(x*.05,z*.05,2)*.12;r=.18+n;g=.38+n;b=.14}
+  else if(h>25){r=.48;g=.44;b=.4}
+  else if(z<-CH){const n=fbm(x*.03,z*.03,2)*.06;r=.82+n;g=.72+n;b=.48+n} // desert sand
+  else if(h>5){const n=fbm(x*.05,z*.05,2)*.12;r=.18+n;g=.38+n;b=.14}
   else if(x>CH-30){const n=fbm(x*.02,z*.02,2)*.08;r=.88+n;g=.82+n;b=.58+n}
   else if(Math.abs(x)<CH+20&&Math.abs(z)<CH+20){r=.32;g=.33;b=.3}else{r=.28;g=.42;b=.22}
   tC[i*3]=r;tC[i*3+1]=g;tC[i*3+2]=b}
@@ -260,7 +268,7 @@ const wMat=new THREE.ShaderMaterial({uniforms:{time:{value:0},sunDir:{value:sunD
 vertexShader:`uniform float time;varying vec3 vW,vN;void main(){vec3 p=position;float w=sin(p.x*.015+time*.7)*cos(p.y*.012+time*.5)*.6+sin(p.x*.035+time*1.1)*cos(p.y*.025-time*.8)*.3+sin(p.x*.07+p.y*.06+time*1.9)*.1;p.z+=w;vN=normalize(vec3(-cos(p.x*.015+time*.7)*.015*cos(p.y*.012+time*.5)*.6,-sin(p.x*.015+time*.7)*(-sin(p.y*.012+time*.5))*.012*.6,1));vW=(modelMatrix*vec4(p,1)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1);}`,
 fragmentShader:`uniform vec3 sunDir;varying vec3 vW,vN;void main(){vec3 V2=normalize(cameraPosition-vW),n=normalize(vN);float fr=pow(1.0-max(dot(V2,n),0.0),4.0);vec3 col=mix(mix(vec3(.02,.15,.30),vec3(.01,.08,.22),.4),vec3(.25,.45,.70),fr*.65);col+=vec3(1,.9,.7)*pow(max(dot(n,normalize(sunDir+V2)),0.0),256.0)*2.0;gl_FragColor=vec4(col,.92);}`
 });
-const water=new THREE.Mesh(new THREE.PlaneGeometry(5000,5000,50,50),wMat);
+const water=new THREE.Mesh(new THREE.PlaneGeometry(8000,8000,50,50),wMat);
 water.rotation.x=-Math.PI/2;water.position.set(CH+1200,-0.8,0);scene.add(water);
 
 // ══════════════ CITY GROUND ══════════════
@@ -781,7 +789,7 @@ seedR(222);for(let i=0;i<15;i++){const x=CH+30+srand()*200,z=-400+srand()*800,h=
 const clMat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.7,roughness:1});
 const _cloudPuff=new THREE.SphereGeometry(1,4,3);
 const cloudGeos=[];
-seedR(888);for(let i=0;i<20;i++){const cx=-1500+srand()*3000,cz=-1500+srand()*3000,cy=200+srand()*300;
+seedR(888);for(let i=0;i<40;i++){const cx=-3500+srand()*7000,cz=-3500+srand()*7000,cy=200+srand()*300;
   for(let j=0;j<3+Math.floor(srand()*3);j++){const s=10+srand()*20;
     cloudGeos.push(geoAt(_cloudPuff,cx+srand()*30-15,cy+srand()*5,cz+srand()*30-15,0,0,0,s,s*.35,s))}
 }
@@ -2325,6 +2333,340 @@ let sportsGroup;
   vbNet.position.set(vbX,1.75,vbZ);scene.add(vbNet);
 
   scene.add=_sa;scene.add(g);sportsGroup=g;
+})();
+
+// ══════════════ FOREST BIOME (west, centered -1800,0) ══════════════
+let forestGroup;
+(function buildForest(){
+  const g=new THREE.Group();g.name='forest';
+  const trG=[],lfG=[],dlfG=[],rkG=[],lgG=[],bshG=[];
+  const _ft=new THREE.CylinderGeometry(.08,.18,5,4);
+  const _fl=new THREE.ConeGeometry(1.2,3,5);
+  const _fdl=new THREE.ConeGeometry(.9,2.2,5);
+  const _fr=new THREE.DodecahedronGeometry(1.2);
+  const _fb=new THREE.SphereGeometry(.6,3,3);
+  const _flog=new THREE.CylinderGeometry(.15,.15,3,4);
+  const cx=-1800,cz=0;
+  seedR(7001);
+  // Dense pine forest
+  for(let i=0;i<120;i++){const x=cx-600+srand()*1200,z=cz-800+srand()*1600,h=getH(x,z);
+    if(h<-1)continue;const th=4+srand()*4;
+    trG.push(geoAt(_ft,x,h+th/2,z,0,srand()*6.28,0,1+srand()*.3,1,1+srand()*.3));
+    lfG.push(geoAt(_fl,x,h+th-.5,z,0,srand()*6.28,0,1+srand()*.5,1+srand()*.3,1+srand()*.5));
+    if(srand()>.5)dlfG.push(geoAt(_fdl,x,h+th*0.6,z,0,srand()*6.28,0,.8+srand()*.4,.8+srand()*.3,.8+srand()*.4));
+  }
+  // Scattered rocks
+  for(let i=0;i<25;i++){const x=cx-500+srand()*1000,z=cz-700+srand()*1400,h=getH(x,z);
+    if(h<-1)continue;const s=.5+srand()*1.5;rkG.push(geoAt(_fr,x,h+s*.4,z,srand(),srand(),0,s,s*.7,s))}
+  // Fallen logs
+  for(let i=0;i<15;i++){const x=cx-400+srand()*800,z=cz-600+srand()*1200,h=getH(x,z);
+    if(h<-1)continue;lgG.push(geoAt(_flog,x,h+.15,z,0,srand()*6.28,Math.PI/2,1+srand(),1,1))}
+  // Bushes
+  for(let i=0;i<40;i++){const x=cx-500+srand()*1000,z=cz-700+srand()*1400,h=getH(x,z);
+    if(h<-1)continue;const s=.4+srand()*.6;bshG.push(geoAt(_fb,x,h+s*.3,z,0,srand()*6.28,0,s,s*.7,s))}
+  // Merge and add to group
+  const trMat=new THREE.MeshStandardMaterial({color:0x5a3a1a,roughness:.9});
+  const lfMat=new THREE.MeshStandardMaterial({color:0x1a5a2a,roughness:.8});
+  const dlfMat=new THREE.MeshStandardMaterial({color:0x0d4420,roughness:.85});
+  const rkMat=new THREE.MeshStandardMaterial({color:0x667766,roughness:.95});
+  const lgMat=new THREE.MeshStandardMaterial({color:0x6b4226,roughness:.9});
+  const bshMat=new THREE.MeshStandardMaterial({color:0x2a6b2a,roughness:.85});
+  if(trG.length)g.add(new THREE.Mesh(mergeGeometries(trG),trMat));
+  if(lfG.length)g.add(new THREE.Mesh(mergeGeometries(lfG),lfMat));
+  if(dlfG.length)g.add(new THREE.Mesh(mergeGeometries(dlfG),dlfMat));
+  if(rkG.length)g.add(new THREE.Mesh(mergeGeometries(rkG),rkMat));
+  if(lgG.length)g.add(new THREE.Mesh(mergeGeometries(lgG),lgMat));
+  if(bshG.length)g.add(new THREE.Mesh(mergeGeometries(bshG),bshMat));
+  // Forest clearing with campfire
+  const campX=cx+50,campZ=cz,campH=getH(campX,campZ);
+  const campRing=new THREE.Mesh(new THREE.RingGeometry(1,2.5,6),new THREE.MeshStandardMaterial({color:0x888888,roughness:1}));
+  campRing.rotation.x=-Math.PI/2;campRing.position.set(campX,campH+.05,campZ);g.add(campRing);
+  for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const lm=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,.6,3),new THREE.MeshStandardMaterial({color:0x6b4226}));
+    lm.position.set(campX+Math.cos(a)*.5,campH+.3,campZ+Math.sin(a)*.5);lm.rotation.z=.3;lm.rotation.y=a;g.add(lm)}
+  const campFire=new THREE.Mesh(new THREE.ConeGeometry(.3,.8,4),new THREE.MeshStandardMaterial({color:0xff6600,emissive:0xff4400,emissiveIntensity:2,transparent:true,opacity:.8}));
+  campFire.position.set(campX,campH+.5,campZ);g.add(campFire);
+  const campLight=new THREE.PointLight(0xff6633,.6,25);campLight.position.set(campX,campH+1.5,campZ);g.add(campLight);
+  scene.add(g);forestGroup=g;
+})();
+
+// ══════════════ DESERT BIOME (south, centered 0,-1800) ══════════════
+let desertGroup;
+(function buildDesert(){
+  const g=new THREE.Group();g.name='desert';
+  const cacG=[],cacAG=[],rkG=[],skG=[];
+  const _cac=new THREE.CylinderGeometry(.12,.18,2,5);
+  const _cacArm=new THREE.CylinderGeometry(.06,.08,1,4);
+  const _drock=new THREE.DodecahedronGeometry(1);
+  const _skull=new THREE.SphereGeometry(.2,4,3);
+  const cx=0,cz=-1800;
+  seedR(7002);
+  // Cacti
+  for(let i=0;i<60;i++){const x=cx-1000+srand()*2000,z=cz-600+srand()*1200,h=getH(x,z);
+    if(h<-1)continue;const th=1.5+srand()*2;
+    cacG.push(geoAt(_cac,x,h+th/2,z,0,srand()*6.28,0,1,th/2,1));
+    if(srand()>.4){const ay=srand()*6.28;
+      cacAG.push(geoAt(_cacArm,x+Math.cos(ay)*.25,h+th*.6,z+Math.sin(ay)*.25,.2,ay,Math.PI/2-srand()*.4,.8,.8,.8))}
+    if(srand()>.6){const ay2=srand()*6.28;
+      cacAG.push(geoAt(_cacArm,x+Math.cos(ay2)*.25,h+th*.35,z+Math.sin(ay2)*.25,-.2,ay2,Math.PI/2-srand()*.4,.7,.7,.7))}
+  }
+  // Desert rocks & boulders
+  for(let i=0;i<30;i++){const x=cx-800+srand()*1600,z=cz-500+srand()*1000,h=getH(x,z);
+    if(h<-1)continue;const s=1+srand()*3;rkG.push(geoAt(_drock,x,h+s*.35,z,srand(),srand(),0,s,s*.6,s))}
+  // Rock arches (landmark clusters)
+  for(let i=0;i<3;i++){const ax=cx-300+srand()*600,az=cz-200+srand()*400,ah=getH(ax,az);
+    // Two pillars + top span
+    const pw=2+srand()*2,ph=6+srand()*4;
+    rkG.push(geoAt(_drock,ax-pw,ah+ph/2,az,0,srand(),0,pw*.4,ph*.5,pw*.4));
+    rkG.push(geoAt(_drock,ax+pw,ah+ph/2,az,0,srand(),0,pw*.4,ph*.5,pw*.4));
+    rkG.push(geoAt(_drock,ax,ah+ph*.8,az,0,srand(),0,pw*1.3,ph*.15,pw*.5));
+  }
+  // Scattered skulls/bones for atmosphere
+  for(let i=0;i<10;i++){const x=cx-600+srand()*1200,z=cz-400+srand()*800,h=getH(x,z);
+    if(h<-1)continue;skG.push(geoAt(_skull,x,h+.15,z,srand()*.5,srand()*6.28,0))}
+  // Merge and add to group
+  const cacMat=new THREE.MeshStandardMaterial({color:0x3d8b37,roughness:.8});
+  const cacAMat=new THREE.MeshStandardMaterial({color:0x4a9e43,roughness:.8});
+  const rkMat=new THREE.MeshStandardMaterial({color:0xb8956a,roughness:.95});
+  const skMat=new THREE.MeshStandardMaterial({color:0xe8dcc8,roughness:.9});
+  if(cacG.length)g.add(new THREE.Mesh(mergeGeometries(cacG),cacMat));
+  if(cacAG.length)g.add(new THREE.Mesh(mergeGeometries(cacAG),cacAMat));
+  if(rkG.length)g.add(new THREE.Mesh(mergeGeometries(rkG),rkMat));
+  if(skG.length)g.add(new THREE.Mesh(mergeGeometries(skG),skMat));
+  // Desert outpost
+  const opX=cx+200,opZ=cz+100,opH=getH(opX,opZ);
+  const tent=new THREE.Mesh(new THREE.ConeGeometry(3,3.5,4),new THREE.MeshStandardMaterial({color:0xc8a87a,roughness:.9}));
+  tent.position.set(opX,opH+1.75,opZ);g.add(tent);
+  const barrel1=new THREE.Mesh(new THREE.CylinderGeometry(.3,.35,.8,6),new THREE.MeshStandardMaterial({color:0x8b4513,roughness:.8}));
+  barrel1.position.set(opX+4,opH+.4,opZ+1);g.add(barrel1);
+  const barrel2=barrel1.clone();barrel2.position.set(opX+4.5,opH+.4,opZ-1);g.add(barrel2);
+  scene.add(g);desertGroup=g;
+})();
+
+// ══════════════ HARBOR/INDUSTRIAL (east, centered 1800,0) ══════════════
+let harborGroup;
+(function buildHarbor(){
+  const g=new THREE.Group();g.name='harbor';
+  const cx=1800,cz=0;
+  // Dock platform
+  const dockMat=new THREE.MeshStandardMaterial({color:0x8b7355,roughness:.9});
+  const metalMat=new THREE.MeshStandardMaterial({color:0x555555,roughness:.6,metalness:.4});
+  const crateMat=new THREE.MeshStandardMaterial({color:0xc89040,roughness:.85});
+  const rustyMat=new THREE.MeshStandardMaterial({color:0x884422,roughness:.8,metalness:.3});
+  const containerMats=[
+    new THREE.MeshStandardMaterial({color:0xcc3333,roughness:.7,metalness:.2}),
+    new THREE.MeshStandardMaterial({color:0x3333cc,roughness:.7,metalness:.2}),
+    new THREE.MeshStandardMaterial({color:0x33aa33,roughness:.7,metalness:.2}),
+    new THREE.MeshStandardMaterial({color:0xcccc33,roughness:.7,metalness:.2})
+  ];
+  // Main pier
+  const pier=new THREE.Mesh(new THREE.BoxGeometry(120,1,30),dockMat);
+  pier.position.set(cx,-0.3,cz);pier.receiveShadow=true;g.add(pier);
+  // Secondary pier
+  const pier2=new THREE.Mesh(new THREE.BoxGeometry(80,1,20),dockMat);
+  pier2.position.set(cx-30,-0.3,cz+60);pier2.receiveShadow=true;g.add(pier2);
+  // Pier pilings
+  seedR(7003);
+  for(let i=0;i<12;i++){const px=cx-55+i*10,pz=cz+15;
+    const piling=new THREE.Mesh(new THREE.CylinderGeometry(.3,.35,5,5),dockMat);
+    piling.position.set(px,-2,pz);g.add(piling)}
+  for(let i=0;i<8;i++){const px=cx-65+i*10,pz=cz+70;
+    const piling=new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,4,5),dockMat);
+    piling.position.set(px,-1.5,pz);g.add(piling)}
+  // Warehouse buildings
+  for(let i=0;i<3;i++){
+    const wx=cx-40+i*35,wz=cz-25,wh=8+srand()*4,ww=25,wd=15;
+    const wh0=getH(wx,wz);
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(ww,wh,wd),metalMat);
+    wall.position.set(wx,wh0+wh/2,wz);wall.castShadow=true;g.add(wall);
+    // Roof
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(ww+2,.3,wd+2),rustyMat);
+    roof.position.set(wx,wh0+wh+.15,wz);g.add(roof);
+    // Roller door
+    const door=new THREE.Mesh(new THREE.PlaneGeometry(6,5),new THREE.MeshStandardMaterial({color:0x666666,metalness:.5,roughness:.6}));
+    door.position.set(wx,wh0+2.5,wz+wd/2+.1);g.add(door);
+  }
+  // Shipping containers (stacked)
+  for(let i=0;i<20;i++){
+    const cx2=cx-30+srand()*80,cz2=cz+5+srand()*20;
+    const ch0=getH(cx2,cz2);const stack=Math.floor(srand()*3);
+    for(let s=0;s<=stack;s++){
+      const cont=new THREE.Mesh(new THREE.BoxGeometry(6,2.5,2.5),containerMats[Math.floor(srand()*4)]);
+      cont.position.set(cx2,ch0+1.25+s*2.6,cz2);cont.rotation.y=srand()>.5?0:Math.PI/2;
+      cont.castShadow=true;g.add(cont)}
+  }
+  // Crane
+  const craneX=cx+20,craneZ=cz+10,craneH0=getH(craneX,craneZ);
+  const cranePole=new THREE.Mesh(new THREE.BoxGeometry(2,30,2),metalMat);
+  cranePole.position.set(craneX,craneH0+15,craneZ);cranePole.castShadow=true;g.add(cranePole);
+  const craneArm=new THREE.Mesh(new THREE.BoxGeometry(25,1.5,1.5),metalMat);
+  craneArm.position.set(craneX+10,craneH0+28,craneZ);g.add(craneArm);
+  const craneCable=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,15,3),metalMat);
+  craneCable.position.set(craneX+18,craneH0+20,craneZ);g.add(craneCable);
+  // Crates on dock
+  for(let i=0;i<10;i++){const cx3=cx-20+srand()*50,cz3=cz+srand()*10,ch0=getH(cx3,cz3);
+    const s=1+srand();const crate=new THREE.Mesh(new THREE.BoxGeometry(s,s,s),crateMat);
+    crate.position.set(cx3,ch0+s/2,cz3);crate.castShadow=true;g.add(crate)}
+  // Lighthouse
+  const lhX=cx+55,lhZ=cz+50,lhH0=getH(lhX,lhZ);
+  const lhBase=new THREE.Mesh(new THREE.CylinderGeometry(2.5,3.5,12,8),new THREE.MeshStandardMaterial({color:0xeeeeee,roughness:.7}));
+  lhBase.position.set(lhX,lhH0+6,lhZ);lhBase.castShadow=true;g.add(lhBase);
+  const lhStripe=new THREE.Mesh(new THREE.CylinderGeometry(2.6,3,2,8),new THREE.MeshStandardMaterial({color:0xcc3333,roughness:.7}));
+  lhStripe.position.set(lhX,lhH0+9,lhZ);g.add(lhStripe);
+  const lhTop=new THREE.Mesh(new THREE.CylinderGeometry(1.8,2.5,3,8),new THREE.MeshStandardMaterial({color:0xeeeeee,roughness:.7}));
+  lhTop.position.set(lhX,lhH0+13.5,lhZ);g.add(lhTop);
+  const lhLight=new THREE.Mesh(new THREE.SphereGeometry(1,6,4),new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffff88,emissiveIntensity:3}));
+  lhLight.position.set(lhX,lhH0+15,lhZ);g.add(lhLight);
+  const lhPL=new THREE.PointLight(0xffffaa,.8,60);lhPL.position.set(lhX,lhH0+15,lhZ);g.add(lhPL);
+  scene.add(g);harborGroup=g;
+})();
+
+// ══════════════ MOUNTAIN VILLAGE (northwest, centered -1400,1400) ══════════════
+let mountainGroup;
+(function buildMountainVillage(){
+  const g=new THREE.Group();g.name='mountain';
+  const cx=-1400,cz=1400;
+  const woodMat=new THREE.MeshStandardMaterial({color:0x8b6914,roughness:.85});
+  const roofMat=new THREE.MeshStandardMaterial({color:0x6b3a2a,roughness:.8});
+  const stoneMat=new THREE.MeshStandardMaterial({color:0x999988,roughness:.95});
+  const snowMat=new THREE.MeshStandardMaterial({color:0xeeeeff,roughness:.6});
+  seedR(7004);
+  // Mountain cabins
+  const cabinPositions=[];
+  for(let i=0;i<8;i++){
+    const bx=cx-200+srand()*400,bz=cz-200+srand()*400,bh=getH(bx,bz);
+    const bw=6+srand()*4,bd=5+srand()*3,bhh=3+srand()*2;
+    // Cabin walls
+    const cabin=new THREE.Mesh(new THREE.BoxGeometry(bw,bhh,bd),woodMat);
+    cabin.position.set(bx,bh+bhh/2,bz);cabin.castShadow=true;g.add(cabin);
+    // A-frame roof
+    const roofShape=new THREE.Shape();roofShape.moveTo(-bw/2-.5,0);roofShape.lineTo(0,2.5);roofShape.lineTo(bw/2+.5,0);roofShape.closePath();
+    const roofGeo=new THREE.ExtrudeGeometry(roofShape,{depth:bd+1,bevelEnabled:false});
+    const roof=new THREE.Mesh(roofGeo,roofMat);
+    roof.rotation.x=Math.PI/2;roof.position.set(bx,bh+bhh,bz-bd/2-.5);roof.castShadow=true;g.add(roof);
+    // Chimney
+    if(srand()>.4){const ch=new THREE.Mesh(new THREE.BoxGeometry(.8,2,.8),stoneMat);
+      ch.position.set(bx+bw/4,bh+bhh+2,bz);g.add(ch)}
+    // Door
+    const door=new THREE.Mesh(new THREE.PlaneGeometry(1.2,2.2),new THREE.MeshStandardMaterial({color:0x5a3a0a}));
+    door.position.set(bx,bh+1.1,bz+bd/2+.05);g.add(door);
+    cabinPositions.push({x:bx,z:bz});
+  }
+  // Stone well in center
+  const wellH=getH(cx,cz);
+  const wellBase=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.5,1.5,8),stoneMat);
+  wellBase.position.set(cx,wellH+.75,cz);g.add(wellBase);
+  const wellTop=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,.15,8),woodMat);
+  wellTop.position.set(cx,wellH+1.55,cz);g.add(wellTop);
+  // Support posts
+  for(const side of[-1,1]){const post=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,2,4),woodMat);
+    post.position.set(cx+side,wellH+2.5,cz);g.add(post)}
+  const wellRoof=new THREE.Mesh(new THREE.ConeGeometry(1.6,1,4),roofMat);
+  wellRoof.position.set(cx,wellH+4,cz);g.add(wellRoof);
+  // Snow-capped pines
+  const _mTrunk=new THREE.CylinderGeometry(.06,.12,3,4);
+  const _mPine=new THREE.ConeGeometry(.8,2,4);
+  const pineGeos=[],snowGeos=[],trunkGeos2=[];
+  for(let i=0;i<50;i++){const x=cx-350+srand()*700,z=cz-350+srand()*700,h=getH(x,z);
+    // Skip if too close to a cabin
+    let nearCabin=false;for(const c of cabinPositions){if(Math.abs(x-c.x)<8&&Math.abs(z-c.z)<8){nearCabin=true;break}}
+    if(nearCabin||h<5)continue;const th=2.5+srand()*2;
+    trunkGeos2.push(geoAt(_mTrunk,x,h+th/2,z));
+    pineGeos.push(geoAt(_mPine,x,h+th+.5,z,0,srand()*6.28,0,1+srand()*.3,1+srand()*.2,1+srand()*.3));
+    // Snow cap on some trees
+    if(h>30||srand()>.6)snowGeos.push(geoAt(_mPine,x,h+th+1.2,z,0,srand()*6.28,0,.5+srand()*.3,.4,.5+srand()*.3));
+  }
+  if(trunkGeos2.length)g.add(new THREE.Mesh(mergeGeometries(trunkGeos2),new THREE.MeshStandardMaterial({color:0x5a3a1a,roughness:.9})));
+  if(pineGeos.length)g.add(new THREE.Mesh(mergeGeometries(pineGeos),new THREE.MeshStandardMaterial({color:0x1a4a25,roughness:.85})));
+  if(snowGeos.length)g.add(new THREE.Mesh(mergeGeometries(snowGeos),snowMat));
+  // Stone path between cabins
+  const pathGeos=[];const _pathStone=new THREE.CylinderGeometry(.3,.35,.08,5);
+  for(let i=0;i<40;i++){const x=cx-150+srand()*300,z=cz-150+srand()*300,h=getH(x,z);
+    pathGeos.push(geoAt(_pathStone,x,h+.04,z,0,srand()*6.28,0,.8+srand()*.6,1,.8+srand()*.6))}
+  if(pathGeos.length)g.add(new THREE.Mesh(mergeGeometries(pathGeos),stoneMat));
+  scene.add(g);mountainGroup=g;
+})();
+
+// ══════════════ BEACH RESORT (southeast, centered 1400,-1400) ══════════════
+let beachGroup;
+(function buildBeachResort(){
+  const g=new THREE.Group();g.name='beach';
+  const cx=1400,cz=-1400;
+  const sandMat=new THREE.MeshStandardMaterial({color:0xe8d5a8,roughness:.95});
+  const umbMats=[
+    new THREE.MeshStandardMaterial({color:0xff4444,roughness:.6,side:THREE.DoubleSide}),
+    new THREE.MeshStandardMaterial({color:0x4444ff,roughness:.6,side:THREE.DoubleSide}),
+    new THREE.MeshStandardMaterial({color:0x44cc44,roughness:.6,side:THREE.DoubleSide}),
+    new THREE.MeshStandardMaterial({color:0xffcc00,roughness:.6,side:THREE.DoubleSide})
+  ];
+  const woodMat2=new THREE.MeshStandardMaterial({color:0xb89060,roughness:.85});
+  const whiteMat=new THREE.MeshStandardMaterial({color:0xeeeeee,roughness:.5});
+  seedR(7005);
+  // Beach sand area
+  const beachSand=new THREE.Mesh(new THREE.PlaneGeometry(400,300,1,1),sandMat);
+  beachSand.rotation.x=-Math.PI/2;beachSand.position.set(cx,.15,cz);beachSand.receiveShadow=true;g.add(beachSand);
+  // Umbrellas with towels
+  for(let i=0;i<18;i++){
+    const ux=cx-150+srand()*300,uz=cz-100+srand()*200,uh=getH(ux,uz);
+    // Pole
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,3,4),woodMat2);
+    pole.position.set(ux,uh+1.5,uz);g.add(pole);
+    // Umbrella top
+    const umb=new THREE.Mesh(new THREE.ConeGeometry(1.8,.6,6,1,true),umbMats[Math.floor(srand()*4)]);
+    umb.position.set(ux,uh+3,uz);g.add(umb);
+    // Towel
+    const towel=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.5),umbMats[Math.floor(srand()*4)]);
+    towel.rotation.x=-Math.PI/2;towel.rotation.z=srand()*6.28;
+    towel.position.set(ux+1.5,uh+.05,uz);g.add(towel);
+  }
+  // Tiki bar
+  const barX=cx+50,barZ=cz+80,barH=getH(barX,barZ);
+  const barBase=new THREE.Mesh(new THREE.BoxGeometry(8,1.2,3),woodMat2);
+  barBase.position.set(barX,barH+.6,barZ);g.add(barBase);
+  const barTop=new THREE.Mesh(new THREE.BoxGeometry(9,.15,4),woodMat2);
+  barTop.position.set(barX,barH+1.25,barZ);g.add(barTop);
+  // Tiki bar roof (palm frond style)
+  const tikiRoof=new THREE.Mesh(new THREE.ConeGeometry(6,2,6),new THREE.MeshStandardMaterial({color:0x8b7355,roughness:1,side:THREE.DoubleSide}));
+  tikiRoof.position.set(barX,barH+3.5,barZ);g.add(tikiRoof);
+  // Bar stools
+  for(let i=0;i<5;i++){
+    const stool=new THREE.Mesh(new THREE.CylinderGeometry(.25,.2,.05,6),woodMat2);
+    stool.position.set(barX-3+i*1.5,barH+.8,barZ+2);g.add(stool);
+    const stoolLeg=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.8,4),woodMat2);
+    stoolLeg.position.set(barX-3+i*1.5,barH+.4,barZ+2);g.add(stoolLeg);
+  }
+  // Beach volleyball
+  const vbX2=cx-80,vbZ2=cz-50,vbH2=getH(vbX2,vbZ2);
+  for(const nx of[-3,3]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,2.5,4),whiteMat);
+    p.position.set(vbX2+nx,vbH2+1.25,vbZ2);g.add(p)}
+  const net2=new THREE.Mesh(new THREE.PlaneGeometry(6,1.5),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.4}));
+  net2.position.set(vbX2,vbH2+1.75,vbZ2);g.add(net2);
+  // Lifeguard tower
+  const lgX=cx-40,lgZ=cz+60,lgH=getH(lgX,lgZ);
+  for(const dx of[-1.5,1.5])for(const dz of[-1,1]){
+    const leg=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,5,4),woodMat2);
+    leg.position.set(lgX+dx,lgH+2.5,lgZ+dz);g.add(leg)}
+  const lgPlatform=new THREE.Mesh(new THREE.BoxGeometry(4,0.15,3),woodMat2);
+  lgPlatform.position.set(lgX,lgH+5,lgZ);g.add(lgPlatform);
+  const lgHut=new THREE.Mesh(new THREE.BoxGeometry(3.5,2.5,2.5),new THREE.MeshStandardMaterial({color:0xcc4444,roughness:.7}));
+  lgHut.position.set(lgX,lgH+6.3,lgZ);lgHut.castShadow=true;g.add(lgHut);
+  const lgRoof=new THREE.Mesh(new THREE.BoxGeometry(4.5,.15,3.5),whiteMat);
+  lgRoof.position.set(lgX,lgH+7.7,lgZ);g.add(lgRoof);
+  // Surfboards leaning against tower
+  for(let i=0;i<3;i++){const sb=new THREE.Mesh(new THREE.BoxGeometry(.15,2,.5),
+    new THREE.MeshStandardMaterial({color:[0xff6600,0x00ccff,0xff00ff][i],roughness:.4}));
+    sb.position.set(lgX+2+i*.5,lgH+1,lgZ);sb.rotation.z=.2;g.add(sb)}
+  // Palm trees along beach
+  const _bpTrunk=new THREE.CylinderGeometry(.1,.2,6,4);
+  const _bpLeaf=new THREE.ConeGeometry(.4,2.5,3,1);
+  const bpTG=[],bpLG=[];
+  for(let i=0;i<15;i++){const x=cx-160+srand()*320,z=cz+100+srand()*60,h=getH(x,z);
+    const th=5+srand()*3;
+    bpTG.push(geoAt(_bpTrunk,x,h+th/2,z,.1*srand(),srand()*6.28,0));
+    for(let j=0;j<4;j++){const a=j/4*Math.PI*2;
+      bpLG.push(geoAt(_bpLeaf,x+Math.cos(a)*.4,h+th-.3,z+Math.sin(a)*.4,-.8+srand()*.2,a,0))}}
+  if(bpTG.length)g.add(new THREE.Mesh(mergeGeometries(bpTG),new THREE.MeshStandardMaterial({color:0x7a5a2a,roughness:.9})));
+  if(bpLG.length)g.add(new THREE.Mesh(mergeGeometries(bpLG),new THREE.MeshStandardMaterial({color:0x228b22,roughness:.8})));
+  scene.add(g);beachGroup=g;
 })();
 
 // ══════════════ NPC SPAWNS ══════════════
@@ -4634,6 +4976,12 @@ function update(dt){
     }
   }
   if(sportsGroup){const sDist=Math.abs(P.x-380)+Math.abs(P.z-850);sportsGroup.visible=sDist<400;}
+  // Biome proximity toggles
+  if(forestGroup){const d=Math.abs(P.x+1800)+Math.abs(P.z);forestGroup.visible=d<1200;}
+  if(desertGroup){const d=Math.abs(P.x)+Math.abs(P.z+1800);desertGroup.visible=d<1200;}
+  if(harborGroup){const d=Math.abs(P.x-1800)+Math.abs(P.z);harborGroup.visible=d<1200;}
+  if(mountainGroup){const d=Math.abs(P.x+1400)+Math.abs(P.z-1400);mountainGroup.visible=d<1200;}
+  if(beachGroup){const d=Math.abs(P.x-1400)+Math.abs(P.z+1400);beachGroup.visible=d<1200;}
 
   // ═══ HUD ═══
   document.getElementById('crosshair').style.display='none';
