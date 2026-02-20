@@ -12,6 +12,16 @@
     updateAuthUI();
   });
 
+  // ══════════ WELCOME OVERLAY ══════════
+
+  window.dismissWelcome = function () {
+    const overlay = document.getElementById('welcome-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      setTimeout(() => overlay.remove(), 400);
+    }
+  };
+
   // ══════════ AUTH UI ══════════
 
   window.updateAuthUI = function () {
