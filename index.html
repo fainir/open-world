@@ -4153,10 +4153,11 @@ function update(dt){
     if(trickTimer>=trickDur){trickActive=false;trickTimer=0}
   }
 
-  // F to mount/dismount
+  // F to mount/dismount or exit wingsuit
   if(fJust){
     fJust=false;
-    if(currentVeh)dismountVehicle();
+    if(isFlying&&!currentVeh){isFlying=false;V.y=Math.min(V.y,0);showTip('Wingsuit off!')}
+    else if(currentVeh)dismountVehicle();
     else{const nv=nearestVehicle();if(nv)mountVehicle(nv)}
   }
   fJust=false;
