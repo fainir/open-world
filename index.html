@@ -217,7 +217,7 @@ R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,1));
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=0.9;
 const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x88bbdd,0.00045);
-const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.5,5000);
+const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.5,2500);
 
 // ══════════════ SKY ══════════════
 const sunDir=new THREE.Vector3(0.45,0.55,-0.3).normalize();
@@ -1251,7 +1251,10 @@ spawnV('snowboard',-CH-90,0,Math.PI);spawnV('snowboard',-CH-120,150,Math.PI);
 
 // ══════════════ FESTIVAL AREA (Midburn-style) ══════════════
 let festivalData=null;
+let festivalGroup;
 (function buildFestival(){
+  const g=new THREE.Group();g.name='festival';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
   const FX=0,FZ=850; // center of festival - much larger area
   const sLC=[0xff0044,0x4400ff,0x00ff44,0xffaa00,0xff00ff,0x00aaff,0xff6600,0x00ffff];
   const emM=c=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:1.8});
@@ -1572,11 +1575,6 @@ let festivalData=null;
     const fl2=new THREE.Mesh(new THREE.ConeGeometry(.3,1.2,5),emM(0xff4400));
     fl2.position.set(FX+sx,5.5,FZ-250);scene.add(fl2)}
 
-  // ─── PARKED VEHICLES ───
-  spawnV('car',FX-25,FZ-260,Math.PI/6);spawnV('car',FX-12,FZ-260,0);spawnV('car',FX+18,FZ-265,.3);
-  spawnV('motorcycle',FX+5,FZ-260,-Math.PI/4);spawnV('motorcycle',FX+30,FZ-258,0);
-  spawnV('bike',FX-35,FZ-255,Math.PI/3);spawnV('bike',FX+40,FZ-260,-.2);
-
   // Flags and banners scattered everywhere
   seedR(7654);
   const flagC=[0xff0044,0x4400ff,0x00ff44,0xffaa00,0xff00ff,0x00aaff,0xff6600,0xffdd00];
@@ -1631,11 +1629,19 @@ let festivalData=null;
   for(let nli=0;nli<5;nli++){const nl=new THREE.Mesh(new THREE.SphereGeometry(.15,5,4),emM([0xff0066,0x00ff66,0x6600ff,0xffaa00,0xff00ff][nli]));
     nl.position.set(arX-3+nli*1.5,4.5,arZ-3);scene.add(nl)}
 
+  scene.add=_sa;scene.add(g);festivalGroup=g;
   festivalData={wheelGrp,dfTiles};
 })();
+// Festival parked vehicles (outside group so they stay visible when driven away)
+spawnV('car',-25,590,Math.PI/6);spawnV('car',-12,590,0);spawnV('car',18,585,.3);
+spawnV('motorcycle',5,590,-Math.PI/4);spawnV('motorcycle',30,592,0);
+spawnV('bike',-35,595,Math.PI/3);spawnV('bike',40,590,-.2);
 
 // ══════════════ SPORTS & EXTREME SPORTS COMPLEX ══════════════
+let sportsGroup;
 (function buildSportsComplex(){
+  const g=new THREE.Group();g.name='sports';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
   const SX=380,SZ=850; // center - east of festival
   const gM=c=>new THREE.MeshStandardMaterial({color:c,roughness:.75});
   const lnM=new THREE.MeshStandardMaterial({color:0xffffff});
@@ -2318,6 +2324,7 @@ let festivalData=null;
   const vbNet=new THREE.Mesh(new THREE.PlaneGeometry(6,1.5),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.4}));
   vbNet.position.set(vbX,1.75,vbZ);scene.add(vbNet);
 
+  scene.add=_sa;scene.add(g);sportsGroup=g;
 })();
 
 // ══════════════ NPC SPAWNS ══════════════
@@ -4617,6 +4624,7 @@ function update(dt){
   updateNPCs(dt);
   if(festivalData){
     const fDist=Math.abs(P.x)+Math.abs(P.z-850);
+    if(festivalGroup)festivalGroup.visible=fDist<400;
     if(fDist<250){
       festivalData.wheelGrp.rotation.z+=dt*.2;
       const t=clock.elapsedTime;
@@ -4625,6 +4633,7 @@ function update(dt){
         festivalData.dfTiles[i].material.emissiveIntensity=.15+Math.sin(phase)*.35}
     }
   }
+  if(sportsGroup){const sDist=Math.abs(P.x-380)+Math.abs(P.z-850);sportsGroup.visible=sDist<400;}
 
   // ═══ HUD ═══
   document.getElementById('crosshair').style.display='none';
