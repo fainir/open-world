@@ -1,13 +1,13 @@
 <!-- Open World Studio Overlay — injected into game HTML at serve time -->
 <style id="ow-overlay-style">
-#ow-fab{position:fixed;bottom:24px;right:24px;z-index:9999;height:44px;border-radius:22px;
-  background:linear-gradient(135deg,#6366f1,#a78bfa);border:none;cursor:pointer;color:#fff;font-size:14px;
-  box-shadow:0 4px 20px rgba(99,102,241,.4);display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:0 18px;font-weight:600;letter-spacing:.02em;
-  transition:transform .2s,box-shadow .2s,padding .2s;font-family:'Inter',sans-serif;pointer-events:all}
-#ow-fab:hover{transform:scale(1.05);box-shadow:0 6px 28px rgba(99,102,241,.6)}
-#ow-fab .ow-fab-icon{font-size:18px;line-height:1}
-#ow-fab.ow-fab-close{width:44px;padding:0;border-radius:50%;font-size:20px}
+#ow-fab{position:fixed;top:12px;right:12px;z-index:9999;height:36px;border-radius:8px;
+  background:rgba(99,102,241,.85);border:none;cursor:pointer;color:#fff;font-size:13px;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:0 14px;font-weight:600;letter-spacing:.02em;
+  transition:background .15s;font-family:'Inter',sans-serif;pointer-events:all}
+#ow-fab:hover{background:rgba(99,102,241,1)}
+#ow-fab .ow-fab-icon{font-size:14px;line-height:1}
+#ow-fab.ow-fab-close{border-radius:8px;width:auto;padding:0 14px}
 #ow-fab.ow-has-update{animation:ow-pulse 2s infinite}
 @keyframes ow-pulse{0%,100%{box-shadow:0 4px 20px rgba(99,102,241,.4)}50%{box-shadow:0 4px 30px rgba(99,102,241,.8)}}
 
@@ -172,8 +172,8 @@
 
 @media(max-width:600px){
   #ow-panel{width:100vw;max-width:100vw}
-  #ow-fab{height:40px;bottom:16px;right:16px;font-size:13px;padding:0 14px}
-  #ow-fab.ow-fab-close{width:40px;padding:0}
+  #ow-fab{height:34px;top:8px;right:8px;font-size:12px;padding:0 12px}
+  #ow-fab.ow-fab-close{padding:0 12px}
 }
 </style>
 
@@ -338,7 +338,7 @@ const Auth={
 function openPanel(){
   document.exitPointerLock&&document.exitPointerLock();
   panel.classList.add('ow-open');panelOpen=true;
-  fab.innerHTML='&times;';fab.classList.add('ow-fab-close');fab.title='Close Chat';
+  fab.innerHTML='&times; Close';fab.classList.add('ow-fab-close');fab.title='Close Chat';
   localStorage.setItem(SK.PANEL,'true');
   input.focus();
 }
