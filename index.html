@@ -18,13 +18,7 @@ canvas{display:block}
 #overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);padding:3px 8px}
 #overlay .controls .ctrl-key .cl{color:rgba(255,255,255,0.6)}
 #hud{position:fixed;z-index:5;pointer-events:none;display:none}
-#speed{position:fixed;bottom:30px;left:30px;font-size:2em;font-weight:bold;color:#fff;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(0,150,255,0.5)}
-#altitude{position:fixed;bottom:65px;left:30px;font-size:0.9em;color:#aaddff;opacity:0.8;font-family:'Courier New',monospace}
-#mode-display{position:fixed;top:25px;left:50%;transform:translateX(-50%);font-size:1.1em;letter-spacing:0.2em;color:#fff;font-family:'Courier New',monospace;text-shadow:0 0 15px rgba(255,100,0,0.6)}
 #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(255,255,255,0.3);display:none;font-family:monospace}
-#boost-bar{position:fixed;bottom:30px;right:30px;width:160px;height:5px;background:rgba(255,255,255,0.15);border-radius:3px}
-#boost-fill{width:100%;height:100%;border-radius:3px;background:linear-gradient(90deg,#ff4400,#ffaa00);transition:width 0.15s}
-#boost-label{position:fixed;bottom:40px;right:30px;font-size:0.65em;color:#ff8844;opacity:0.7;font-family:'Courier New',monospace;letter-spacing:0.1em}
 #score{position:fixed;top:25px;right:30px;font-size:1.4em;color:#ffdd00;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(255,200,0,0.5)}
 #combo{position:fixed;top:55px;right:30px;font-size:0.9em;color:#ff8800;font-family:'Courier New',monospace;opacity:0}
 #trick-display{position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);font-size:2.8em;font-weight:bold;color:#ffee00;text-shadow:0 0 30px rgba(255,200,0,0.8),0 0 60px rgba(255,100,0,0.4);opacity:0;transition:opacity 0.2s;font-family:'Courier New',monospace;pointer-events:none;white-space:nowrap}
@@ -80,26 +74,21 @@ canvas{display:block}
 <div class="sub">Vehicle Playground</div>
 <div class="click">Click to Play</div>
 <div class="controls">
-<span class="ctrl-key"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="cl">Move</span></span>
-<span class="ctrl-key"><kbd>&uarr;</kbd><kbd>&darr;</kbd><span class="cl">Move / Pitch</span></span>
-<span class="ctrl-key"><kbd>&larr;</kbd><kbd>&rarr;</kbd><span class="cl">Turn</span></span>
+<span class="ctrl-key"><kbd>WASD</kbd><span class="cl">/</span><kbd>Arrows</kbd><span class="cl">Move</span></span>
 <span class="ctrl-key"><kbd>Space</kbd><span class="cl">Jump / Fly</span></span>
 <span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
 <span class="ctrl-key"><kbd>Mouse</kbd><span class="cl">Look</span></span>
 <span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
+<span class="ctrl-key"><kbd>E</kbd><span class="cl">Enter</span></span>
 <span class="ctrl-key"><kbd>F</kbd><span class="cl">Vehicle</span></span>
 <span class="ctrl-key"><kbd>V</kbd><span class="cl">Vehicle Menu</span></span>
 <span class="ctrl-key"><kbd>B</kbd><span class="cl">Weapons</span></span>
 <span class="ctrl-key"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span class="cl">Tricks</span></span>
+<span class="ctrl-key"><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd><kbd>8</kbd><span class="cl">Fight</span></span>
 </div>
 </div>
 <div id="hud">
-<div id="speed">0 km/h</div>
-<div id="altitude">ALT: 0m</div>
-<div id="mode-display">WALKING</div>
 <div id="crosshair">+</div>
-<div id="boost-label">BOOST</div>
-<div id="boost-bar"><div id="boost-fill"></div></div>
 <div id="score"></div>
 <div id="combo"></div>
 <div id="trick-display"></div>
@@ -110,17 +99,17 @@ canvas{display:block}
 <div style="display:none"><button id="veh-btn"></button><button id="wpn-btn"></button></div>
 <div id="bottom-bar">
 <div id="controls-bar">
-<span class="ctrl-key"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="cl">Move</span></span>
-<span class="ctrl-key"><kbd>&uarr;</kbd><kbd>&darr;</kbd><span class="cl">Move/Pitch</span></span>
-<span class="ctrl-key"><kbd>&larr;</kbd><kbd>&rarr;</kbd><span class="cl">Turn</span></span>
+<span class="ctrl-key"><kbd>WASD</kbd><span class="cl">/</span><kbd>Arrows</kbd><span class="cl">Move</span></span>
 <span class="ctrl-key"><kbd>Space</kbd><span class="cl">Jump/Fly</span></span>
 <span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
 <span class="ctrl-key"><kbd>Mouse</kbd><span class="cl">Look</span></span>
 <span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
+<span class="ctrl-key"><kbd>E</kbd><span class="cl">Enter</span></span>
 <span class="ctrl-key"><kbd>F</kbd><span class="cl">Vehicle</span></span>
 <span class="ctrl-key"><kbd>V</kbd><span class="cl">Vehicles</span></span>
 <span class="ctrl-key"><kbd>B</kbd><span class="cl">Weapons</span></span>
 <span class="ctrl-key"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span class="cl">Tricks</span></span>
+<span class="ctrl-key"><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd><kbd>8</kbd><span class="cl">Fight</span></span>
 </div>
 </div>
 <div id="wpn-menu">
@@ -144,6 +133,9 @@ canvas{display:block}
 <script type="module">
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {buildZones} from './zones/_registry.js';
+import {ZoneManager} from './zones/_zone-manager.js';
+import {ZoneUI} from './zones/_zone-ui.js';
 
 // ══════════════ ERROR DISPLAY ══════════════
 window.onerror=(msg,src,line)=>{
@@ -300,7 +292,7 @@ for(let ti=0;ti<20;ti++){
   texPool.push(new THREE.CanvasTexture(c));
 }
 seedR(777);
-const emptyLots=[];
+const emptyLots=[],enterableSpots=[];
 for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
   const cx=bx+(BK-ST)/2,cz=bz+(BK-ST)/2;
   if(srand()<.14){emptyLots.push({cx,cz,bx,bz});continue}
@@ -374,6 +366,7 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
     const sign=box(rw*.5,.6,.08,signC);sign.material=new THREE.MeshStandardMaterial({color:signC,emissive:signC,emissiveIntensity:.4});
     sign.position.set(cx,rH+.4,cz+rd/2+.05);scene.add(sign);
     bldgs.push({minX:cx-rw/2-.3,maxX:cx+rw/2+.3,minZ:cz-rd/2-.3,maxZ:cz+rd/2+.3,h:rH});
+    enterableSpots.push({type:'restaurant',cx,cz:cz+rd/2,h:rH});
   }
   // ─── Standalone shop ───
   else if(bType<.56&&h<25){
@@ -392,6 +385,7 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
     // Stripe canopy
     const can=box(sw2+.4,.04,1,shopColors);can.position.set(cx,sH-.2,cz+sd2/2+.5);can.rotation.x=.12;scene.add(can);
     bldgs.push({minX:cx-sw2/2-.3,maxX:cx+sw2/2+.3,minZ:cz-sd2/2-.3,maxZ:cz+sd2/2+.3,h:sH});
+    enterableSpots.push({type:'shop',cx,cz:cz+sd2/2,h:sH});
   }
   // ─── Rave / nightclub ───
   else if(bType<.62&&h<35){
@@ -412,6 +406,7 @@ for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
       new THREE.MeshStandardMaterial({color:neonC,emissive:neonC,emissiveIntensity:1,side:THREE.DoubleSide}));
     glow.rotation.x=-Math.PI/2;glow.position.set(cx,.12,cz+cd/2+1.5);scene.add(glow);
     bldgs.push({minX:cx-cw/2-.3,maxX:cx+cw/2+.3,minZ:cz-cd/2-.3,maxZ:cz+cd/2+.3,h:cH});
+    enterableSpots.push({type:'rave',cx,cz:cz+cd/2,h:cH});
   }
   // ─── Standard box building ───
   else{
@@ -870,6 +865,12 @@ const VDEFS={
 };
 // Parkour tricks
 const parkourTricks=[{n:'Front Flip',d:.7,ax:'x',ag:Math.PI*2},{n:'Backflip',d:.8,ax:'x',ag:-Math.PI*2},{n:'Spin',d:.6,ax:'y',ag:Math.PI*2},{n:'Wall Run',d:.9,ax:'x',ag:Math.PI}];
+const fightMoves=[
+  {n:'Punch',d:.35,ax:'x',ag:.4,range:2.5,dmg:20},
+  {n:'Kick',d:.45,ax:'x',ag:.6,range:3,dmg:30},
+  {n:'Uppercut',d:.4,ax:'x',ag:-.5,range:2,dmg:35},
+  {n:'Roundhouse',d:.55,ax:'y',ag:Math.PI,range:3.5,dmg:40}
+];
 
 // ══════════════ VEHICLE MESH FACTORIES ══════════════
 function mkCar(){const g=new THREE.Group(),c=[0xcc2222,0x2255cc,0xeeeeee,0xdddd22,0x22cc44,0x111111][Math.floor(srand()*6)];
@@ -1555,6 +1556,612 @@ let festivalData=null;
   festivalData={wheelGrp,dfTiles};
 })();
 
+// ══════════════ SPORTS & EXTREME SPORTS COMPLEX ══════════════
+(function buildSportsComplex(){
+  const SX=380,SZ=850; // center - east of festival
+  const gM=c=>new THREE.MeshStandardMaterial({color:c,roughness:.75});
+  const lnM=new THREE.MeshStandardMaterial({color:0xffffff});
+  const fenceM=new THREE.MeshStandardMaterial({color:0x888888,transparent:true,opacity:.35,side:THREE.DoubleSide});
+  const emM2=c=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.6});
+
+  // ─── GROUND / MAIN PLAZA ───
+  const mainGnd=new THREE.Mesh(new THREE.PlaneGeometry(420,380),gM(0x606060));
+  mainGnd.rotation.x=-Math.PI/2;mainGnd.position.set(SX,.03,SZ);scene.add(mainGnd);
+  // Entrance path from festival
+  const ePath=new THREE.Mesh(new THREE.PlaneGeometry(8,120),gM(0x777777));
+  ePath.rotation.x=-Math.PI/2;ePath.position.set(SX-150,.04,SZ);scene.add(ePath);
+
+  // ═══════════════════════════════════════
+  //         FOOTBALL / SOCCER STADIUM
+  // ═══════════════════════════════════════
+  const stX=SX-120,stZ=SZ-80;
+  // Field
+  const field=new THREE.Mesh(new THREE.PlaneGeometry(68,105),gM(0x2a8a2a));
+  field.rotation.x=-Math.PI/2;field.position.set(stX,.12,stZ);scene.add(field);
+  // Field lines
+  const mkLine=(x,z,w,d)=>{const l=new THREE.Mesh(new THREE.PlaneGeometry(w,d),lnM);l.rotation.x=-Math.PI/2;l.position.set(x,.13,z);scene.add(l)};
+  mkLine(stX,stZ,68,.15); // center
+  const cCirc=new THREE.Mesh(new THREE.RingGeometry(9,9.15,24),lnM);cCirc.rotation.x=-Math.PI/2;cCirc.position.set(stX,.13,stZ);scene.add(cCirc);
+  mkLine(stX,stZ-52.5,68,.15);mkLine(stX,stZ+52.5,68,.15); // end lines
+  mkLine(stX-34,stZ,.15,105);mkLine(stX+34,stZ,.15,105); // sidelines
+  // Penalty boxes
+  for(const gz of[-52.5,52.5]){mkLine(stX,stZ+gz*.65,40,.12);mkLine(stX-20,stZ+gz*.82,.12,Math.abs(gz*.35));mkLine(stX+20,stZ+gz*.82,.12,Math.abs(gz*.35))}
+  // Goals
+  for(const gz of[-52.5,52.5]){const goW=7.32,goH=2.44;
+    const gl=cyl(.06,.06,goH,0xffffff);gl.position.set(stX-goW/2,goH/2,stZ+gz);scene.add(gl);
+    const gr=cyl(.06,.06,goH,0xffffff);gr.position.set(stX+goW/2,goH/2,stZ+gz);scene.add(gr);
+    const gt=box(goW,.06,.06,0xffffff);gt.position.set(stX,goH,stZ+gz);scene.add(gt);
+    const net=new THREE.Mesh(new THREE.PlaneGeometry(goW,goH),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.25,side:THREE.DoubleSide}));
+    net.position.set(stX,goH/2,stZ+gz+(gz>0?1.5:-1.5));scene.add(net)}
+  // Stadium stands (4 sides)
+  for(const side of[{dx:-40,dz:0,ry:Math.PI/2,w:105},{dx:40,dz:0,ry:-Math.PI/2,w:105},{dx:0,dz:-60,ry:0,w:68},{dx:0,dz:60,ry:Math.PI,w:68}]){
+    const stand=box(side.w,8,12,0x555555);stand.position.set(stX+side.dx,4,stZ+side.dz);scene.add(stand);
+    // Seats (colored rows)
+    for(let r=0;r<3;r++){const seat=box(side.w-2,.3,3,[0x3344cc,0xcc3344,0x33cc44][r]);
+      seat.position.set(stX+side.dx,2+r*2.5,stZ+side.dz);scene.add(seat)}}
+  // Floodlights (4 corners)
+  for(const cx of[-40,40])for(const cz of[-60,60]){
+    const pole=cyl(.15,.15,25,0x888888);pole.position.set(stX+cx,12.5,stZ+cz);scene.add(pole);
+    const lBox=box(2,1,1.5,0xdddddd);lBox.position.set(stX+cx,25,stZ+cz);scene.add(lBox)}
+
+  // ═══════════════════════════════════════
+  //         BASKETBALL COURTS (2)
+  // ═══════════════════════════════════════
+  for(let bc=0;bc<2;bc++){
+    const bx=SX-20+bc*35,bz=SZ-100;
+    const ct=new THREE.Mesh(new THREE.PlaneGeometry(15,28),gM(0xcc7744));ct.rotation.x=-Math.PI/2;ct.position.set(bx,.12,bz);scene.add(ct);
+    mkLine(bx,bz,15,.12);
+    const cc=new THREE.Mesh(new THREE.RingGeometry(1.8,1.95,16),lnM);cc.rotation.x=-Math.PI/2;cc.position.set(bx,.13,bz);scene.add(cc);
+    // 3-point arcs
+    for(const zs of[-1,1]){const arc=new THREE.Mesh(new THREE.RingGeometry(6,6.12,16,1,0,Math.PI),lnM);
+      arc.rotation.x=-Math.PI/2;arc.rotation.z=zs>0?0:Math.PI;arc.position.set(bx,.13,bz+zs*8);scene.add(arc)}
+    // Hoops
+    for(const hz of[-13,13]){
+      const pole=cyl(.08,.08,3.5,0x888888);pole.position.set(bx,1.75,bz+hz);scene.add(pole);
+      const bb=box(1.2,.8,.05,0xffffff);bb.position.set(bx,3.2,bz+hz);scene.add(bb);
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(.23,.02,6,12),new THREE.MeshStandardMaterial({color:0xff4400}));
+      rim.rotation.x=Math.PI/2;rim.position.set(bx,3,bz+hz+(hz>0?-.3:.3));scene.add(rim)}}
+
+  // ═══════════════════════════════════════
+  //         TENNIS COURTS (4)
+  // ═══════════════════════════════════════
+  for(let tc=0;tc<4;tc++){
+    const tx=SX+60+tc%2*18,tz=SZ-100+(tc>=2?30:0);
+    const ct=new THREE.Mesh(new THREE.PlaneGeometry(11,24),gM(0x2266aa));ct.rotation.x=-Math.PI/2;ct.position.set(tx,.12,tz);scene.add(ct);
+    mkLine(tx,tz,11,.1);mkLine(tx,tz-12,11,.1);mkLine(tx,tz+12,11,.1);
+    mkLine(tx-5.5,tz,.1,24);mkLine(tx+5.5,tz,.1,24);
+    // Service boxes
+    mkLine(tx-5.5,tz-6,11,.08);mkLine(tx+5.5,tz+6,11,.08);mkLine(tx,tz,.08,24);
+    // Net
+    const np1=cyl(.04,.04,1.2,0x666666);np1.position.set(tx-6,.6,tz);scene.add(np1);
+    const np2=cyl(.04,.04,1.2,0x666666);np2.position.set(tx+6,.6,tz);scene.add(np2);
+    const tNet=new THREE.Mesh(new THREE.PlaneGeometry(12,1),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.4,side:THREE.DoubleSide}));
+    tNet.position.set(tx,.7,tz);scene.add(tNet)}
+
+  // ═══════════════════════════════════════
+  //         OLYMPIC SWIMMING POOL
+  // ═══════════════════════════════════════
+  const pX=SX+120,pZ=SZ-80;
+  // Pool basin
+  const poolW=25,poolD=50;
+  const poolFloor=new THREE.Mesh(new THREE.PlaneGeometry(poolW,poolD),
+    new THREE.MeshStandardMaterial({color:0x1166aa,roughness:.2}));
+  poolFloor.rotation.x=-Math.PI/2;poolFloor.position.set(pX,-.5,pZ);scene.add(poolFloor);
+  // Water surface
+  const poolWater=new THREE.Mesh(new THREE.PlaneGeometry(poolW,poolD),
+    new THREE.MeshStandardMaterial({color:0x44aaee,transparent:true,opacity:.55,roughness:.1,metalness:.2}));
+  poolWater.rotation.x=-Math.PI/2;poolWater.position.set(pX,.05,pZ);scene.add(poolWater);
+  // Pool edge/deck
+  const deckM=gM(0xccccbb);
+  for(const dz of[-poolD/2-2,poolD/2+2]){const d=new THREE.Mesh(new THREE.PlaneGeometry(poolW+4,4),deckM);d.rotation.x=-Math.PI/2;d.position.set(pX,.08,pZ+dz);scene.add(d)}
+  for(const dx of[-poolW/2-2,poolW/2+2]){const d=new THREE.Mesh(new THREE.PlaneGeometry(4,poolD+8),deckM);d.rotation.x=-Math.PI/2;d.position.set(pX+dx,.08,pZ);scene.add(d)}
+  // Lane lines (8 lanes)
+  for(let ln=1;ln<8;ln++){const lx=pX-poolW/2+ln*(poolW/8);
+    const lane=new THREE.Mesh(new THREE.PlaneGeometry(.12,poolD-2),new THREE.MeshStandardMaterial({color:0xffdd00,transparent:true,opacity:.6}));
+    lane.rotation.x=-Math.PI/2;lane.position.set(lx,.06,pZ);scene.add(lane)}
+  // Starting blocks
+  for(let sb=0;sb<8;sb++){const sbx=pX-poolW/2+sb*(poolW/8)+poolW/16;
+    const block=box(.6,.4,.8,0xdddddd);block.position.set(sbx,.2,pZ-poolD/2-1);scene.add(block)}
+  // Diving boards (high dive)
+  const divX=pX+poolW/2+8;
+  for(let db=0;db<3;db++){const h=3+db*3;
+    const plat=box(3,.2,2,0xcccccc);plat.position.set(divX,h,pZ+poolD/2-5);scene.add(plat);
+    const board=box(1,.1,4,0x4488cc);board.position.set(divX,h+.15,pZ+poolD/2-2);scene.add(board);
+    const ladder=cyl(.06,.06,h,0x888888);ladder.position.set(divX+1.5,h/2,pZ+poolD/2-5);scene.add(ladder)}
+
+  // ═══════════════════════════════════════
+  //         ATHLETICS / RUNNING TRACK
+  // ═══════════════════════════════════════
+  const trX=SX-120,trZ=SZ+80;
+  // Oval track (400m scaled)
+  const trackW=50,trackH=90;
+  // Track surface (red)
+  const trackOuter=new THREE.Mesh(new THREE.PlaneGeometry(trackW+20,trackH+20),gM(0xcc3322));
+  trackOuter.rotation.x=-Math.PI/2;trackOuter.position.set(trX,.11,trZ);scene.add(trackOuter);
+  // Infield (green)
+  const infield=new THREE.Mesh(new THREE.PlaneGeometry(trackW-8,trackH-8),gM(0x2a8a2a));
+  infield.rotation.x=-Math.PI/2;infield.position.set(trX,.12,trZ);scene.add(infield);
+  // Lane markings (8 lanes)
+  for(let ln=0;ln<=8;ln++){const r=trackW/2-4+ln*1.2;
+    const ring=new THREE.Mesh(new THREE.RingGeometry(r,r+.08,32),lnM);
+    ring.rotation.x=-Math.PI/2;ring.position.set(trX,.125,trZ);scene.add(ring)}
+  // Straight finish line
+  mkLine(trX+trackW/2+4,trZ,.15,16);
+  // Long jump pit
+  const ljX=trX+trackW/2+15,ljZ=trZ-20;
+  const ljRun=new THREE.Mesh(new THREE.PlaneGeometry(2,30),gM(0xcc3322));ljRun.rotation.x=-Math.PI/2;ljRun.position.set(ljX,.12,ljZ-20);scene.add(ljRun);
+  const ljPit=new THREE.Mesh(new THREE.PlaneGeometry(3,8),gM(0xddcc88));ljPit.rotation.x=-Math.PI/2;ljPit.position.set(ljX,.1,ljZ);scene.add(ljPit);
+  const ljBoard=box(1,.05,.15,0xffffff);ljBoard.position.set(ljX,.12,ljZ-4);scene.add(ljBoard);
+  // Shot put circle
+  const spX=trX-trackW/2-10,spZ=trZ+15;
+  const spCircle=new THREE.Mesh(new THREE.CircleGeometry(1.1,16),gM(0x999999));spCircle.rotation.x=-Math.PI/2;spCircle.position.set(spX,.12,spZ);scene.add(spCircle);
+  const spRing=new THREE.Mesh(new THREE.RingGeometry(1.05,1.15,16),lnM);spRing.rotation.x=-Math.PI/2;spRing.position.set(spX,.13,spZ);scene.add(spRing);
+  // High jump area
+  const hjX=trX,hjZ=trZ+trackH/2+8;
+  const hjMat=new THREE.Mesh(new THREE.PlaneGeometry(5,3),gM(0x3355aa));hjMat.rotation.x=-Math.PI/2;hjMat.position.set(hjX,.12,hjZ);scene.add(hjMat);
+  const hjPole1=cyl(.04,.04,2.5,0x888888);hjPole1.position.set(hjX-2.5,1.25,hjZ);scene.add(hjPole1);
+  const hjPole2=cyl(.04,.04,2.5,0x888888);hjPole2.position.set(hjX+2.5,1.25,hjZ);scene.add(hjPole2);
+  const hjBar=cyl(.02,.02,5,0xffdd00);hjBar.rotation.z=Math.PI/2;hjBar.position.set(hjX,2,hjZ);scene.add(hjBar);
+  // Pole vault
+  const pvX=trX+trackW/2+15,pvZ=trZ+20;
+  const pvRun=new THREE.Mesh(new THREE.PlaneGeometry(2,35),gM(0xcc3322));pvRun.rotation.x=-Math.PI/2;pvRun.position.set(pvX,.12,pvZ-20);scene.add(pvRun);
+  const pvMat=new THREE.Mesh(new THREE.PlaneGeometry(5,5),gM(0x3355aa));pvMat.rotation.x=-Math.PI/2;pvMat.position.set(pvX,.12,pvZ+3);scene.add(pvMat);
+  const pvP1=cyl(.04,.04,5,0x888888);pvP1.position.set(pvX-2,2.5,pvZ);scene.add(pvP1);
+  const pvP2=cyl(.04,.04,5,0x888888);pvP2.position.set(pvX+2,2.5,pvZ);scene.add(pvP2);
+  const pvBar=cyl(.015,.015,4.5,0xffdd00);pvBar.rotation.z=Math.PI/2;pvBar.position.set(pvX,4.5,pvZ);scene.add(pvBar);
+
+  // ═══════════════════════════════════════
+  //         VOLLEYBALL COURTS (2 beach)
+  // ═══════════════════════════════════════
+  for(let vc=0;vc<2;vc++){
+    const vx=SX+10+vc*22,vz=SZ-50;
+    const sand=new THREE.Mesh(new THREE.PlaneGeometry(16,8),gM(0xddcc88));sand.rotation.x=-Math.PI/2;sand.position.set(vx,.1,vz);scene.add(sand);
+    const vp1=cyl(.05,.05,2.5,0x888888);vp1.position.set(vx-8,1.25,vz);scene.add(vp1);
+    const vp2=cyl(.05,.05,2.5,0x888888);vp2.position.set(vx+8,1.25,vz);scene.add(vp2);
+    const vNet=new THREE.Mesh(new THREE.PlaneGeometry(16,1),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.45,side:THREE.DoubleSide}));
+    vNet.position.set(vx,2,vz);scene.add(vNet)}
+
+  // ═══════════════════════════════════════
+  //         BASEBALL DIAMOND
+  // ═══════════════════════════════════════
+  const bbX=SX+130,bbZ=SZ+20;
+  // Outfield
+  const ofGeo=new THREE.CircleGeometry(40,32,0,Math.PI/2);
+  const outfield=new THREE.Mesh(ofGeo,gM(0x2a8a2a));outfield.rotation.x=-Math.PI/2;outfield.rotation.z=Math.PI/4;outfield.position.set(bbX,.11,bbZ);scene.add(outfield);
+  // Infield dirt
+  const ifDirt=new THREE.Mesh(new THREE.CircleGeometry(18,4),gM(0xbb9966));ifDirt.rotation.x=-Math.PI/2;ifDirt.rotation.z=Math.PI/4;ifDirt.position.set(bbX,.12,bbZ);scene.add(ifDirt);
+  // Bases (diamond)
+  const baseC=0xffffff;
+  for(const bp of[[0,-13],[13,0],[0,13],[-13,0]]){
+    const base=box(.4,.05,.4,baseC);base.position.set(bbX+bp[0],.13,bbZ+bp[1]);scene.add(base)}
+  // Pitcher's mound
+  const mound=new THREE.Mesh(new THREE.CylinderGeometry(1.2,.8,.3,8),gM(0xbb9966));mound.position.set(bbX,.15,bbZ);scene.add(mound);
+  // Foul poles
+  const fp1=cyl(.04,.04,12,0xffdd00);fp1.position.set(bbX+28,.01,bbZ-28);scene.add(fp1);
+  const fp2=cyl(.04,.04,12,0xffdd00);fp2.position.set(bbX-28,.01,bbZ-28);scene.add(fp2);
+  // Backstop fence
+  const backstop=new THREE.Mesh(new THREE.PlaneGeometry(20,6),fenceM);
+  backstop.position.set(bbX,3,bbZ-16);scene.add(backstop);
+
+  // ═══════════════════════════════════════
+  //         INDOOR SPORTS HALL (box building)
+  // ═══════════════════════════════════════
+  const hallX=SX-30,hallZ=SZ+60;
+  // Main structure
+  const hall=box(50,12,35,0x667788);hall.position.set(hallX,6,hallZ);scene.add(hall);
+  // Roof (slightly sloped look via different color top)
+  const hallRoof=box(52,1,37,0x556677);hallRoof.position.set(hallX,12.5,hallZ);scene.add(hallRoof);
+  // Entrance
+  const hallDoor=box(6,4,.5,0x3388aa);hallDoor.position.set(hallX,2,hallZ-17.5);scene.add(hallDoor);
+  // Windows
+  for(let w=0;w<6;w++){const win=box(3,2,.3,0x88bbdd);win.material=new THREE.MeshStandardMaterial({color:0x88bbdd,transparent:true,opacity:.4});
+    win.position.set(hallX-20+w*8,8,hallZ-17.5);scene.add(win)}
+  // Sign
+  const hallSign=box(12,2,.2,0x222244);hallSign.material=new THREE.MeshStandardMaterial({color:0x222244,emissive:0x4466aa,emissiveIntensity:.3});
+  hallSign.position.set(hallX,11,hallZ-17.7);scene.add(hallSign);
+
+  // ═══════════════════════════════════════
+  //         GYMNASIUM / BOXING RING
+  // ═══════════════════════════════════════
+  const gymX=SX+50,gymZ=SZ+65;
+  const gym=box(30,10,25,0x886655);gym.position.set(gymX,5,gymZ);scene.add(gym);
+  const gymRoof=box(32,.8,27,0x775544);gymRoof.position.set(gymX,10.4,gymZ);scene.add(gymRoof);
+  // Boxing ring outside
+  const ringX=gymX+25,ringZ=gymZ;
+  const ringFloor=box(7,.8,7,0xdddddd);ringFloor.position.set(ringX,.4,ringZ);scene.add(ringFloor);
+  const ringMat=new THREE.Mesh(new THREE.PlaneGeometry(6,6),gM(0x224488));ringMat.rotation.x=-Math.PI/2;ringMat.position.set(ringX,.82,ringZ);scene.add(ringMat);
+  // Ring posts & ropes
+  for(const rx of[-3,3])for(const rz of[-3,3]){
+    const post=cyl(.08,.08,1.8,0xcccccc);post.position.set(ringX+rx,1.7,ringZ+rz);scene.add(post)}
+  for(let rh=0;rh<3;rh++){const ry=1+rh*.35;const ropeC=[0xff0000,0xffffff,0x0000ff][rh];
+    for(const side of[[3,0,0,6],[0,3,6,0],[-3,0,0,6],[0,-3,6,0]]){
+      const rope=cyl(.02,.02,6,ropeC);rope.rotation.z=side[2]?Math.PI/2:0;rope.rotation.x=side[3]?Math.PI/2:0;
+      rope.position.set(ringX+side[0],ry+.8,ringZ+side[1]);scene.add(rope)}}
+
+  // ═══════════════════════════════════════
+  //         SKATEPARK
+  // ═══════════════════════════════════════
+  const skX=SX-160,skZ=SZ+30;
+  // Ground pad
+  const skGnd=new THREE.Mesh(new THREE.PlaneGeometry(50,45),gM(0x888888));skGnd.rotation.x=-Math.PI/2;skGnd.position.set(skX,.06,skZ);scene.add(skGnd);
+  // Half pipe
+  const hpGeo=new THREE.CylinderGeometry(6,6,18,12,1,true,0,Math.PI);
+  const halfpipe=new THREE.Mesh(hpGeo,gM(0x999999));halfpipe.rotation.z=Math.PI/2;halfpipe.position.set(skX-10,0,skZ-8);scene.add(halfpipe);
+  // Quarter pipes (corners)
+  for(const qp of[[-18,-15,0],[-18,10,Math.PI/2],[18,-15,Math.PI],[18,10,-Math.PI/2]]){
+    const qGeo=new THREE.CylinderGeometry(4,4,8,8,1,true,0,Math.PI/2);
+    const qMesh=new THREE.Mesh(qGeo,gM(0x999999));qMesh.rotation.set(0,qp[2],Math.PI/2);
+    qMesh.position.set(skX+qp[0],0,skZ+qp[1]);scene.add(qMesh)}
+  // Rails (grind rails)
+  for(let r=0;r<4;r++){const rx=skX+5+r*5,rz=skZ+5;
+    const rail=cyl(.03,.03,6,0xcccccc);rail.rotation.z=Math.PI/2;rail.position.set(rx,.6,rz);scene.add(rail);
+    const rSupp1=cyl(.03,.03,.6,0x888888);rSupp1.position.set(rx-2.5,.3,rz);scene.add(rSupp1);
+    const rSupp2=cyl(.03,.03,.6,0x888888);rSupp2.position.set(rx+2.5,.3,rz);scene.add(rSupp2)}
+  // Fun box (pyramid ramp)
+  const funbox=box(5,1.5,5,0x999999);funbox.position.set(skX+5,.75,skZ-5);scene.add(funbox);
+  // Bowl
+  const bowlGeo=new THREE.SphereGeometry(8,16,8,0,Math.PI*2,Math.PI/2,Math.PI/2);
+  const bowl=new THREE.Mesh(bowlGeo,gM(0x888888));bowl.position.set(skX+12,0,skZ-12);scene.add(bowl);
+  // Ledges
+  for(let lg=0;lg<3;lg++){const ledge=box(6,.5,.8,0xaaaaaa);ledge.position.set(skX-5+lg*8,.25,skZ+15);scene.add(ledge)}
+
+  // ═══════════════════════════════════════
+  //         BMX / DIRT TRACK
+  // ═══════════════════════════════════════
+  const bmxX=SX-160,bmxZ=SZ+90;
+  const bmxGnd=new THREE.Mesh(new THREE.PlaneGeometry(50,35),gM(0x8a7a5a));bmxGnd.rotation.x=-Math.PI/2;bmxGnd.position.set(bmxX,.06,bmxZ);scene.add(bmxGnd);
+  // Dirt jumps (tabletops)
+  for(let dj=0;dj<6;dj++){const djx=bmxX-20+dj*8;
+    const jump=new THREE.Mesh(new THREE.CylinderGeometry(2,3,2,8,1,false,0,Math.PI),gM(0x8a6a3a));
+    jump.rotation.z=Math.PI;jump.rotation.y=Math.PI/2;jump.position.set(djx,1,bmxZ-5);scene.add(jump)}
+  // Berm (banked turn)
+  const berm=new THREE.Mesh(new THREE.CylinderGeometry(8,10,2,12,1,true,0,Math.PI/2),gM(0x8a6a3a));
+  berm.position.set(bmxX+15,1,bmxZ+8);scene.add(berm);
+  // Start gate
+  const gate=box(12,.3,3,0x888888);gate.position.set(bmxX-15,1.5,bmxZ+12);gate.rotation.x=-.3;scene.add(gate);
+  for(const gx of[-6,6]){const gPost=cyl(.08,.08,2,0x888888);gPost.position.set(bmxX-15+gx,1,bmxZ+12);scene.add(gPost)}
+
+  // ═══════════════════════════════════════
+  //         ROCK CLIMBING WALL
+  // ═══════════════════════════════════════
+  const cwX=SX+95,cwZ=SZ+50;
+  // Wall structure
+  const wall=box(15,18,.8,0x888877);wall.position.set(cwX,9,cwZ);scene.add(wall);
+  // Overhang section
+  const overhang=box(5,6,.8,0x887766);overhang.position.set(cwX+7,15,cwZ+1.5);overhang.rotation.x=-.4;scene.add(overhang);
+  // Climbing holds (colorful dots)
+  const holdC=[0xff4444,0x44ff44,0x4444ff,0xffff44,0xff44ff,0x44ffff,0xff8844,0x88ff44];
+  seedR(1234);
+  for(let h=0;h<40;h++){const hx=cwX-6+srand()*12,hy=1+srand()*16,hz=cwZ-.45;
+    const hold=new THREE.Mesh(new THREE.SphereGeometry(.15,5,4),new THREE.MeshStandardMaterial({color:holdC[h%8]}));
+    hold.position.set(hx,hy,hz);scene.add(hold)}
+  // Safety mat
+  const cMat=new THREE.Mesh(new THREE.PlaneGeometry(18,4),gM(0x3355aa));cMat.rotation.x=-Math.PI/2;cMat.position.set(cwX,.08,cwZ+2);scene.add(cMat);
+
+  // ═══════════════════════════════════════
+  //         PARKOUR / OBSTACLE COURSE
+  // ═══════════════════════════════════════
+  const pkX=SX+95,pkZ=SZ+85;
+  // Ground
+  const pkGnd=new THREE.Mesh(new THREE.PlaneGeometry(35,25),gM(0x555555));pkGnd.rotation.x=-Math.PI/2;pkGnd.position.set(pkX,.06,pkZ);scene.add(pkGnd);
+  // Vault boxes (ascending heights)
+  for(let vb=0;vb<5;vb++){const bx=pkX-12+vb*6;
+    const vBox=box(2,1+vb*.6,1.5,0xcc8844);vBox.position.set(bx,(1+vb*.6)/2,pkZ-8);scene.add(vBox)}
+  // Wall obstacles
+  for(let wo=0;wo<3;wo++){const wx=pkX-8+wo*8;
+    const wall2=box(.4,3+wo,4,0x888888);wall2.position.set(wx,(3+wo)/2,pkZ);scene.add(wall2)}
+  // Monkey bars
+  const mbStart=pkX-10,mbEnd=pkX+10;
+  const mbP1=cyl(.06,.06,3.5,0x888888);mbP1.position.set(mbStart,1.75,pkZ+8);scene.add(mbP1);
+  const mbP2=cyl(.06,.06,3.5,0x888888);mbP2.position.set(mbEnd,1.75,pkZ+8);scene.add(mbP2);
+  const mbTop=cyl(.04,.04,20,0x888888);mbTop.rotation.z=Math.PI/2;mbTop.position.set(pkX,3.5,pkZ+8);scene.add(mbTop);
+  for(let mb=0;mb<10;mb++){const bar=cyl(.025,.025,1.2,0xcccccc);bar.rotation.x=Math.PI/2;
+    bar.position.set(mbStart+1+mb*2,3.5,pkZ+8);scene.add(bar)}
+  // Balance beams
+  for(let bb2=0;bb2<2;bb2++){const beam=box(8,.08,.15,0xccaa66);beam.position.set(pkX-5+bb2*10,1,pkZ+4);scene.add(beam);
+    const bs1=cyl(.04,.04,1,0x888888);bs1.position.set(pkX-5+bb2*10-3.5,.5,pkZ+4);scene.add(bs1);
+    const bs2=cyl(.04,.04,1,0x888888);bs2.position.set(pkX-5+bb2*10+3.5,.5,pkZ+4);scene.add(bs2)}
+  // Cargo net
+  const netFrame=box(6,5,.1,0x666666);netFrame.position.set(pkX,2.5,pkZ-3);scene.add(netFrame);
+  const cargoNet=new THREE.Mesh(new THREE.PlaneGeometry(5.5,4.5),new THREE.MeshStandardMaterial({color:0x886644,transparent:true,opacity:.5,side:THREE.DoubleSide}));
+  cargoNet.position.set(pkX,2.5,pkZ-2.9);scene.add(cargoNet);
+
+  // ═══════════════════════════════════════
+  //         BUNGEE JUMPING TOWER
+  // ═══════════════════════════════════════
+  const bjX=SX+155,bjZ=SZ+60;
+  // Tower structure
+  for(const cx of[-2,2])for(const cz of[-2,2]){
+    const leg=cyl(.12,.12,35,0xcc4444);leg.position.set(bjX+cx,17.5,bjZ+cz);scene.add(leg)}
+  // Cross braces
+  for(let h=0;h<5;h++){const bh=5+h*6;
+    for(const side of[[0,-2],[0,2],[-2,0],[2,0]]){
+      const brace=box(4,.15,.15,0xcc4444);brace.position.set(bjX+side[0],bh,bjZ+side[1]);scene.add(brace)}}
+  // Platform at top
+  const bjPlat=box(6,1,6,0x888888);bjPlat.position.set(bjX,35,bjZ);scene.add(bjPlat);
+  // Railing
+  for(const rx of[-3,3])for(const rz of[-3,3]){
+    const rail=cyl(.03,.03,1.2,0xcccccc);rail.position.set(bjX+rx,36.1,bjZ+rz);scene.add(rail)}
+  // Ladder
+  for(let lh=0;lh<17;lh++){const rung=box(.6,.04,.04,0x888888);rung.position.set(bjX-2,2+lh*2,bjZ-2);scene.add(rung)}
+
+  // ═══════════════════════════════════════
+  //         ZIP LINE (long)
+  // ═══════════════════════════════════════
+  const zlStartX=SX+155,zlStartZ=SZ+30,zlEndX=SX+30,zlEndZ=SZ-30;
+  // Start tower (tall)
+  const zlTower=cyl(.15,.15,20,0x888888);zlTower.position.set(zlStartX,10,zlStartZ);scene.add(zlTower);
+  const zlPlat=box(3,.3,3,0x777777);zlPlat.position.set(zlStartX,20,zlStartZ);scene.add(zlPlat);
+  // End pole (short)
+  const zlEnd=cyl(.12,.12,4,0x888888);zlEnd.position.set(zlEndX,2,zlEndZ);scene.add(zlEnd);
+  // Cable
+  const zlCurve=new THREE.LineCurve3(new THREE.Vector3(zlStartX,20,zlStartZ),new THREE.Vector3(zlEndX,4,zlEndZ));
+  const zlGeo=new THREE.TubeGeometry(zlCurve,20,.03,4,false);
+  const zlCable=new THREE.Mesh(zlGeo,new THREE.MeshStandardMaterial({color:0x444444,metalness:.8}));
+  scene.add(zlCable);
+
+  // ═══════════════════════════════════════
+  //         MOTOCROSS / RALLY TRACK
+  // ═══════════════════════════════════════
+  const mxX=SX+30,mxZ=SZ+130;
+  // Track ground (oval dirt)
+  const mxGnd=new THREE.Mesh(new THREE.PlaneGeometry(80,50),gM(0x8a7a5a));mxGnd.rotation.x=-Math.PI/2;mxGnd.position.set(mxX,.06,mxZ);scene.add(mxGnd);
+  // Track path
+  const mxTrack=new THREE.Mesh(new THREE.RingGeometry(14,20,24),gM(0x776644));mxTrack.rotation.x=-Math.PI/2;mxTrack.position.set(mxX,.08,mxZ);scene.add(mxTrack);
+  // Jump ramps
+  for(let jr=0;jr<4;jr++){const a=jr/4*Math.PI*2;const rx2=mxX+Math.cos(a)*17,rz2=mxZ+Math.sin(a)*17;
+    const ramp=new THREE.Mesh(new THREE.CylinderGeometry(2,3,1.5,6,1,false,0,Math.PI),gM(0x8a6a3a));
+    ramp.rotation.set(0,a+Math.PI/2,Math.PI);ramp.position.set(rx2,.75,rz2);scene.add(ramp)}
+  // Tire barriers
+  for(let tb=0;tb<12;tb++){const a=tb/12*Math.PI*2;const tx=mxX+Math.cos(a)*22,tz=mxZ+Math.sin(a)*22;
+    const tire=new THREE.Mesh(new THREE.TorusGeometry(.5,.25,6,8),gM(0x222222));
+    tire.position.set(tx,.3,tz);scene.add(tire)}
+  // Checkered flag stand
+  const flagStand=cyl(.06,.06,4,0x888888);flagStand.position.set(mxX+22,2,mxZ);scene.add(flagStand);
+  const chkFlag=box(1.2,.8,.03,0xffffff);chkFlag.position.set(mxX+22,3.5,mxZ);scene.add(chkFlag);
+
+  // ═══════════════════════════════════════
+  //         ARCHERY RANGE
+  // ═══════════════════════════════════════
+  const arX=SX-70,arZ=SZ+130;
+  const arGnd=new THREE.Mesh(new THREE.PlaneGeometry(40,15),gM(0x3a7a3a));arGnd.rotation.x=-Math.PI/2;arGnd.position.set(arX,.07,arZ);scene.add(arGnd);
+  // Targets (5 lanes)
+  for(let t=0;t<5;t++){const tx=arX-16+t*8;
+    // Target face
+    const target=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),new THREE.MeshStandardMaterial({color:0xffffff}));
+    target.position.set(tx,1.5,arZ-6);scene.add(target);
+    const ring1=new THREE.Mesh(new THREE.RingGeometry(.8,1.2,16),new THREE.MeshStandardMaterial({color:0x0066ff}));
+    ring1.position.set(tx,1.5,arZ-5.99);scene.add(ring1);
+    const ring2=new THREE.Mesh(new THREE.RingGeometry(.4,.8,16),new THREE.MeshStandardMaterial({color:0xff0000}));
+    ring2.position.set(tx,1.5,arZ-5.98);scene.add(ring2);
+    const bull=new THREE.Mesh(new THREE.CircleGeometry(.4,12),new THREE.MeshStandardMaterial({color:0xffdd00}));
+    bull.position.set(tx,1.5,arZ-5.97);scene.add(bull);
+    // Shooting line
+    mkLine(tx,arZ+5,1.5,.08)}
+  // Safety net behind
+  const arNet=new THREE.Mesh(new THREE.PlaneGeometry(42,4),fenceM);arNet.position.set(arX,2,arZ-7.5);scene.add(arNet);
+
+  // ═══════════════════════════════════════
+  //         TRAMPOLINES
+  // ═══════════════════════════════════════
+  const trpX=SX-70,trpZ=SZ+60;
+  for(let t=0;t<6;t++){const tx=trpX-10+t*5,tz=trpZ;
+    // Frame
+    const frame=new THREE.Mesh(new THREE.TorusGeometry(2,.08,6,12),gM(0x888888));
+    frame.rotation.x=Math.PI/2;frame.position.set(tx,.8,tz);scene.add(frame);
+    const fLegs=box(4,.8,.08,0x888888);fLegs.position.set(tx,.4,tz);scene.add(fLegs);
+    // Bounce surface
+    const bounce=new THREE.Mesh(new THREE.CircleGeometry(1.8,12),
+      new THREE.MeshStandardMaterial({color:0x222222,roughness:.5}));
+    bounce.rotation.x=-Math.PI/2;bounce.position.set(tx,.78,tz);scene.add(bounce);
+    // Safety pad (edge)
+    const pad=new THREE.Mesh(new THREE.RingGeometry(1.7,2.1,12),gM(0x3366cc));
+    pad.rotation.x=-Math.PI/2;pad.position.set(tx,.8,tz);scene.add(pad)}
+
+  // ═══════════════════════════════════════
+  //         SKATEBOARD MEGA RAMP
+  // ═══════════════════════════════════════
+  const mrX=SX-160,mrZ=SZ-40;
+  // Launch ramp (giant)
+  const launchRamp=box(10,.4,20,0x999999);launchRamp.position.set(mrX,5,mrZ);launchRamp.rotation.x=.5;scene.add(launchRamp);
+  const launchBase=box(10,10,.4,0x888888);launchBase.position.set(mrX,5,mrZ+10);scene.add(launchBase);
+  // Landing ramp
+  const landRamp=box(10,.4,15,0x999999);landRamp.position.set(mrX,2,mrZ-20);landRamp.rotation.x=-.3;scene.add(landRamp);
+  // Gap section (flat)
+  const gapFloor=new THREE.Mesh(new THREE.PlaneGeometry(10,8),gM(0x777777));gapFloor.rotation.x=-Math.PI/2;gapFloor.position.set(mrX,.06,mrZ-10);scene.add(gapFloor);
+
+  // ═══════════════════════════════════════
+  //         SURFING WAVE POOL
+  // ═══════════════════════════════════════
+  const wpX=SX+130,wpZ=SZ+90;
+  const wpGnd=new THREE.Mesh(new THREE.PlaneGeometry(30,20),gM(0xccccbb));wpGnd.rotation.x=-Math.PI/2;wpGnd.position.set(wpX,.05,wpZ);scene.add(wpGnd);
+  const wavePool=new THREE.Mesh(new THREE.PlaneGeometry(26,16),
+    new THREE.MeshStandardMaterial({color:0x2288cc,transparent:true,opacity:.6,roughness:.1}));
+  wavePool.rotation.x=-Math.PI/2;wavePool.position.set(wpX,.04,wpZ);scene.add(wavePool);
+  // Wave generators (cylinders at one end)
+  for(let wg=0;wg<5;wg++){const wx=wpX-10+wg*5;
+    const gen=cyl(.8,.8,.6,0x555555);gen.position.set(wx,.3,wpZ-7);scene.add(gen)}
+  // Viewing deck
+  const viewDeck=box(30,2,4,0x887766);viewDeck.position.set(wpX,1,wpZ+12);scene.add(viewDeck);
+
+  // ═══════════════════════════════════════
+  //         ICE SKATING RINK
+  // ═══════════════════════════════════════
+  const iceX=SX-70,iceZ=SZ-60;
+  const iceFloor=new THREE.Mesh(new THREE.PlaneGeometry(30,20),
+    new THREE.MeshStandardMaterial({color:0xccddee,roughness:.05,metalness:.3}));
+  iceFloor.rotation.x=-Math.PI/2;iceFloor.position.set(iceX,.08,iceZ);scene.add(iceFloor);
+  // Boards
+  for(const dz of[-10,10]){const bd=box(30,1.2,.15,0xffffff);bd.position.set(iceX,.6,iceZ+dz);scene.add(bd)}
+  for(const dx of[-15,15]){const bd=box(.15,1.2,20,0xffffff);bd.position.set(iceX+dx,.6,iceZ);scene.add(bd)}
+  // Center circle
+  const iceCirc=new THREE.Mesh(new THREE.RingGeometry(3,3.1,24),new THREE.MeshStandardMaterial({color:0x0044aa}));
+  iceCirc.rotation.x=-Math.PI/2;iceCirc.position.set(iceX,.09,iceZ);scene.add(iceCirc);
+  // Center dot
+  const iceDot=new THREE.Mesh(new THREE.CircleGeometry(.3,8),new THREE.MeshStandardMaterial({color:0x0044aa}));
+  iceDot.rotation.x=-Math.PI/2;iceDot.position.set(iceX,.09,iceZ);scene.add(iceDot);
+  // Blue lines
+  mkLine(iceX-5,iceZ,.2,20);mkLine(iceX+5,iceZ,.2,20);
+  // Goal creases
+  for(const gz of[-9,9]){const crease=new THREE.Mesh(new THREE.CircleGeometry(1.8,12,0,Math.PI),gM(0x4488cc));
+    crease.rotation.x=-Math.PI/2;crease.rotation.z=gz>0?Math.PI:0;crease.position.set(iceX,.09,iceZ+gz);scene.add(crease)}
+
+  // ═══════════════════════════════════════
+  //         CRICKET PITCH
+  // ═══════════════════════════════════════
+  const crX=SX-70,crZ=SZ-110;
+  const crField=new THREE.Mesh(new THREE.CircleGeometry(35,24),gM(0x2a8a2a));crField.rotation.x=-Math.PI/2;crField.position.set(crX,.11,crZ);scene.add(crField);
+  // Pitch strip
+  const crPitch=new THREE.Mesh(new THREE.PlaneGeometry(3,22),gM(0xbbaa77));crPitch.rotation.x=-Math.PI/2;crPitch.position.set(crX,.12,crZ);scene.add(crPitch);
+  // Wickets (stumps at each end)
+  for(const wz of[-10,10]){for(let s=0;s<3;s++){
+    const stump=cyl(.015,.015,.7,0xddcc88);stump.position.set(crX-.08+s*.08,.35,crZ+wz);scene.add(stump)}
+    const bails=box(.2,.02,.02,0xddcc88);bails.position.set(crX,.72,crZ+wz);scene.add(bails)}
+  // Crease lines
+  mkLine(crX,crZ-10,2,.06);mkLine(crX,crZ+10,2,.06);
+  // Boundary rope
+  const bRope=new THREE.Mesh(new THREE.RingGeometry(34.8,35,32),gM(0xffffff));bRope.rotation.x=-Math.PI/2;bRope.position.set(crX,.12,crZ);scene.add(bRope);
+
+  // ═══════════════════════════════════════
+  //         BADMINTON COURTS (3)
+  // ═══════════════════════════════════════
+  for(let bd=0;bd<3;bd++){
+    const bx=SX+55+bd*16,bz=SZ-50;
+    const bCourt=new THREE.Mesh(new THREE.PlaneGeometry(6.1,13.4),gM(0x338844));bCourt.rotation.x=-Math.PI/2;bCourt.position.set(bx,.12,bz);scene.add(bCourt);
+    mkLine(bx,bz,6.1,.08);mkLine(bx-3.05,bz,.08,13.4);mkLine(bx+3.05,bz,.08,13.4);
+    mkLine(bx,bz-6.7,6.1,.08);mkLine(bx,bz+6.7,6.1,.08);
+    // Net
+    const bnp1=cyl(.03,.03,1.55,0x666666);bnp1.position.set(bx-3.2,.775,bz);scene.add(bnp1);
+    const bnp2=cyl(.03,.03,1.55,0x666666);bnp2.position.set(bx+3.2,.775,bz);scene.add(bnp2);
+    const bNet=new THREE.Mesh(new THREE.PlaneGeometry(6.5,1),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.4,side:THREE.DoubleSide}));
+    bNet.position.set(bx,1.1,bz);scene.add(bNet)}
+
+  // ═══════════════════════════════════════
+  //         TABLE TENNIS (outdoor tables)
+  // ═══════════════════════════════════════
+  for(let tt=0;tt<4;tt++){
+    const tx=SX-20+tt*12,tz=SZ-35;
+    const table=box(1.525,.76,2.74,0x004488);table.position.set(tx,.76,tz);scene.add(table);
+    const ttNet=box(.02,.15,1.83,0xffffff);ttNet.position.set(tx,.915,tz);scene.add(ttNet);
+    // Legs
+    for(const lx of[-.6,.6])for(const lz of[-1.1,1.1]){
+      const leg=cyl(.03,.03,.7,0x888888);leg.position.set(tx+lx,.35,tz+lz);scene.add(leg)}}
+
+  // ═══════════════════════════════════════
+  //         FENCING PISTE
+  // ═══════════════════════════════════════
+  const feX=SX-30,feZ=SZ+110;
+  const piste=new THREE.Mesh(new THREE.PlaneGeometry(2,14),gM(0x888888));piste.rotation.x=-Math.PI/2;piste.position.set(feX,.08,feZ);scene.add(piste);
+  mkLine(feX,feZ-7,2,.06);mkLine(feX,feZ+7,2,.06);mkLine(feX,feZ,2,.06);
+  mkLine(feX,feZ-3,1,.06);mkLine(feX,feZ+3,1,.06);
+
+  // ═══════════════════════════════════════
+  //         HANDBALL COURT
+  // ═══════════════════════════════════════
+  const hbX=SX+10,hbZ=SZ+30;
+  const hbCourt=new THREE.Mesh(new THREE.PlaneGeometry(20,40),gM(0xcc9944));hbCourt.rotation.x=-Math.PI/2;hbCourt.position.set(hbX,.12,hbZ);scene.add(hbCourt);
+  mkLine(hbX,hbZ,20,.1);mkLine(hbX-10,hbZ,.1,40);mkLine(hbX+10,hbZ,.1,40);
+  mkLine(hbX,hbZ-20,20,.1);mkLine(hbX,hbZ+20,20,.1);
+  // Goals
+  for(const gz of[-20,20]){
+    const gL=cyl(.04,.04,2,0xff4444);gL.position.set(hbX-3,1,hbZ+gz);scene.add(gL);
+    const gR=cyl(.04,.04,2,0xff4444);gR.position.set(hbX+3,1,hbZ+gz);scene.add(gR);
+    const gT=box(6,.04,.04,0xff4444);gT.position.set(hbX,2,hbZ+gz);scene.add(gT)}
+  // D-zone arcs
+  for(const gz of[-1,1]){const darc=new THREE.Mesh(new THREE.RingGeometry(6,6.1,16,1,0,Math.PI),lnM);
+    darc.rotation.x=-Math.PI/2;darc.rotation.z=gz>0?0:Math.PI;darc.position.set(hbX,.13,hbZ+gz*17);scene.add(darc)}
+
+  // ═══════════════════════════════════════
+  //         ROPES COURSE / HIGH ROPES
+  // ═══════════════════════════════════════
+  const rcX=SX+155,rcZ=SZ+100;
+  // Support poles
+  const rpPoles=[];
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const rx2=rcX+Math.cos(a)*12,rz2=rcZ+Math.sin(a)*12;
+    const pole=cyl(.1,.1,10,0x6a4a2a);pole.position.set(rx2,5,rz2);scene.add(pole);rpPoles.push([rx2,rz2])}
+  // Platforms
+  for(let i=0;i<8;i++){const[px,pz]=rpPoles[i];
+    const plat=box(2,.15,2,0x8a6a3a);plat.position.set(px,8,pz);scene.add(plat)}
+  // Connecting beams/ropes between platforms
+  for(let i=0;i<8;i++){const[px,pz]=rpPoles[i];const[nx,nz]=rpPoles[(i+1)%8];
+    const curve=new THREE.LineCurve3(new THREE.Vector3(px,8,pz),new THREE.Vector3(nx,8,nz));
+    const ropeGeo=new THREE.TubeGeometry(curve,8,.02,4,false);
+    const rope=new THREE.Mesh(ropeGeo,new THREE.MeshStandardMaterial({color:0x886644}));scene.add(rope)}
+  // Cargo net climb up
+  const rcNet=new THREE.Mesh(new THREE.PlaneGeometry(3,8),new THREE.MeshStandardMaterial({color:0x886644,transparent:true,opacity:.5,side:THREE.DoubleSide}));
+  rcNet.position.set(rpPoles[0][0],4,rpPoles[0][1]);scene.add(rcNet);
+
+  // ═══════════════════════════════════════
+  //         WEIGHTLIFTING / OUTDOOR GYM
+  // ═══════════════════════════════════════
+  const ogX=SX+50,ogZ=SZ+100;
+  const ogGnd=new THREE.Mesh(new THREE.PlaneGeometry(20,15),gM(0x444444));ogGnd.rotation.x=-Math.PI/2;ogGnd.position.set(ogX,.06,ogZ);scene.add(ogGnd);
+  // Squat racks
+  for(let sr=0;sr<3;sr++){const sx2=ogX-6+sr*6;
+    for(const dx of[-.6,.6]){const up=cyl(.04,.04,2.2,0x888888);up.position.set(sx2+dx,1.1,ogZ-3);scene.add(up)}
+    const rackBar=cyl(.025,.025,1.5,0xcccccc);rackBar.rotation.z=Math.PI/2;rackBar.position.set(sx2,1.8,ogZ-3);scene.add(rackBar)}
+  // Bench press
+  for(let bp=0;bp<2;bp++){const bx=ogX-4+bp*8;
+    const bench=box(1.2,.4,.4,0x222222);bench.position.set(bx,.4,ogZ+2);scene.add(bench);
+    for(const dx of[-.5,.5]){const up=cyl(.03,.03,1.5,0x888888);up.position.set(bx+dx,.75,ogZ+2);scene.add(up)}
+    const bar=cyl(.02,.02,2,0xcccccc);bar.rotation.z=Math.PI/2;bar.position.set(bx,1.2,ogZ+2);scene.add(bar)}
+  // Pull-up bar station
+  const puP1=cyl(.05,.05,2.8,0x888888);puP1.position.set(ogX-3,1.4,ogZ+6);scene.add(puP1);
+  const puP2=cyl(.05,.05,2.8,0x888888);puP2.position.set(ogX+3,1.4,ogZ+6);scene.add(puP2);
+  const puBar=cyl(.03,.03,6,0xcccccc);puBar.rotation.z=Math.PI/2;puBar.position.set(ogX,2.8,ogZ+6);scene.add(puBar);
+  // Kettlebells & dumbbells rack
+  const kbRack=box(3,.8,.5,0x333333);kbRack.position.set(ogX,0.4,ogZ-6);scene.add(kbRack);
+  for(let kb=0;kb<5;kb++){const kbell=new THREE.Mesh(new THREE.SphereGeometry(.15,6,5),gM(0x222222));
+    kbell.position.set(ogX-1+kb*.5,.95,ogZ-6);scene.add(kbell)}
+
+  // ═══════════════════════════════════════
+  //         MOUNTAIN BIKE TRAIL HEAD
+  // ═══════════════════════════════════════
+  const mtX=SX-120,mtZ=SZ+150;
+  // Trail marker arch
+  const tArch1=cyl(.08,.08,4,0x6a4a2a);tArch1.position.set(mtX-2,2,mtZ);scene.add(tArch1);
+  const tArch2=cyl(.08,.08,4,0x6a4a2a);tArch2.position.set(mtX+2,2,mtZ);scene.add(tArch2);
+  const tArchTop=box(5,.3,.3,0x6a4a2a);tArchTop.position.set(mtX,4,mtZ);scene.add(tArchTop);
+  // Trail sign
+  const tSign=box(1.5,1,.08,0x446622);tSign.material=new THREE.MeshStandardMaterial({color:0x446622,emissive:0x446622,emissiveIntensity:.15});
+  tSign.position.set(mtX,3,mtZ);scene.add(tSign);
+  // Dirt path leading out
+  const mPath=new THREE.Mesh(new THREE.PlaneGeometry(3,40),gM(0x8a7a5a));
+  mPath.rotation.x=-Math.PI/2;mPath.position.set(mtX,.05,mtZ+25);scene.add(mPath);
+  // Bike wash station
+  const bWash=box(2,.8,1,0x4488aa);bWash.position.set(mtX+5,.4,mtZ);scene.add(bWash);
+
+  // ═══════════════════════════════════════
+  //         KAYAK / CANOE LAUNCH
+  // ═══════════════════════════════════════
+  const klX=SX+160,klZ=SZ+140;
+  // Dock
+  const dock=box(4,.3,12,0x8a6a3a);dock.position.set(klX,.15,klZ);scene.add(dock);
+  // Water area
+  const kWater=new THREE.Mesh(new THREE.PlaneGeometry(30,20),
+    new THREE.MeshStandardMaterial({color:0x2288aa,transparent:true,opacity:.5,roughness:.1}));
+  kWater.rotation.x=-Math.PI/2;kWater.position.set(klX+18,.02,klZ);scene.add(kWater);
+  // Kayak racks
+  for(let kr=0;kr<4;kr++){const kayak=box(.5,.3,3,[0xff4444,0x44ff44,0x4488ff,0xffaa00][kr]);
+    kayak.position.set(klX-3,.5+kr*.4,klZ-3+kr*2);scene.add(kayak)}
+
+  // ═══════════════════════════════════════
+  //         AREA SIGNAGE & LIGHTING
+  // ═══════════════════════════════════════
+  // Entrance sign
+  const mainSign=box(20,4,.3,0x224466);mainSign.material=emM2(0x224466);
+  mainSign.position.set(SX-160,3,SZ);scene.add(mainSign);
+  // Path lights along main walkway
+  for(let pl=0;pl<15;pl++){const px=SX-150+pl*22;
+    const lamp=cyl(.04,.04,3,0x888888);lamp.position.set(px,1.5,SZ+2);scene.add(lamp);
+    const lHead=new THREE.Mesh(new THREE.SphereGeometry(.2,6,5),emM2(0xffeedd));
+    lHead.position.set(px,3.1,SZ+2);scene.add(lHead)}
+  // Benches along paths
+  for(let bn=0;bn<8;bn++){const bx=SX-100+bn*30;
+    const benchSeat=box(2,.4,.6,0x6a4a2a);benchSeat.position.set(bx,.5,SZ-3);scene.add(benchSeat)}
+
+})();
+
 // ══════════════ NPC SPAWNS ══════════════
 seedR(4444);
 for(let i=0;i<25;i++){const x=-CH+BK*3+srand()*(CS-BK*6),z=-CH+BK*3+srand()*(CS-BK*6);
@@ -1650,17 +2257,41 @@ function emit(p,d){const i=pI%PC;pPos[i*3]=p.x;pPos[i*3+1]=p.y;pPos[i*3+2]=p.z;
   pVl[i].copy(d).multiplyScalar(8+Math.random()*12).add(new THREE.Vector3((Math.random()-.5)*3,(Math.random()-.5)*3,(Math.random()-.5)*3));
   pLf[i]=1;pSz[i]=1.5+Math.random()*1.5;pI++}
 
+// ══════════════ ZONE SYSTEM ══════════════
+const gameAPI={
+  THREE,scene,cam,R,canvas,P,V,charG,keys,
+  box,cyl,lerp,clamp,
+  get yaw(){return yaw},set yaw(v){yaw=v},
+  get pitch(){return pitch},set pitch(v){pitch=v},
+  get mode(){return mode},set mode(v){mode=v},
+  get isFlying(){return isFlying},set isFlying(v){isFlying=v},
+  get onGround(){return onGround},set onGround(v){onGround=v},
+  get currentVeh(){return currentVeh},
+  get locked(){return locked},
+  get menuOpen(){return menuOpen},
+  get wpnMenuOpen(){return wpnMenuOpen},
+  getH,fwd:()=>new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),
+  showTip,dismountVehicle,
+  ui:null
+};
+const zoneUI=new ZoneUI();
+gameAPI.ui=zoneUI;
+const zoneManager=new ZoneManager(gameAPI);
+zoneManager.init(buildZones(enterableSpots));
+
 // ══════════════ INPUT ══════════════
 document.addEventListener('keydown',e=>{keys[e.code]=true;
   if(e.code==='Space'&&!keys._sp){keys._sp=true;spaceJust=true}
   if(e.code==='KeyF'&&!keys._fp){keys._fp=true;fJust=true}
   if(e.code==='Digit1')tryTrick(0);if(e.code==='Digit2')tryTrick(1);
   if(e.code==='Digit3')tryTrick(2);if(e.code==='Digit4')tryTrick(3);
+  if(e.code==='Digit5')tryFight(0);if(e.code==='Digit6')tryFight(1);
+  if(e.code==='Digit7')tryFight(2);if(e.code==='Digit8')tryFight(3);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });
 document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')keys._sp=false;if(e.code==='KeyF')keys._fp=false});
-document.addEventListener('mousedown',e=>{if(e.button===0&&locked&&!menuOpen&&!wpnMenuOpen)shooting=true});
-document.addEventListener('mouseup',e=>{if(e.button===0)shooting=false});
+document.addEventListener('mousedown',e=>{if(e.button===0&&locked&&!menuOpen&&!wpnMenuOpen){shooting=true;keys['mouse0']=true}});
+document.addEventListener('mouseup',e=>{if(e.button===0){shooting=false;keys['mouse0']=false}});
 document.addEventListener('mousemove',e=>{
   if(!locked)return;
   const mx=e.movementX||0,my=e.movementY||0;
@@ -1731,6 +2362,31 @@ function tryTrick(idx){
   }
 }
 
+function tryFight(idx){
+  if(trickActive||mode!=='walk'||isFlying)return;
+  if(idx>=fightMoves.length)return;
+  const m=fightMoves[idx];
+  trickActive=true;trickTimer=0;trickDur=m.d;trickName=m.n;
+  trickRot.set(0,0,0);
+  // Score
+  comboTimer=2;comboCount++;score+=150*comboCount;
+  const el=document.getElementById('trick-display');
+  el.textContent=m.n+(comboCount>1?` x${comboCount}`:'');el.style.opacity='1';trickDispTimer=1.5;
+  // Forward lunge
+  V.add(fwd().multiplyScalar(4));
+  // Damage nearby NPCs
+  const ff=fwd();const hitX=P.x-ff.x*m.range,hitZ=P.z-ff.z*m.range;
+  for(const npc of npcs){
+    const dx=npc.mesh.position.x-hitX,dz=npc.mesh.position.z-hitZ;
+    if(Math.sqrt(dx*dx+dz*dz)<m.range){
+      // Knockback NPC
+      npc.mesh.position.x+=ff.x*-3;npc.mesh.position.z+=ff.z*-3;
+      // Particles at hit
+      for(let p=0;p<5;p++)emit(npc.mesh.position,new THREE.Vector3((Math.random()-.5),(Math.random()-.5),(Math.random()-.5)));
+    }
+  }
+}
+
 // ══════════════ VEHICLE MOUNT/DISMOUNT ══════════════
 function nearestVehicle(){
   let best=null,bd=8;
@@ -1780,6 +2436,15 @@ let walkBob=0,engineOn=false;
 // ══════════════ GAME UPDATE ══════════════
 function update(dt){
   dt=Math.min(dt,.05);
+  // Zone system — if inside a zone, only run zone update
+  if(zoneManager.activeZone){zoneManager.update(dt);return}
+  // Zone proximity check
+  if(!currentVeh&&mode==='walk'&&!menuOpen&&!wpnMenuOpen){
+    zoneManager.update(dt);
+    if(zoneManager.nearestZone)zoneUI.showPrompt('Press E \u2014 '+zoneManager.nearestZone.label);
+    else zoneUI.hidePrompt();
+  }else zoneUI.hidePrompt();
+
   const tH=getH(P.x,P.z),sH=getSurfaceH(P.x,P.z),gH=Math.max(tH,sH);
   engineOn=false;
 
@@ -1997,9 +2662,9 @@ function update(dt){
       if(kU()||kD()||kL()||kR()){lA.rotation.x=Math.sin(walkBob)*.4;rA.rotation.x=-Math.sin(walkBob)*.4;
         lL.rotation.x=-Math.sin(walkBob)*.5;rL.rotation.x=Math.sin(walkBob)*.5}
       else{lA.rotation.x=rA.rotation.x=lL.rotation.x=rL.rotation.x=0}}
-    // Parkour trick rotation on character (quaternion for correct axes)
+    // Parkour trick / fight rotation on character (quaternion for correct axes)
     if(trickActive&&mode==='walk'){
-      const ct=parkourTricks.find(t=>t.n===trickName);
+      const ct=parkourTricks.find(t=>t.n===trickName)||fightMoves.find(t=>t.n===trickName);
       if(ct){const prog=trickTimer/trickDur;
         const cBaseQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
         const cTQ=new THREE.Quaternion();
@@ -2227,26 +2892,19 @@ function update(dt){
   }
 
   // ═══ HUD ═══
-  const spd=currentVeh?Math.abs(currentVeh.speed)*3.6:V.length()*3.6;
-  document.getElementById('speed').textContent=`${spd|0} km/h`;
-  document.getElementById('altitude').textContent=`ALT: ${Math.max(0,P.y)|0}m`;
-  let mStr='WALKING';
-  if(currentVeh)mStr=currentVeh.type.toUpperCase();
-  else if(isFlying)mStr=engineOn?'BOOST':'GLIDING';
-  const mEl=document.getElementById('mode-display');mEl.textContent=mStr;
-  mEl.style.color=engineOn?'#ff6600':isFlying?'#44aaff':currentVeh?'#44ff66':'#fff';
-  document.getElementById('boost-fill').style.width=boostFuel+'%';
   document.getElementById('crosshair').style.display='none';
   document.getElementById('score').textContent=score>0?`${score} PTS`:'';
   const cEl=document.getElementById('combo');
   if(comboCount>1){cEl.textContent=`COMBO x${comboCount}`;cEl.style.opacity='1'}else cEl.style.opacity='0';
 
-  // Tricks panel
+  // Tricks & fighting panel
   let tricks=parkourTricks;
   if(currentVeh)tricks=currentVeh.def.tricks;
   else if(isFlying)tricks=[{n:'Barrel Roll'},{n:'Front Flip'},{n:'Cork'},{n:'Superman'}];
   const tp=document.getElementById('tricks-panel');
-  tp.innerHTML=tricks.map((t,i)=>`<span><span class="key">[${i+1}]</span> ${t.n}</span>`).join('');
+  let panelHTML=tricks.map((t,i)=>`<span><span class="key">[${i+1}]</span> ${t.n}</span>`).join('');
+  if(!currentVeh&&!isFlying)panelHTML+=' '+fightMoves.map((m,i)=>`<span><span class="key">[${i+5}]</span> ${m.n}</span>`).join('');
+  tp.innerHTML=panelHTML;
   // Gun model scale based on weapon
   // Update flashlight position if active
   if(window._flashlight){const gp=new THREE.Vector3().copy(P).add(new THREE.Vector3(0,1.2,0));
