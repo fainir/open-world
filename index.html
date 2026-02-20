@@ -3927,7 +3927,7 @@ function updateZoneMarkers(){
   for(const m of zoneMarkers){
     const dx=m.zone.position[0]-P.x,dz=m.zone.position[2]-P.z;
     const dist2=dx*dx+dz*dz;
-    if(dist2>22500||dist2<9){m.el.style.opacity='0';continue}// 150^2=22500, 3^2=9
+    if(dist2>225){m.el.style.opacity='0';continue}// only show within 15 units of circle
     _zmVec.set(m.zone.position[0],m.zone.position[1]+4,m.zone.position[2]);
     const sp=_zmVec.project(cam);
     if(sp.z>1||sp.z<-1){m.el.style.opacity='0';continue}
@@ -3935,7 +3935,7 @@ function updateZoneMarkers(){
     if(sx<-40||sx>innerWidth+40||sy<-40||sy>innerHeight+40){m.el.style.opacity='0';continue}
     const dist=Math.sqrt(dist2);
     m.el.style.left=sx+'px';m.el.style.top=sy+'px';
-    m.el.style.opacity=dist<30?'1':String(1-(dist-30)/120);
+    m.el.style.opacity=dist<5?'1':String(1-(dist-5)/10);
   }
 }
 
@@ -4099,19 +4099,10 @@ function update(dt){
   dt=Math.min(dt,.05);
   // Zone system — if inside a zone, only run zone update
   if(zoneManager.activeZone){zoneManager.update(dt);return}
-  // Zone proximity check — auto-enter when stepping on glowing circle
+  // Zone proximity check — press E on glowing circle to enter
   if(!currentVeh&&mode==='walk'&&!menuOpen&&!wpnMenuOpen){
     zoneManager.update(dt);
-    // Check if player is standing on a zone circle (radius 2)
-    if(!zoneManager.activeZone&&!zoneManager.transitioning){
-      for(const zc of zoneCircles){
-        const dx=P.x-zc.zone.position[0],dz=P.z-zc.zone.position[2];
-        if(dx*dx+dz*dz<4){// radius 2 squared
-          zoneManager.enterZone(zc.zone);break;
-        }
-      }
-    }
-    if(zoneManager.nearestZone)zoneUI.showPrompt(zoneManager.nearestZone.label);
+    if(zoneManager.nearestZone)zoneUI.showPrompt('Press E \u2014 '+zoneManager.nearestZone.label);
     else zoneUI.hidePrompt();
   }else zoneUI.hidePrompt();
   // Animate zone entry circles

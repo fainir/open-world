@@ -51,13 +51,14 @@ The game uses a ZONE SYSTEM for performance. The world is divided into zones tha
 - Zone functions follow the pattern: function creates meshes, adds to group, returns group
 
 ### Zone Entry System (Glowing Circles)
-Players enter zones by walking onto a glowing circle on the ground near the zone's door/gate:
+Players enter zones by pressing E while near a glowing circle on the ground at the zone's door/gate:
 - Each zone has a glowing cyan ring (RingGeometry + CircleGeometry) placed at its entry position
 - The circles pulse with a breathing animation and are only visible within 150 units
-- When the player walks within radius 2 of the circle center, they auto-enter the zone (no button press needed)
+- The zone's icon floats above the circle but only appears when the player is within ~15 units
+- When the player is within the zone's `radius`, pressing E enters the zone
 - The entry position (`position` field in zone definition) should be placed where the door/gate of the building is — usually at the front face of the structure, offset ~2 units from the building wall
 - When adding a new zone, set its `position` to be at the doorway/entrance, NOT the center of the building
-- The `radius` field in the zone definition controls the floating marker visibility range (typically 8-10), NOT the entry circle size (which is always radius 2)
+- The `radius` field in the zone definition controls the E-key proximity range (typically 8-10)
 
 ### Core Structure
 - **CSS**: UI overlay styles (HUD, menus, controls, mobile touch buttons)
