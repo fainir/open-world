@@ -2899,17 +2899,17 @@ function buildZones(spots){
   const shops=spots.filter(s=>s.type==='shop');
   const raves=spots.filter(s=>s.type==='rave');
   for(let i=0;i<Math.min(3,restaurants.length);i++){const s=restaurants[i];
-    zones.push({id:'coffee-'+i,type:'interior',zoneClass:'coffee-shop',position:[s.cx,0,s.cz+2],radius:5,label:'Coffee Shop',icon:'\u2615'})}
+    zones.push({id:'coffee-'+i,type:'interior',zoneClass:'coffee-shop',position:[s.cx,0,s.cz+2],radius:8,label:'Coffee Shop',icon:'\u2615'})}
   for(let i=3;i<Math.min(6,restaurants.length);i++){const s=restaurants[i];
-    zones.push({id:'bar-'+(i-3),type:'interior',zoneClass:'bar',position:[s.cx,0,s.cz+2],radius:5,label:'Bar',icon:'\u{1F37A}'})}
+    zones.push({id:'bar-'+(i-3),type:'interior',zoneClass:'bar',position:[s.cx,0,s.cz+2],radius:8,label:'Bar',icon:'\u{1F37A}'})}
   for(let i=0;i<Math.min(3,shops.length);i++){const s=shops[i];
-    zones.push({id:'clothing-'+i,type:'interior',zoneClass:'clothing-store',position:[s.cx,0,s.cz+2],radius:5,label:'Clothing Store',icon:'\u{1F45A}'})}
+    zones.push({id:'clothing-'+i,type:'interior',zoneClass:'clothing-store',position:[s.cx,0,s.cz+2],radius:8,label:'Clothing Store',icon:'\u{1F45A}'})}
   for(let i=3;i<Math.min(6,shops.length);i++){const s=shops[i];
-    zones.push({id:'convenience-'+(i-3),type:'interior',zoneClass:'convenience-store',position:[s.cx,0,s.cz+2],radius:5,label:'Convenience Store',icon:'\u{1F3EA}'})}
+    zones.push({id:'convenience-'+(i-3),type:'interior',zoneClass:'convenience-store',position:[s.cx,0,s.cz+2],radius:8,label:'Convenience Store',icon:'\u{1F3EA}'})}
   for(let i=0;i<Math.min(3,raves.length);i++){const s=raves[i];
-    zones.push({id:'rave-'+i,type:'interior',zoneClass:'rave-interior',position:[s.cx,0,s.cz+2],radius:5,label:'Nightclub',icon:'\u{1F3B6}'})}
+    zones.push({id:'rave-'+i,type:'interior',zoneClass:'rave-interior',position:[s.cx,0,s.cz+2],radius:8,label:'Nightclub',icon:'\u{1F3B6}'})}
   for(let i=6;i<Math.min(9,restaurants.length);i++){const s=restaurants[i];
-    zones.push({id:'restaurant-'+(i-6),type:'interior',zoneClass:'restaurant-interior',position:[s.cx,0,s.cz+2],radius:5,label:'Restaurant',icon:'\u{1F37D}'})}
+    zones.push({id:'restaurant-'+(i-6),type:'interior',zoneClass:'restaurant-interior',position:[s.cx,0,s.cz+2],radius:8,label:'Restaurant',icon:'\u{1F37D}'})}
   zones.push({id:'tennis-match',type:'mission',zoneClass:'tennis-match',position:[440,0,750],radius:8,label:'Tennis Match',icon:'\u{1F3BE}'});
   zones.push({id:'basketball-game',type:'mission',zoneClass:'basketball-game',position:[360,0,750],radius:8,label:'Basketball Game',icon:'\u{1F3C0}'});
   zones.push({id:'boxing-match',type:'mission',zoneClass:'boxing-match',position:[455,0,915],radius:8,label:'Boxing Match',icon:'\u{1F94A}'});
@@ -2922,6 +2922,29 @@ const zoneUI=new ZoneUI();
 gameAPI.ui=zoneUI;
 const zoneManager=new ZoneManager(gameAPI);
 zoneManager.init(buildZones(enterableSpots));
+
+// Floating markers above enterable zones
+const zoneMarkers=[];
+for(const z of zoneManager.zones){
+  const sp=document.createElement('div');
+  sp.style.cssText='position:fixed;font-size:1.6em;pointer-events:none;z-index:5;text-shadow:0 0 8px rgba(0,0,0,0.8);opacity:0;transition:opacity 0.3s';
+  sp.textContent=z.icon||'\u2B50';document.body.appendChild(sp);
+  zoneMarkers.push({el:sp,zone:z});
+}
+function updateZoneMarkers(){
+  const w2=innerWidth/2,h2=innerHeight/2;
+  for(const m of zoneMarkers){
+    const wp=new THREE.Vector3(m.zone.position[0],m.zone.position[1]+4,m.zone.position[2]);
+    const dist=P.distanceTo(wp);
+    if(dist>150||dist<3){m.el.style.opacity='0';continue}
+    const sp=wp.clone().project(cam);
+    if(sp.z>1||sp.z<-1){m.el.style.opacity='0';continue}
+    const sx=sp.x*w2+w2,sy=-sp.y*h2+h2;
+    if(sx<-40||sx>innerWidth+40||sy<-40||sy>innerHeight+40){m.el.style.opacity='0';continue}
+    m.el.style.left=sx+'px';m.el.style.top=sy+'px';
+    m.el.style.opacity=dist<30?'1':String(1-(dist-30)/120);
+  }
+}
 
 // ══════════════ INPUT ══════════════
 document.addEventListener('keydown',e=>{keys[e.code]=true;
@@ -3088,6 +3111,7 @@ function update(dt){
     if(zoneManager.nearestZone)zoneUI.showPrompt('Press E \u2014 '+zoneManager.nearestZone.label);
     else zoneUI.hidePrompt();
   }else zoneUI.hidePrompt();
+  if(!zoneManager.activeZone)updateZoneMarkers();
 
   const tH=getH(P.x,P.z),sH=getSurfaceH(P.x,P.z),gH=Math.max(tH,sH);
   engineOn=false;
