@@ -229,11 +229,12 @@ def api_suggest_version(
 
 # ── Admin routes ──
 
-ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
+ADMIN_USERNAMES = [s.strip() for s in os.environ.get("ADMIN_USERNAMES", "").split(",") if s.strip()]
+ADMIN_EMAILS = [s.strip() for s in os.environ.get("ADMIN_EMAILS", "").split(",") if s.strip()]
 
 
 def get_admin_user(user: User = Depends(get_current_user_required)) -> User:
-    is_admin = user.is_admin or user.username in ADMIN_USERNAMES
+    is_admin = user.is_admin or user.username in ADMIN_USERNAMES or user.email in ADMIN_EMAILS
     if not is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
