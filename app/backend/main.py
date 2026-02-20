@@ -269,6 +269,36 @@ def api_admin_suggestions(
     ]
 
 
+@app.get("/api/admin/all-versions")
+def api_admin_all_versions(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user),
+):
+    versions = (
+        db.query(GameVersion)
+        .order_by(GameVersion.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": v.id,
+            "version_number": v.version_number,
+            "description": v.description,
+            "user_prompt": v.user_prompt,
+            "is_suggested": v.is_suggested,
+            "suggestion_status": v.suggestion_status,
+            "suggested_at": v.suggested_at.isoformat() if v.suggested_at else None,
+            "reviewed_at": v.reviewed_at.isoformat() if v.reviewed_at else None,
+            "username": v.user.username if v.user else "Anonymous",
+            "session_id": v.session_id,
+            "share_slug": v.share_slug,
+            "is_shared": v.is_shared,
+            "created_at": v.created_at.isoformat() if v.created_at else None,
+        }
+        for v in versions
+    ]
+
+
 @app.post("/api/admin/approve/{version_id}")
 def api_admin_approve(
     version_id: str,

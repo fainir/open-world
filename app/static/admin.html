@@ -32,7 +32,11 @@
     <div id="stats-bar">
       <div class="stat-card">
         <div class="stat-num" id="stat-total">0</div>
-        <div class="stat-label">Total Suggestions</div>
+        <div class="stat-label">Total Versions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num stat-suggested" id="stat-suggested">0</div>
+        <div class="stat-label">Suggested</div>
       </div>
       <div class="stat-card">
         <div class="stat-num stat-pending" id="stat-pending">0</div>
@@ -51,6 +55,8 @@
     <!-- Filter Tabs -->
     <div id="filter-tabs">
       <button class="filter-tab active" data-filter="all" onclick="filterSuggestions('all', this)">All</button>
+      <button class="filter-tab" data-filter="suggested" onclick="filterSuggestions('suggested', this)">Suggested</button>
+      <button class="filter-tab" data-filter="not-suggested" onclick="filterSuggestions('not-suggested', this)">Not Suggested</button>
       <button class="filter-tab" data-filter="pending" onclick="filterSuggestions('pending', this)">Pending</button>
       <button class="filter-tab" data-filter="approved" onclick="filterSuggestions('approved', this)">Approved</button>
       <button class="filter-tab" data-filter="declined" onclick="filterSuggestions('declined', this)">Declined</button>
@@ -85,7 +91,7 @@
 // ADMIN PANEL
 // ══════════════════════════════════════════
 
-let allSuggestions = [];
+let allVersions = [];
 let currentFilter = 'all';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -99,16 +105,16 @@ async function checkAdminAuth() {
   }
   const user = Auth.getUser();
   document.getElementById('admin-username').textContent = user ? user.username : 'Admin';
-  loadSuggestions();
+  loadVersions();
 }
 
-async function loadSuggestions() {
+async function loadVersions() {
   document.getElementById('loading').style.display = 'flex';
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('suggestions-list').innerHTML = '';
 
   try {
-    const res = await fetch('/api/admin/suggestions', {
+    const res = await fetch('/api/admin/all-versions', {
       headers: Auth.authHeaders(),
     });
     if (res.status === 403) {
@@ -117,11 +123,11 @@ async function loadSuggestions() {
         '<div class="admin-error">Access denied. You are not an admin.</div>';
       return;
     }
-    if (!res.ok) throw new Error('Failed to load suggestions');
+    if (!res.ok) throw new Error('Failed to load versions');
 
-    allSuggestions = await res.json();
+    allVersions = await res.json();
     updateStats();
-    renderSuggestions();
+    renderVersions();
   } catch (err) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('suggestions-list').innerHTML =
@@ -130,29 +136,38 @@ async function loadSuggestions() {
 }
 
 function updateStats() {
-  document.getElementById('stat-total').textContent = allSuggestions.length;
+  document.getElementById('stat-total').textContent = allVersions.length;
+  document.getElementById('stat-suggested').textContent =
+    allVersions.filter(v => v.is_suggested).length;
   document.getElementById('stat-pending').textContent =
-    allSuggestions.filter(s => s.suggestion_status === 'pending').length;
+    allVersions.filter(v => v.suggestion_status === 'pending').length;
   document.getElementById('stat-approved').textContent =
-    allSuggestions.filter(s => s.suggestion_status === 'approved').length;
+    allVersions.filter(v => v.suggestion_status === 'approved').length;
   document.getElementById('stat-declined').textContent =
-    allSuggestions.filter(s => s.suggestion_status === 'declined').length;
+    allVersions.filter(v => v.suggestion_status === 'declined').length;
 }
 
 function filterSuggestions(filter, btn) {
   currentFilter = filter;
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  renderSuggestions();
+  renderVersions();
 }
 
-function renderSuggestions() {
+function renderVersions() {
   document.getElementById('loading').style.display = 'none';
   const list = document.getElementById('suggestions-list');
 
-  const filtered = currentFilter === 'all'
-    ? allSuggestions
-    : allSuggestions.filter(s => s.suggestion_status === currentFilter);
+  let filtered;
+  if (currentFilter === 'all') {
+    filtered = allVersions;
+  } else if (currentFilter === 'suggested') {
+    filtered = allVersions.filter(v => v.is_suggested);
+  } else if (currentFilter === 'not-suggested') {
+    filtered = allVersions.filter(v => !v.is_suggested);
+  } else {
+    filtered = allVersions.filter(v => v.suggestion_status === currentFilter);
+  }
 
   if (filtered.length === 0) {
     document.getElementById('empty-state').style.display = 'block';
@@ -161,42 +176,48 @@ function renderSuggestions() {
   }
 
   document.getElementById('empty-state').style.display = 'none';
-  list.innerHTML = filtered.map(s => {
-    const statusClass = `status-${s.suggestion_status}`;
-    const time = s.suggested_at ? new Date(s.suggested_at).toLocaleString() : '';
-    const reviewedTime = s.reviewed_at ? new Date(s.reviewed_at).toLocaleString() : '';
+  list.innerHTML = filtered.map(v => {
+    const isSuggested = v.is_suggested;
+    const statusLabel = isSuggested ? v.suggestion_status : 'not suggested';
+    const statusClass = isSuggested ? `status-${v.suggestion_status}` : 'status-none';
+    const time = v.created_at ? new Date(v.created_at).toLocaleString() : '';
+    const suggestedTime = v.suggested_at ? new Date(v.suggested_at).toLocaleString() : '';
+    const reviewedTime = v.reviewed_at ? new Date(v.reviewed_at).toLocaleString() : '';
 
     return `
-      <div class="suggestion-card" data-id="${s.id}">
+      <div class="suggestion-card ${!isSuggested ? 'card-not-suggested' : ''}" data-id="${v.id}">
         <div class="suggestion-header">
           <div class="suggestion-meta">
-            <span class="suggestion-user">${escapeHtml(s.username)}</span>
-            <span class="suggestion-version">v${s.version_number}</span>
-            <span class="suggestion-status ${statusClass}">${s.suggestion_status}</span>
+            <span class="suggestion-user">${escapeHtml(v.username)}</span>
+            <span class="suggestion-version">v${v.version_number}</span>
+            <span class="suggestion-status ${statusClass}">${statusLabel}</span>
+            ${v.is_shared ? '<span class="suggestion-status status-shared">shared</span>' : ''}
           </div>
           <span class="suggestion-time">${time}</span>
         </div>
 
+        ${v.user_prompt ? `
         <div class="suggestion-prompt">
           <div class="prompt-label">User Prompt:</div>
-          <div class="prompt-text">${escapeHtml(s.user_prompt || 'N/A')}</div>
-        </div>
+          <div class="prompt-text">${escapeHtml(v.user_prompt)}</div>
+        </div>` : ''}
 
         <div class="suggestion-desc">
           <div class="prompt-label">Changes:</div>
-          <div class="prompt-text">${escapeHtml(s.description)}</div>
+          <div class="prompt-text">${escapeHtml(v.description)}</div>
         </div>
 
         <div class="suggestion-footer">
           <div class="suggestion-actions">
-            ${s.suggestion_status === 'pending' ? `
-              <button class="btn btn-approve" onclick="approveVersion('${s.id}', this)">Approve & Merge</button>
-              <button class="btn btn-decline" onclick="declineVersion('${s.id}', this)">Decline</button>
-            ` : `
-              <span class="reviewed-info">${s.suggestion_status === 'approved' ? 'Approved' : 'Declined'}${reviewedTime ? ' on ' + reviewedTime : ''}</span>
-            `}
-            <button class="btn btn-outline btn-sm" onclick="previewVersion('${s.id}', ${s.version_number})">Preview</button>
-            ${s.share_slug ? `<a class="btn btn-ghost btn-sm" href="/shared/${s.share_slug}" target="_blank">View Shared</a>` : ''}
+            ${isSuggested && v.suggestion_status === 'pending' ? `
+              <button class="btn btn-approve" onclick="approveVersion('${v.id}', this)">Approve & Merge</button>
+              <button class="btn btn-decline" onclick="declineVersion('${v.id}', this)">Decline</button>
+            ` : ''}
+            ${isSuggested && v.suggestion_status !== 'pending' ? `
+              <span class="reviewed-info">${v.suggestion_status === 'approved' ? 'Approved' : 'Declined'}${reviewedTime ? ' on ' + reviewedTime : ''}</span>
+            ` : ''}
+            <button class="btn btn-outline btn-sm" onclick="previewVersion('${v.id}', ${v.version_number})">Preview</button>
+            ${v.share_slug ? `<a class="btn btn-ghost btn-sm" href="/shared/${v.share_slug}" target="_blank">View Shared</a>` : ''}
           </div>
         </div>
       </div>
@@ -219,7 +240,7 @@ async function approveVersion(versionId, btn) {
       const data = await res.json();
       throw new Error(data.detail || 'Approve failed');
     }
-    await loadSuggestions();
+    await loadVersions();
   } catch (err) {
     alert(err.message);
     btn.disabled = false;
@@ -240,7 +261,7 @@ async function declineVersion(versionId, btn) {
       const data = await res.json();
       throw new Error(data.detail || 'Decline failed');
     }
-    await loadSuggestions();
+    await loadVersions();
   } catch (err) {
     alert(err.message);
     btn.disabled = false;
