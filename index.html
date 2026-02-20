@@ -896,7 +896,8 @@ function mkNPCMesh(colorIdx,armed){
   return g}
 
 function pickNewTarget(npc){
-  if(npc.type==='festivalGoer'){npc.targetX=-80+Math.random()*160;npc.targetZ=660+Math.random()*140;return}
+  if(npc.type==='festivalGoer'){const a=Math.random()*Math.PI*2;const r=20+Math.random()*200;
+    npc.targetX=Math.cos(a)*r;npc.targetZ=850+Math.sin(a)*r;return}
   // City street waypoint
   const bx=-CH+BK*2+Math.floor(Math.random()*((CS-BK*4)/BK))*BK;
   const bz=-CH+BK*2+Math.floor(Math.random()*((CS-BK*4)/BK))*BK;
@@ -995,72 +996,55 @@ spawnV('waterski',CH+180,150,0);
 spawnV('ski',-CH-80,50,Math.PI);spawnV('ski',-CH-100,-100,Math.PI);
 spawnV('snowboard',-CH-90,0,Math.PI);spawnV('snowboard',-CH-120,150,Math.PI);
 
-// ══════════════ FESTIVAL AREA ══════════════
+// ══════════════ FESTIVAL AREA (Midburn-style) ══════════════
 let festivalData=null;
 (function buildFestival(){
-  const FX=0,FZ=730;
-  // Ground pad
-  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(300,200),
-    new THREE.MeshStandardMaterial({color:0x554433,roughness:.85}));
-  gnd.rotation.x=-Math.PI/2;gnd.position.set(FX,.05,FZ);scene.add(gnd);
+  const FX=0,FZ=850; // center of festival - much larger area
+  const sLC=[0xff0044,0x4400ff,0x00ff44,0xffaa00,0xff00ff,0x00aaff,0xff6600,0x00ffff];
+  const emM=c=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:1.8});
+  const slM=new THREE.MeshStandardMaterial({color:0xffeeaa,emissive:0xffdd88,emissiveIntensity:1.5});
 
-  // ─── STAGE ───
-  const stg=box(20,2,10,0x3a3a3a);stg.position.set(FX,1,FZ-30);scene.add(stg);
-  const stgBack=box(20,8,.3,0x222222);stgBack.position.set(FX,5,FZ-34.5);scene.add(stgBack);
-  const stgRoof=box(22,.3,12,0x333333);stgRoof.position.set(FX,9,FZ-30);scene.add(stgRoof);
-  for(const sx of[-9.5,9.5])for(const sz of[FZ-24,FZ-35]){
-    const p=cyl(.15,.15,9,0x555555);p.position.set(FX+sx,4.5,sz);scene.add(p)}
-  // Stage lights
-  const sLC=[0xff0044,0x4400ff,0x00ff44,0xffaa00,0xff00ff,0x00aaff];
-  for(let i=0;i<6;i++){const lx=FX-8+i*3.2;
-    const lM=new THREE.Mesh(new THREE.CylinderGeometry(.3,.5,.6,6),
-      new THREE.MeshStandardMaterial({color:sLC[i],emissive:sLC[i],emissiveIntensity:2}));
-    lM.position.set(lx,8.6,FZ-30);lM.rotation.x=Math.PI;scene.add(lM);
-    if(i<3){const pl=new THREE.PointLight(sLC[i],2,25);pl.position.set(lx,7,FZ-30);scene.add(pl)}}
-  // Speaker stacks
-  for(const sx of[-11,11])for(let j=0;j<3;j++){
-    const spk=box(2,1.5,1.5,0x1a1a1a);spk.position.set(FX+sx,1+j*1.5,FZ-30);scene.add(spk);
-    const cn=cyl(.4,.4,.1,0x333333);cn.rotation.x=Math.PI/2;cn.position.set(FX+sx,1+j*1.5,FZ-29.2);scene.add(cn)}
+  // ─── DESERT GROUND ───
+  const gnd=new THREE.Mesh(new THREE.CircleGeometry(280,32),
+    new THREE.MeshStandardMaterial({color:0xc4a66a,roughness:.95}));
+  gnd.rotation.x=-Math.PI/2;gnd.position.set(FX,.04,FZ);scene.add(gnd);
+  // Dusty paths (radial)
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
+    const path=new THREE.Mesh(new THREE.PlaneGeometry(6,250),
+      new THREE.MeshStandardMaterial({color:0xb89858,roughness:.9}));
+    path.rotation.x=-Math.PI/2;path.rotation.z=a;path.position.set(FX,.06,FZ);scene.add(path)}
+  // Circular ring roads
+  for(const r of[80,150,220]){
+    const ring=new THREE.Mesh(new THREE.RingGeometry(r-2,r+2,48),
+      new THREE.MeshStandardMaterial({color:0xb89858,roughness:.9}));
+    ring.rotation.x=-Math.PI/2;ring.position.set(FX,.06,FZ);scene.add(ring)}
 
-  // ─── FERRIS WHEEL ───
-  const fwG=new THREE.Group();const fwR=12;
-  // Support legs
-  for(const sx of[-.4,.4]){const leg=cyl(.25,.3,fwR+4,0x666666);
-    leg.position.set(sx*6,(fwR+3)/2,0);leg.rotation.z=sx*.15;fwG.add(leg)}
-  // Rotating wheel sub-group
-  const wheelGrp=new THREE.Group();wheelGrp.position.y=fwR+3;
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(fwR,.15,6,24),
-    new THREE.MeshStandardMaterial({color:0xcc3333,metalness:.4,roughness:.4}));
-  wheelGrp.add(rim);
-  const axle=cyl(.3,.3,1.5,0x888888);axle.rotation.x=Math.PI/2;wheelGrp.add(axle);
-  const gColors=[0xffaa00,0x44aaff,0xff4488,0x44ff44];
-  for(let i=0;i<12;i++){const a=(i/12)*Math.PI*2;
-    const spoke=cyl(.06,.06,fwR,0x888888);
-    spoke.position.set(Math.cos(a)*fwR/2,Math.sin(a)*fwR/2,0);
-    spoke.rotation.z=a+Math.PI/2;wheelGrp.add(spoke);
-    const gon=box(1,1.2,.8,gColors[i%4]);gon.position.set(Math.cos(a)*fwR,Math.sin(a)*fwR,0);wheelGrp.add(gon);
-    const led=new THREE.Mesh(new THREE.SphereGeometry(.15,4,3),
-      new THREE.MeshStandardMaterial({color:sLC[i%6],emissive:sLC[i%6],emissiveIntensity:1.5}));
-    led.position.set(Math.cos(a)*fwR,Math.sin(a)*fwR,.25);wheelGrp.add(led)}
-  fwG.add(wheelGrp);
-  fwG.position.set(FX,0,FZ+15);scene.add(fwG);
-
-  // ─── TENTS/BOOTHS ───
-  const tC=[0xcc2222,0x2266cc,0xccaa22,0x22cc66,0xcc44aa,0x44cccc];
-  function mkTent(tx,tz,tc){const tg=new THREE.Group();
-    for(const dx of[-1.5,1.5])for(const dz of[-1.5,1.5]){
-      const p=cyl(.06,.06,3,0x888888);p.position.set(dx,1.5,dz);tg.add(p)}
-    const canopy=box(3.5,.1,3.5,tc);canopy.material=new THREE.MeshStandardMaterial({color:tc,side:THREE.DoubleSide,roughness:.8});
-    canopy.position.y=3;tg.add(canopy);
-    const peak=new THREE.Mesh(new THREE.ConeGeometry(.5,.8,4),new THREE.MeshStandardMaterial({color:tc,roughness:.8}));
-    peak.position.y=3.4;tg.add(peak);
-    const counter=box(3,.1,.8,0x8B7355);counter.position.set(0,1,1.6);tg.add(counter);
-    tg.position.set(tx,getH(tx,tz),tz);scene.add(tg)}
-  mkTent(FX-40,FZ-20,tC[0]);mkTent(FX+40,FZ-20,tC[1]);
-  mkTent(FX-40,FZ+20,tC[2]);mkTent(FX+40,FZ+20,tC[3]);
-  mkTent(FX-60,FZ,tC[4]);mkTent(FX+60,FZ,tC[5]);
-
-  // ─── FOOD TRUCKS ───
+  // ═══ HELPER FUNCTIONS ═══
+  function mkStage(sx,sz,w,d,h,name,color,lightC){
+    const plat=box(w,2,d,0x2a2a2a);plat.position.set(sx,1,sz);scene.add(plat);
+    const back=box(w,h,.3,0x1a1a1a);back.position.set(sx,h/2+2,sz-d/2-.15);scene.add(back);
+    const roof=box(w+2,.25,d+2,0x222222);roof.position.set(sx,h+2,sz);scene.add(roof);
+    for(const px of[-w/2+.5,w/2-.5])for(const pz of[sz-d/2,sz+d/2]){
+      const p=cyl(.12,.12,h+2,0x444444);p.position.set(sx+px,(h+2)/2,pz);scene.add(p)}
+    // Lights
+    for(let i=0;i<Math.ceil(w/3);i++){const lx=sx-w/2+1.5+i*3;
+      const c=lightC[i%lightC.length];
+      const lM=new THREE.Mesh(new THREE.CylinderGeometry(.25,.4,.5,6),emM(c));
+      lM.position.set(lx,h+1.6,sz);lM.rotation.x=Math.PI;scene.add(lM)}
+    // Speaker stacks
+    for(const px of[-w/2-1.5,w/2+1.5])for(let j=0;j<Math.ceil(h/3);j++){
+      const spk=box(1.8,1.4,1.4,0x1a1a1a);spk.position.set(sx+px,1+j*1.4,sz);scene.add(spk)}
+    // 1 point light per stage
+    const pl=new THREE.PointLight(lightC[0],2,40);pl.position.set(sx,h,sz);scene.add(pl);
+  }
+  function mkTent(tx,tz,tc,sc){sc=sc||1;const tg=new THREE.Group();const hw=2*sc;
+    for(const dx of[-hw,hw])for(const dz of[-hw,hw]){
+      const p=cyl(.06,.06,3*sc,0x888888);p.position.set(dx,1.5*sc,dz);tg.add(p)}
+    const canopy=box(hw*2+1.5,.1,hw*2+1.5,tc);canopy.material=new THREE.MeshStandardMaterial({color:tc,side:THREE.DoubleSide,roughness:.8});
+    canopy.position.y=3*sc;tg.add(canopy);
+    const peak=new THREE.Mesh(new THREE.ConeGeometry(.5*sc,.8*sc,4),new THREE.MeshStandardMaterial({color:tc,roughness:.8}));
+    peak.position.y=3*sc+.4*sc;tg.add(peak);
+    tg.position.set(tx,.04,tz);scene.add(tg)}
   function mkFoodTruck(fx,fz,fry,color){const ftg=new THREE.Group();
     const body=box(3.5,2,1.8,color);body.position.y=1.5;ftg.add(body);
     const win=box(1.5,.8,.05,0x88bbff);win.material=new THREE.MeshStandardMaterial({color:0x88bbff,transparent:true,opacity:.4});
@@ -1070,43 +1054,285 @@ let festivalData=null;
       wh.position.set(i<2?1.2:-1.2,.35,i%2===0?.85:-.85);ftg.add(wh)}
     const sign=box(1.5,.8,.08,0xffffcc);sign.material=new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffeeaa,emissiveIntensity:.3});
     sign.position.set(0,3.1,.93);ftg.add(sign);
-    ftg.position.set(fx,getH(fx,fz),fz);ftg.rotation.y=fry;scene.add(ftg)}
-  mkFoodTruck(FX-30,FZ+50,Math.PI/4,0xff6644);
-  mkFoodTruck(FX+30,FZ+50,-Math.PI/4,0x44aaff);
-  mkFoodTruck(FX,FZ+55,0,0x66cc44);
+    ftg.position.set(fx,.04,fz);ftg.rotation.y=fry;scene.add(ftg)}
+  function stringLights(pts){
+    for(let i=0;i<pts.length;i++){const[px,pz]=pts[i];const[nx,nz]=pts[(i+1)%pts.length];
+      const pole=cyl(.05,.05,5,0x666666);pole.position.set(px,2.5,pz);scene.add(pole);
+      for(let s=0;s<=5;s++){const t=s/5;
+        const bulb=new THREE.Mesh(new THREE.SphereGeometry(.12,4,3),slM);
+        bulb.position.set(px+(nx-px)*t,5-Math.sin(t*Math.PI)*.8,pz+(nz-pz)*t);scene.add(bulb)}}}
 
-  // ─── DANCE FLOOR ───
+  // ═══════════════════════════════════════
+  //          MAIN STAGE (center-south)
+  // ═══════════════════════════════════════
+  mkStage(FX,FZ-60,28,14,10,'MAIN STAGE',0x222222,[0xff0044,0x4400ff,0x00ff44,0xffaa00,0xff00ff,0x00aaff]);
+  // Giant LED screen behind main stage
+  const ledScreen=box(24,.15,6,0x111111);
+  ledScreen.material=new THREE.MeshStandardMaterial({color:0x2200ff,emissive:0x4400ff,emissiveIntensity:1.2});
+  ledScreen.position.set(FX,7,FZ-67.3);scene.add(ledScreen);
+
+  // ═══════════════════════════════════════
+  //          BASS STAGE (east)
+  // ═══════════════════════════════════════
+  mkStage(FX+100,FZ+20,20,12,8,'BASS ARENA',0x1a1a2a,[0x4400ff,0x6600ff,0x8800ff,0x00aaff]);
+  // Bass bins pyramid
+  for(let r=0;r<3;r++)for(let c=0;c<4-r;c++){
+    const bx=FX+100-3+c*2+r,bz=FZ+20+7;
+    const bin=box(1.8,1.8,1.8,0x111111);bin.position.set(bx,1+r*1.8,bz);scene.add(bin)}
+
+  // ═══════════════════════════════════════
+  //          CHILL STAGE (west)
+  // ═══════════════════════════════════════
+  mkStage(FX-100,FZ+30,16,10,6,'CHILL ZONE',0x2a2a1a,[0xffaa00,0xff6600,0xffdd00,0xff4400]);
+  // Bean bags / cushions around chill stage
+  const cushC=[0xcc4444,0x4444cc,0x44cc44,0xcccc44,0xcc44cc];
+  for(let i=0;i<12;i++){const a=Math.PI*.3+i*.15;const r=12+Math.random()*8;
+    const cb=new THREE.Mesh(new THREE.SphereGeometry(.6,5,4),
+      new THREE.MeshStandardMaterial({color:cushC[i%5],roughness:.9}));
+    cb.position.set(FX-100+Math.cos(a)*r,.25,FZ+30+Math.sin(a)*r);cb.scale.set(1,.4,1);scene.add(cb)}
+
+  // ═══════════════════════════════════════
+  //          TECHNO TENT (north-east)
+  // ═══════════════════════════════════════
+  // Big dome tent
+  const domeR=15;
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(domeR,16,10,0,Math.PI*2,0,Math.PI/2),
+    new THREE.MeshStandardMaterial({color:0x222222,transparent:true,opacity:.6,side:THREE.DoubleSide}));
+  dome.position.set(FX+50,0,FZ+100);scene.add(dome);
+  // Neon ring around dome
+  const neonRing=new THREE.Mesh(new THREE.TorusGeometry(domeR+1,.15,6,24),emM(0xff00ff));
+  neonRing.rotation.x=Math.PI/2;neonRing.position.set(FX+50,.5,FZ+100);scene.add(neonRing);
+  // DJ booth inside dome
+  const djBooth=box(4,1.2,2,0x1a1a1a);djBooth.position.set(FX+50,.6,FZ+100-8);scene.add(djBooth);
+  // Laser source
+  const laser=new THREE.PointLight(0xff00ff,2,30);laser.position.set(FX+50,10,FZ+100);scene.add(laser);
+
+  // ═══════════════════════════════════════
+  //          ACOUSTIC STAGE (north-west)
+  // ═══════════════════════════════════════
+  mkStage(FX-60,FZ+120,14,8,5,'ACOUSTIC',0x3a2a1a,[0xffdd00,0xffaa44,0xff8800]);
+  // Hay bales for seating
+  for(let i=0;i<15;i++){const a=-1+i*.2;const r=8+Math.floor(i/5)*4;
+    const hay=box(1.5,.8,1,0xccaa44);hay.material=new THREE.MeshStandardMaterial({color:0xccaa44,roughness:.95});
+    hay.position.set(FX-60+Math.cos(a)*r,.4,FZ+120+Math.sin(a)*r+5);scene.add(hay)}
+
+  // ═══════════════════════════════════════
+  //          SUNRISE STAGE (far north)
+  // ═══════════════════════════════════════
+  mkStage(FX,FZ+180,22,12,9,'SUNRISE',0x1a1a1a,[0xff4400,0xff6600,0xffaa00,0xffdd00,0xff0044]);
+
+  // ═══════════════════════════════════════
+  //          THE TEMPLE (burning man icon)
+  // ═══════════════════════════════════════
+  const templeX=FX,templeZ=FZ+60;
+  // Base platform
+  const tBase=box(12,.5,12,0xddcc99);tBase.position.set(templeX,.25,templeZ);scene.add(tBase);
+  // Pillars
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
+    const pil=cyl(.25,.2,8,0xddcc88);pil.position.set(templeX+Math.cos(a)*4.5,4,templeZ+Math.sin(a)*4.5);scene.add(pil)}
+  // Spire
+  const spire=new THREE.Mesh(new THREE.ConeGeometry(1.5,10,6),
+    new THREE.MeshStandardMaterial({color:0xeedd99,roughness:.6}));
+  spire.position.set(templeX,13,templeZ);scene.add(spire);
+  // Inner flame (emissive)
+  const flame=new THREE.Mesh(new THREE.ConeGeometry(.5,3,5),emM(0xff6600));
+  flame.position.set(templeX,2,templeZ);scene.add(flame);
+  // Temple ring
+  const tRing=new THREE.Mesh(new THREE.TorusGeometry(5.5,.12,6,20),
+    new THREE.MeshStandardMaterial({color:0xddcc88,roughness:.6}));
+  tRing.rotation.x=Math.PI/2;tRing.position.set(templeX,8,templeZ);scene.add(tRing);
+
+  // ═══════════════════════════════════════
+  //          ART INSTALLATIONS
+  // ═══════════════════════════════════════
+  // Giant glowing orb
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(5,16,12),emM(0x00ffaa));
+  orb.material.transparent=true;orb.material.opacity=.6;
+  orb.position.set(FX-40,6,FZ-10);scene.add(orb);
+  const orbPole=cyl(.15,.15,6,0x666666);orbPole.position.set(FX-40,3,FZ-10);scene.add(orbPole);
+
+  // Neon pyramid
+  const pyrGeo=new THREE.ConeGeometry(6,12,4);
+  const pyr=new THREE.Mesh(pyrGeo,new THREE.MeshStandardMaterial({color:0xff0066,emissive:0xff0066,emissiveIntensity:.5,transparent:true,opacity:.4,side:THREE.DoubleSide}));
+  pyr.position.set(FX+40,6,FZ-10);scene.add(pyr);
+  // Neon edges
+  for(let e=0;e<4;e++){const a=e/4*Math.PI*2+Math.PI/4;
+    const edge=cyl(.08,.08,13.5,0xff0066);edge.material=emM(0xff0066);
+    edge.position.set(FX+40+Math.cos(a)*3,6,FZ-10+Math.sin(a)*3);
+    edge.rotation.z=Math.atan2(6,3)*(e%2===0?1:-1);edge.rotation.y=a;scene.add(edge)}
+
+  // Giant metal sculpture - abstract twisted form
+  const sculpt=new THREE.Group();
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const r=2+i*.3;
+    const ring2=new THREE.Mesh(new THREE.TorusGeometry(r,.12,6,16),
+      new THREE.MeshStandardMaterial({color:0x888888,metalness:.9,roughness:.1}));
+    ring2.position.y=i*1.5+1;ring2.rotation.x=i*.3;ring2.rotation.z=i*.2;sculpt.add(ring2)}
+  sculpt.position.set(FX-80,0,FZ+60);scene.add(sculpt);
+
+  // Laser harp (vertical beams)
+  const beamC=[0xff0000,0xff8800,0xffff00,0x00ff00,0x0088ff,0x8800ff,0xff00ff];
+  for(let i=0;i<7;i++){
+    const beam=cyl(.03,.03,15,beamC[i]);beam.material=emM(beamC[i]);
+    beam.position.set(FX+80+i*1.5,7.5,FZ+60);scene.add(beam)}
+  const harpBase=box(14,.3,2,0x333333);harpBase.position.set(FX+84.5,.15,FZ+60);scene.add(harpBase);
+
+  // Dream catcher (giant ring with web)
+  const dcR=4;
+  const dcRing=new THREE.Mesh(new THREE.TorusGeometry(dcR,.2,8,20),
+    new THREE.MeshStandardMaterial({color:0xccaa66,roughness:.7}));
+  dcRing.position.set(FX+20,8,FZ+120);scene.add(dcRing);
+  const dcPole=cyl(.12,.12,10,0x8B7355);dcPole.position.set(FX+20,5,FZ+120);scene.add(dcPole);
+  // Feathers hanging
+  for(let i=0;i<5;i++){
+    const f=new THREE.Mesh(new THREE.ConeGeometry(.15,1.5,3),
+      new THREE.MeshStandardMaterial({color:[0xffffff,0x44aaff,0xff4488][i%3],roughness:.8}));
+    f.position.set(FX+20-2+i,4,FZ+120);scene.add(f)}
+
+  // ═══════════════════════════════════════
+  //          FERRIS WHEEL (bigger)
+  // ═══════════════════════════════════════
+  const fwG=new THREE.Group();const fwR=18;
+  for(const sx of[-.4,.4]){const leg=cyl(.3,.35,fwR+4,0x666666);
+    leg.position.set(sx*7,(fwR+3)/2,0);leg.rotation.z=sx*.12;fwG.add(leg)}
+  const wheelGrp=new THREE.Group();wheelGrp.position.y=fwR+3;
+  wheelGrp.add(new THREE.Mesh(new THREE.TorusGeometry(fwR,.2,6,32),
+    new THREE.MeshStandardMaterial({color:0xcc3333,metalness:.4,roughness:.4})));
+  wheelGrp.add(cyl(.4,.4,2,0x888888));wheelGrp.children[1].rotation.x=Math.PI/2;
+  const gColors=[0xffaa00,0x44aaff,0xff4488,0x44ff44,0xff6600,0xaa44ff];
+  for(let i=0;i<16;i++){const a=(i/16)*Math.PI*2;
+    const spoke=cyl(.06,.06,fwR,0x888888);
+    spoke.position.set(Math.cos(a)*fwR/2,Math.sin(a)*fwR/2,0);spoke.rotation.z=a+Math.PI/2;wheelGrp.add(spoke);
+    const gon=box(1.2,1.4,.9,gColors[i%6]);gon.position.set(Math.cos(a)*fwR,Math.sin(a)*fwR,0);wheelGrp.add(gon);
+    const led=new THREE.Mesh(new THREE.SphereGeometry(.18,4,3),emM(sLC[i%8]));
+    led.position.set(Math.cos(a)*fwR,Math.sin(a)*fwR,.3);wheelGrp.add(led)}
+  fwG.add(wheelGrp);
+  fwG.position.set(FX+130,0,FZ-30);scene.add(fwG);
+
+  // ═══════════════════════════════════════
+  //          WORKSHOP VILLAGE
+  // ═══════════════════════════════════════
+  const wsC=[0xcc6622,0x6622cc,0x22cc66,0xcc2266,0x2266cc,0x66cc22,0xcc8844,0x4488cc];
+  const wsNames=['Yoga','Pottery','Fire Dance','Drumming','Painting','Meditation','Circus','Music'];
+  for(let i=0;i<8;i++){const a=Math.PI*.6+i*.25;const r=100+((i%2)*20);
+    const wx=FX+Math.cos(a)*r,wz=FZ+Math.sin(a)*r;
+    mkTent(wx,wz,wsC[i],1.2);
+    // Workshop mat/rug inside
+    const mat=new THREE.Mesh(new THREE.CircleGeometry(2.5,8),
+      new THREE.MeshStandardMaterial({color:wsC[i],roughness:.95}));
+    mat.rotation.x=-Math.PI/2;mat.position.set(wx,.08,wz);scene.add(mat)}
+
+  // ═══════════════════════════════════════
+  //          FOOD & MARKET AREA (south-east)
+  // ═══════════════════════════════════════
+  const ftC=[0xff6644,0x44aaff,0x66cc44,0xffaa22,0xcc44aa,0x44ccaa];
+  mkFoodTruck(FX+60,FZ-100,Math.PI/3,ftC[0]);
+  mkFoodTruck(FX+80,FZ-100,-Math.PI/6,ftC[1]);
+  mkFoodTruck(FX+70,FZ-80,Math.PI/2,ftC[2]);
+  mkFoodTruck(FX+90,FZ-90,0,ftC[3]);
+  mkFoodTruck(FX+50,FZ-80,Math.PI,ftC[4]);
+  mkFoodTruck(FX+100,FZ-80,-Math.PI/4,ftC[5]);
+  // Market stalls
+  for(let i=0;i<10;i++){const mx=FX+40+i%5*12,mz=FZ-110-Math.floor(i/5)*10;
+    mkTent(mx,mz,[0xcc8844,0x88ccaa,0xcc4488,0xaacc44,0x4488cc,0xccaa44,0x8844cc,0x44cc88,0xcc4444,0x4444cc][i],.8)}
+
+  // ═══════════════════════════════════════
+  //          DANCE FLOORS (multiple)
+  // ═══════════════════════════════════════
   const dfC=[0xff0066,0x6600ff,0x00ff66,0xff6600,0x0066ff,0xff00ff];
   const dfTiles=[];
-  for(let ix=-3;ix<=3;ix++)for(let iz=-3;iz<=3;iz++){
+  // Main dance floor near main stage
+  for(let ix=-4;ix<=4;ix++)for(let iz=-4;iz<=4;iz++){
     const tc=dfC[(Math.abs(ix)+Math.abs(iz))%dfC.length];
     const tile=box(1.9,.05,1.9,tc);
     tile.material=new THREE.MeshStandardMaterial({color:tc,emissive:tc,emissiveIntensity:.3,roughness:.2,metalness:.3});
-    tile.position.set(FX+ix*2,.06,FZ+iz*2);scene.add(tile);dfTiles.push(tile)}
+    tile.position.set(FX+ix*2,.07,FZ-40+iz*2);scene.add(tile);dfTiles.push(tile)}
+  // Bass arena dance floor
+  for(let ix=-3;ix<=3;ix++)for(let iz=-3;iz<=3;iz++){
+    const tc=dfC[(Math.abs(ix*2)+Math.abs(iz))%dfC.length];
+    const tile=box(1.9,.05,1.9,tc);
+    tile.material=new THREE.MeshStandardMaterial({color:tc,emissive:tc,emissiveIntensity:.3,roughness:.2,metalness:.3});
+    tile.position.set(FX+100+ix*2,.07,FZ+30+iz*2);scene.add(tile);dfTiles.push(tile)}
 
-  // ─── STRING LIGHTS ───
-  const slM=new THREE.MeshStandardMaterial({color:0xffeeaa,emissive:0xffdd88,emissiveIntensity:1.5});
-  const poles=[[-80,FZ-40],[-40,FZ-40],[0,FZ-40],[40,FZ-40],[80,FZ-40],
-    [80,FZ],[80,FZ+40],[40,FZ+60],[0,FZ+60],[-40,FZ+60],[-80,FZ+40],[-80,FZ]];
-  for(let i=0;i<poles.length;i++){const[px,pz]=poles[i];const[nx,nz]=poles[(i+1)%poles.length];
-    const pole=cyl(.05,.05,5,0x666666);pole.position.set(px,2.5,pz);scene.add(pole);
-    for(let s=0;s<=6;s++){const t=s/6;const bx=px+(nx-px)*t,bz2=pz+(nz-pz)*t;
-      const sag=-Math.sin(t*Math.PI)*.8;
-      const bulb=new THREE.Mesh(new THREE.SphereGeometry(.12,4,3),slM);
-      bulb.position.set(bx,5+sag,bz2);scene.add(bulb)}}
+  // ═══════════════════════════════════════
+  //          CAMPING & CHILL ZONES
+  // ═══════════════════════════════════════
+  seedR(8888);
+  // Geodesic dome tents (camping)
+  for(let i=0;i<14;i++){const a=srand()*Math.PI*2;const r=170+srand()*60;
+    const dx=FX+Math.cos(a)*r,dz=FZ+Math.sin(a)*r;
+    const dR=1.5+srand();
+    const domeTent=new THREE.Mesh(new THREE.SphereGeometry(dR,8,5,0,Math.PI*2,0,Math.PI/2),
+      new THREE.MeshStandardMaterial({color:[0xeedd88,0x88bbcc,0xcc8888,0x88cc88,0xccaa66][i%5],roughness:.85}));
+    domeTent.position.set(dx,0,dz);scene.add(domeTent)}
+  // Hammocks between poles
+  for(let i=0;i<5;i++){const hx=FX-120+i*15,hz=FZ-20;
+    const p1=cyl(.05,.05,3,0x8B7355);p1.position.set(hx,1.5,hz);scene.add(p1);
+    const p2=cyl(.05,.05,3,0x8B7355);p2.position.set(hx+4,1.5,hz);scene.add(p2);
+    const hammock=new THREE.Mesh(new THREE.PlaneGeometry(4,1.5),
+      new THREE.MeshStandardMaterial({color:[0xcc4444,0x4444cc,0x44cc44,0xcccc44,0xcc44cc][i],side:THREE.DoubleSide,roughness:.9}));
+    hammock.position.set(hx+2,2,hz);hammock.rotation.z=.2;scene.add(hammock)}
 
-  // ─── ENTRANCE ARCH ───
-  const archL=cyl(.15,.15,6,0xcc3333);archL.position.set(FX-6,3,FZ-55);scene.add(archL);
-  const archR=cyl(.15,.15,6,0xcc3333);archR.position.set(FX+6,3,FZ-55);scene.add(archR);
-  const archTop=box(12.5,.4,1,0xcc3333);archTop.position.set(FX,6,FZ-55);scene.add(archTop);
-  // Sign
-  const archSign=box(8,.08,1.5,0xffffcc);archSign.material=new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffeeaa,emissiveIntensity:.5});
-  archSign.position.set(FX,5.2,FZ-55);scene.add(archSign);
+  // Fire pits (gathering spots)
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const r=60;
+    const fpx=FX+Math.cos(a)*r,fpz=FZ+Math.sin(a)*r;
+    // Stone ring
+    for(let s=0;s<8;s++){const sa=s/8*Math.PI*2;
+      const stone=new THREE.Mesh(new THREE.SphereGeometry(.35,5,4),
+        new THREE.MeshStandardMaterial({color:0x666666,roughness:.9}));
+      stone.position.set(fpx+Math.cos(sa)*1.5,.2,fpz+Math.sin(sa)*1.5);stone.scale.y=.5;scene.add(stone)}
+    // Fire glow
+    const fireGlow=new THREE.Mesh(new THREE.ConeGeometry(.4,1.5,5),emM(0xff4400));
+    fireGlow.position.set(fpx,.8,fpz);scene.add(fireGlow);
+    // Log seats
+    for(let l=0;l<4;l++){const la=l/4*Math.PI*2+.3;
+      const log=cyl(.2,.2,1.5,0x6a4a2a);log.rotation.z=Math.PI/2;
+      log.position.set(fpx+Math.cos(la)*3,.2,fpz+Math.sin(la)*3);log.rotation.y=la;scene.add(log)}}
+
+  // ═══════════════════════════════════════
+  //          STRING LIGHTS (everywhere)
+  // ═══════════════════════════════════════
+  // Inner ring
+  const innerPts=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2;
+    innerPts.push([FX+Math.cos(a)*85,FZ+Math.sin(a)*85])}
+  stringLights(innerPts);
+  // Outer ring
+  const outerPts=[];for(let i=0;i<16;i++){const a=i/16*Math.PI*2;
+    outerPts.push([FX+Math.cos(a)*160,FZ+Math.sin(a)*160])}
+  stringLights(outerPts);
+  // Paths between stages
+  stringLights([[FX-15,FZ-60],[FX-50,FZ-20],[FX-100,FZ+30]]);
+  stringLights([[FX+15,FZ-60],[FX+50,FZ+20],[FX+100,FZ+20]]);
+
+  // ═══════════════════════════════════════
+  //          ENTRANCE (south)
+  // ═══════════════════════════════════════
+  // Grand entrance arch
+  const archH=8;
+  for(const sx of[-10,10]){
+    const leg2=cyl(.25,.2,archH,0xcc3333);leg2.position.set(FX+sx,archH/2,FZ-250);scene.add(leg2)}
+  const archTop=box(21,.5,1.5,0xcc3333);archTop.position.set(FX,archH,FZ-250);scene.add(archTop);
+  const archSign=box(16,.08,3,0xffffcc);archSign.material=new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffeeaa,emissiveIntensity:.5});
+  archSign.position.set(FX,archH-2,FZ-250);scene.add(archSign);
+  // Flame pillars at entrance
+  for(const sx of[-14,14]){
+    const fp=cyl(.2,.2,5,0x444444);fp.position.set(FX+sx,2.5,FZ-250);scene.add(fp);
+    const fl2=new THREE.Mesh(new THREE.ConeGeometry(.3,1.2,5),emM(0xff4400));
+    fl2.position.set(FX+sx,5.5,FZ-250);scene.add(fl2)}
 
   // ─── PARKED VEHICLES ───
-  spawnV('car',FX-20,FZ-55,Math.PI/6);spawnV('car',FX-10,FZ-55,0);
-  spawnV('motorcycle',FX+5,FZ-55,-Math.PI/4);spawnV('motorcycle',FX+15,FZ-55,0);
-  spawnV('bike',FX+25,FZ-55,Math.PI/3);
+  spawnV('car',FX-25,FZ-260,Math.PI/6);spawnV('car',FX-12,FZ-260,0);spawnV('car',FX+18,FZ-265,.3);
+  spawnV('motorcycle',FX+5,FZ-260,-Math.PI/4);spawnV('motorcycle',FX+30,FZ-258,0);
+  spawnV('bike',FX-35,FZ-255,Math.PI/3);spawnV('bike',FX+40,FZ-260,-.2);
+
+  // Flags and banners scattered everywhere
+  seedR(7654);
+  const flagC=[0xff0044,0x4400ff,0x00ff44,0xffaa00,0xff00ff,0x00aaff,0xff6600,0xffdd00];
+  for(let i=0;i<30;i++){const a=srand()*Math.PI*2;const r=30+srand()*200;
+    const fx=FX+Math.cos(a)*r,fz=FZ+Math.sin(a)*r;
+    const pole=cyl(.04,.04,6,0x888888);pole.position.set(fx,3,fz);scene.add(pole);
+    const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1),
+      new THREE.MeshStandardMaterial({color:flagC[i%8],side:THREE.DoubleSide,roughness:.9}));
+    flag.position.set(fx+.8,5.5,fz);scene.add(flag)}
 
   festivalData={wheelGrp,dfTiles};
 })();
@@ -1121,9 +1347,10 @@ seedR(5555);
 for(let i=0;i<5;i++){const x=-CH+BK*3+srand()*(CS-BK*6),z=-CH+BK*3+srand()*(CS-BK*6);
   if(!colBldg(x,z,2)){const types=['biker','cyclist','driver','biker','cyclist'];
     spawnNPC(types[i%types.length],x,z,srand()*Math.PI*2)}}
-// Festival NPCs
+// Festival NPCs (spread across large festival grounds)
 seedR(6666);
-for(let i=0;i<12;i++){const x=-80+srand()*160,z=660+srand()*140;
+for(let i=0;i<15;i++){const a=srand()*Math.PI*2;const r=20+srand()*200;
+  const x=Math.cos(a)*r,z=850+Math.sin(a)*r;
   spawnNPC('festivalGoer',x,z,srand()*Math.PI*2)}
 
 // ══════════════ CHARACTER ══════════════
