@@ -205,7 +205,7 @@ const NPC_TYPES={
 };
 const NPC_COLORS=[0x2244aa,0xaa2222,0x22aa44,0xaa8822,0x6622aa,0x228888,0x884422,0xdd6644,0x4466aa,0x335533,0xcc4488,0x6688bb,0x996633,0x448844,0x774411];
 const npcs=[];
-const MAX_NPCS=35;
+const MAX_NPCS=20;
 const kU=()=>keys['KeyW']||keys['ArrowUp'],kD=()=>keys['KeyS']||keys['ArrowDown'];
 const kL=()=>keys['KeyA']||keys['ArrowLeft'],kR=()=>keys['KeyD']||keys['ArrowRight'];
 const clock=new THREE.Clock();
@@ -213,7 +213,7 @@ const clock=new THREE.Clock();
 // ══════════════ RENDERER ══════════════
 const canvas=document.getElementById('game');
 const R=new THREE.WebGLRenderer({canvas,antialias:true});
-R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,1.5));
+R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,1));
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=0.9;
 const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x88bbdd,0.00045);
@@ -221,7 +221,7 @@ const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.5,5000);
 
 // ══════════════ SKY ══════════════
 const sunDir=new THREE.Vector3(0.45,0.55,-0.3).normalize();
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(3500,32,20),new THREE.ShaderMaterial({
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(3500,16,10),new THREE.ShaderMaterial({
 uniforms:{sunDir:{value:sunDir}},side:THREE.BackSide,depthWrite:false,
 vertexShader:`varying vec3 vD;void main(){vD=normalize((modelMatrix*vec4(position,1.0)).xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
 fragmentShader:`uniform vec3 sunDir;varying vec3 vD;void main(){vec3 d=normalize(vD);float y=d.y;vec3 top=vec3(0.12,0.32,0.78),mid=vec3(0.38,0.62,0.92),hor=vec3(0.72,0.82,0.92);vec3 col=y>0.0?mix(hor,mix(mid,top,pow(y,0.45)),smoothstep(0.0,0.35,y)):mix(hor,vec3(0.25,0.35,0.5),min(-y*2.0,1.0));float sd=dot(d,sunDir);col+=vec3(1,0.95,0.8)*pow(max(sd,0.0),900.0)*3.0;col+=vec3(1,0.85,0.5)*pow(max(sd,0.0),80.0)*0.5;col+=vec3(1,0.7,0.3)*pow(max(sd,0.0),8.0)*0.12;col=mix(col,vec3(0.9,0.85,0.78),pow(1.0-abs(y),10.0)*0.5);gl_FragColor=vec4(col,1);}`
@@ -231,7 +231,7 @@ fragmentShader:`uniform vec3 sunDir;varying vec3 vD;void main(){vec3 d=normalize
 const sun=new THREE.DirectionalLight(0xffeedd,2.5);
 sun.position.copy(sunDir).multiplyScalar(500);sun.castShadow=true;
 sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.near=1;sun.shadow.camera.far=400;
-[-150,150,-150,150].forEach((v,i)=>sun.shadow.camera[['left','right','top','bottom'][i]]=v);
+[-100,100,-100,100].forEach((v,i)=>sun.shadow.camera[['left','right','top','bottom'][i]]=v);
 sun.shadow.bias=-0.002;scene.add(sun,sun.target);
 scene.add(new THREE.AmbientLight(0x667788,1.2));
 scene.add(new THREE.HemisphereLight(0x88bbff,0x556633,0.8));
@@ -532,21 +532,20 @@ for(let i=0;i<Math.min(sportsLots.length,6);i++){
     f.rotation.y=Math.PI/2;f.position.set(sx+fx,1.25,sz);scene.add(f)}
 }
 
-// ─── SMALL LAKES/PONDS ───
+// ─── SMALL LAKES/PONDS (merged stones) ───
 seedR(7777);
 const pondLots=emptyLots.slice(parkCount+6,parkCount+10);
+const _stoneGeo=new THREE.SphereGeometry(.35,4,3);
+const stoneGeos=[];
 for(let i=0;i<Math.min(pondLots.length,4);i++){
   const lot=pondLots[i];const lx=lot.cx,lz=lot.cz;
   const pr=6+srand()*4;
   const pond=new THREE.Mesh(new THREE.CircleGeometry(pr,12),waterPondM);
   pond.rotation.x=-Math.PI/2;pond.position.set(lx,.02,lz);scene.add(pond);
-  // Few border stones (simple)
   for(let s=0;s<6;s++){const a=s/6*Math.PI*2;
-    const stone=new THREE.Mesh(new THREE.SphereGeometry(.35,4,3),
-      new THREE.MeshStandardMaterial({color:0x777777,roughness:.9}));
-    stone.position.set(lx+Math.cos(a)*(pr+.2),.15,lz+Math.sin(a)*(pr+.2));
-    stone.scale.y=.5;scene.add(stone)}
+    stoneGeos.push(geoAt(_stoneGeo,lx+Math.cos(a)*(pr+.2),.15,lz+Math.sin(a)*(pr+.2),0,0,0,1,.5,1))}
 }
+if(stoneGeos.length)scene.add(new THREE.Mesh(mergeGeometries(stoneGeos),new THREE.MeshStandardMaterial({color:0x777777,roughness:.9})));
 
 // ─── CENTRAL PLAZA WITH FOUNTAIN ───
 if(!colBldg(0,0,8)){
@@ -585,44 +584,55 @@ for(let i=0;i<5;i++){
     new THREE.MeshStandardMaterial({color:0x777777}));
   head.position.set(px,3.7,pz);scene.add(head)}
 
-// ─── SIDEWALKS & BUS STOPS ───
+// ─── SIDEWALKS (merged) & BUS STOPS ───
 seedR(1111);
+const _swGeo=new THREE.BoxGeometry(BK-ST,.08,.8);
+const swGeos=[];
 for(let x=-CH+ST;x<CH;x+=BK)for(let z=-CH+ST;z<CH;z+=BK){
-  // Sidewalk strips (sparse)
-  if(srand()>.8){const sw=box(BK-ST,.08,.8,0x888888);sw.position.set(x+(BK-ST)/2,.04,z+.4);scene.add(sw)}
+  if(srand()>.8)swGeos.push(geoAt(_swGeo,x+(BK-ST)/2,.04,z+.4));
 }
-// Bus stops (simplified - just roof + pole)
+if(swGeos.length)scene.add(new THREE.Mesh(mergeGeometries(swGeos),new THREE.MeshStandardMaterial({color:0x888888,roughness:.85})));
+// Bus stops (merged)
+const _bsPole=new THREE.CylinderGeometry(.05,.05,2.8,4);
+const _bsRoof=new THREE.BoxGeometry(2,.05,1.2);
+const bsMetalGeos=[],bsRoofGeos=[];
 for(let i=0;i<8;i++){
   const bx=-CH+BK*3+srand()*(CS-BK*6),bz=-CH+BK*3+srand()*(CS-BK*6);
   if(colBldg(bx,bz,1))continue;
-  const bg=new THREE.Group();
-  bg.add(cyl(.05,.05,2.8,0x666666));bg.children[0].position.set(0,1.4,0);
-  const roof=box(2,.05,1.2,0x3388aa);roof.position.y=2.8;bg.add(roof);
-  bg.position.set(bx,.1,bz);bg.rotation.y=srand()*Math.PI*2;scene.add(bg)}
+  const ry=srand()*Math.PI*2;
+  bsMetalGeos.push(geoAt(_bsPole,bx,1.5,bz));
+  bsRoofGeos.push(geoAt(_bsRoof,bx,2.9,bz));
+}
+if(bsMetalGeos.length)scene.add(new THREE.Mesh(mergeGeometries(bsMetalGeos),new THREE.MeshStandardMaterial({color:0x666666,roughness:.7})));
+if(bsRoofGeos.length)scene.add(new THREE.Mesh(mergeGeometries(bsRoofGeos),new THREE.MeshStandardMaterial({color:0x3388aa,roughness:.6})));
 
-// ─── PARKING LOTS ───
+// ─── PARKING LOTS (merged lines) ───
 const parkingM=new THREE.MeshStandardMaterial({color:0x444444,roughness:.9});
-const lineM=new THREE.MeshStandardMaterial({color:0xffffff});
+const _parkLine=new THREE.PlaneGeometry(.1,4);
+const parkLineGeos=[];
 seedR(2222);
 const parkingLots=emptyLots.slice(parkCount+10,parkCount+14);
 for(let i=0;i<Math.min(parkingLots.length,3);i++){
   const lot=parkingLots[i];const lx=lot.cx,lz=lot.cz;
   const pg=new THREE.Mesh(new THREE.PlaneGeometry(BK-ST-2,BK-ST-2),parkingM);
   pg.rotation.x=-Math.PI/2;pg.position.set(lx,.1,lz);scene.add(pg);
-  // Parking lines
-  for(let p=-4;p<=4;p++){
-    const ln=new THREE.Mesh(new THREE.PlaneGeometry(.1,4),lineM);
-    ln.rotation.x=-Math.PI/2;ln.position.set(lx+p*2.5,.11,lz-3);scene.add(ln)}
+  for(let p=-4;p<=4;p++){parkLineGeos.push(geoAt(_parkLine,lx+p*2.5,.11,lz-3,-Math.PI/2))}
 }
+if(parkLineGeos.length)scene.add(new THREE.Mesh(mergeGeometries(parkLineGeos),new THREE.MeshStandardMaterial({color:0xffffff})));
 
-// ══════════════ STREET LAMPS ══════════════
-const glowMat=new THREE.MeshStandardMaterial({color:0xffeecc,emissive:0xffddaa,emissiveIntensity:2});
+// ══════════════ STREET LAMPS (merged) ══════════════
+const _lampPole=new THREE.CylinderGeometry(.06,.06,5,4);
+const _lampArm=new THREE.BoxGeometry(.05,.05,1.5);
+const _lampBulb=new THREE.SphereGeometry(.25,4,3);
+const lampMetalGeos=[],lampGlowGeos=[];
 for(let x=-CH+ST;x<CH;x+=BK*3)for(let z=-CH+ST;z<CH;z+=BK*3){
   const lx=x+2,lz=z+2;
-  const pole=cyl(.06,.06,5,0x666666);pole.position.set(lx,2.5,lz);scene.add(pole);
-  const arm=box(.05,0.05,1.5,0x666666);arm.position.set(lx,5,lz+.75);scene.add(arm);
-  const light=new THREE.Mesh(new THREE.SphereGeometry(.25,5,4),glowMat);light.position.set(lx,4.9,lz+1.4);scene.add(light);
+  lampMetalGeos.push(geoAt(_lampPole,lx,2.5,lz));
+  lampMetalGeos.push(geoAt(_lampArm,lx,5,lz+.75));
+  lampGlowGeos.push(geoAt(_lampBulb,lx,4.9,lz+1.4));
 }
+if(lampMetalGeos.length)scene.add(new THREE.Mesh(mergeGeometries(lampMetalGeos),new THREE.MeshStandardMaterial({color:0x666666,roughness:.7})));
+if(lampGlowGeos.length)scene.add(new THREE.Mesh(mergeGeometries(lampGlowGeos),new THREE.MeshStandardMaterial({color:0xffeecc,emissive:0xffddaa,emissiveIntensity:2})));
 
 // ══════════════ MERGED NATURE (batched geometry for performance) ══════════════
 // Helper: transform geometry to world position/rotation/scale and return clone
@@ -767,12 +777,15 @@ seedR(222);for(let i=0;i<15;i++){const x=CH+30+srand()*200,z=-400+srand()*800,h=
     top.position.y=2.2;top.rotation.x=.1;g.add(top);
     g.position.set(x,h,z);scene.add(g)}}
 
-// ══════════════ CLOUDS ══════════════
+// ══════════════ CLOUDS (merged) ══════════════
 const clMat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.7,roughness:1});
-seedR(888);for(let i=0;i<20;i++){const g=new THREE.Group(),cx=-1500+srand()*3000,cz=-1500+srand()*3000,cy=200+srand()*300;
+const _cloudPuff=new THREE.SphereGeometry(1,4,3);
+const cloudGeos=[];
+seedR(888);for(let i=0;i<20;i++){const cx=-1500+srand()*3000,cz=-1500+srand()*3000,cy=200+srand()*300;
   for(let j=0;j<3+Math.floor(srand()*3);j++){const s=10+srand()*20;
-    const m=new THREE.Mesh(new THREE.SphereGeometry(s,5,4),clMat);m.position.set(srand()*30-15,srand()*5,srand()*30-15);m.scale.y=.35;g.add(m)}
-  g.position.set(cx,cy,cz);scene.add(g)}
+    cloudGeos.push(geoAt(_cloudPuff,cx+srand()*30-15,cy+srand()*5,cz+srand()*30-15,0,0,0,s,s*.35,s))}
+}
+if(cloudGeos.length)scene.add(new THREE.Mesh(mergeGeometries(cloudGeos),clMat));
 
 // ══════════════ RAMPS & TRAMPOLINES ══════════════
 const ramps=[],trampolines=[];
@@ -1163,7 +1176,7 @@ function spawnNPC(type,x,z,ry){
 function updateNPCs(dt){
   for(const npc of npcs){
     const camD=Math.sqrt((npc.x-P.x)**2+(npc.z-P.z)**2);
-    if(camD>300)continue;
+    if(camD>200)continue;
     npc.stateTimer-=dt;
     const cfg=NPC_TYPES[npc.type];
     if(npc.state==='idle'){
