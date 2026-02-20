@@ -1,6 +1,7 @@
 import os
 import uuid
 import asyncio
+import functools
 from typing import Optional
 
 from fastapi import FastAPI, Depends, HTTPException, Query
@@ -387,6 +388,46 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+# ── Overlay injection ──
+
+@functools.lru_cache(maxsize=1)
+def _load_overlay_html() -> str:
+    """Load the overlay HTML/CSS/JS once and cache it."""
+    overlay_path = os.path.join(STATIC_DIR, "overlay.html")
+    with open(overlay_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def _inject_overlay(game_html: str) -> str:
+    """Inject the studio overlay into game HTML before </body>."""
+    overlay = _load_overlay_html()
+    if "</body>" in game_html:
+        return game_html.replace("</body>", f"\n{overlay}\n</body>", 1)
+    return game_html + f"\n{overlay}"
+
+
+@app.get("/")
+def serve_home():
+    """Serve the base game with studio overlay (no iframe)."""
+    path = get_base_game_path()
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Base game not found")
+    with open(path, "r", encoding="utf-8") as f:
+        game_html = f.read()
+    return HTMLResponse(_inject_overlay(game_html))
+
+
+@app.get("/v/{version_id}")
+def serve_version_with_overlay(version_id: str, db: Session = Depends(get_db)):
+    """Serve a specific version with studio overlay."""
+    path = get_version_path(version_id, db)
+    if not path or not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Version not found")
+    with open(path, "r", encoding="utf-8") as f:
+        game_html = f.read()
+    return HTMLResponse(_inject_overlay(game_html))
+
+
 @app.get("/admin")
 def admin_page():
     """Serve the admin panel."""
@@ -396,7 +437,7 @@ def admin_page():
 
 @app.get("/shared/{share_slug}")
 def shared_page(share_slug: str, db: Session = Depends(get_db)):
-    """Serve the shared game as a standalone page."""
+    """Serve the shared game as a standalone page (no overlay)."""
     version = (
         db.query(GameVersion)
         .filter(GameVersion.share_slug == share_slug, GameVersion.is_shared == True)
@@ -411,12 +452,10 @@ def shared_page(share_slug: str, db: Session = Depends(get_db)):
 
 
 @app.get("/{path:path}")
-def serve_spa(path: str):
-    """Serve the SPA for all non-API routes."""
-    # Check if it's a static file
+def serve_catchall(path: str):
+    """Serve static files or redirect to home."""
     static_path = os.path.join(STATIC_DIR, path)
     if path and os.path.isfile(static_path):
         return FileResponse(static_path)
-    # Serve index.html for SPA routing
-    index_path = os.path.join(STATIC_DIR, "index.html")
-    return FileResponse(index_path, media_type="text/html")
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=302)
