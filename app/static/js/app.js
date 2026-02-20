@@ -236,8 +236,8 @@
     if (versionId) {
       actionsHtml = `
         <div class="msg-actions">
-          <button class="msg-action-btn" onclick="handleSaveVersion('${versionId}', this)">Save</button>
           <button class="msg-action-btn" onclick="handleShareVersion('${versionId}', this)">Share</button>
+          <button class="msg-action-btn msg-action-suggest" onclick="handleSuggestVersion('${versionId}', this)">Suggest to Game</button>
         </div>`;
     }
 
@@ -290,34 +290,36 @@
 
   // ══════════ SAVE / SHARE ══════════
 
-  window.handleSaveVersion = async function (versionId, btn) {
-    if (!Auth.isLoggedIn()) {
-      showAuthModal();
-      return;
-    }
+  window.handleShareVersion = async function (versionId, btn) {
     try {
-      await Chat.saveVersion(versionId);
-      btn.textContent = 'Saved!';
-      btn.disabled = true;
+      const result = await Chat.shareVersion(versionId);
+      btn.textContent = 'Shared!';
       btn.style.color = 'var(--success)';
+      const shareUrl = `${window.location.origin}/shared/${result.share_slug}`;
+      document.getElementById('share-link').value = shareUrl;
+      document.getElementById('share-modal').style.display = 'flex';
     } catch (err) {
       alert(err.message);
     }
   };
 
-  window.handleShareVersion = async function (versionId, btn) {
+  window.handleSuggestVersion = async function (versionId, btn) {
     if (!Auth.isLoggedIn()) {
       showAuthModal();
       return;
     }
     try {
-      const result = await Chat.shareVersion(versionId);
-      btn.textContent = 'Shared!';
-      btn.style.color = 'var(--success)';
-      // Show share modal with link
-      const shareUrl = `${window.location.origin}/shared/${result.share_slug}`;
-      document.getElementById('share-link').value = shareUrl;
-      document.getElementById('share-modal').style.display = 'flex';
+      const result = await Chat.suggestVersion(versionId);
+      if (result.status === 'already_suggested') {
+        btn.textContent = 'Already Suggested';
+        btn.disabled = true;
+        btn.style.color = 'var(--warning)';
+      } else {
+        btn.textContent = 'Suggested!';
+        btn.disabled = true;
+        btn.style.color = 'var(--success)';
+        showToast('Suggestion submitted for admin review!');
+      }
     } catch (err) {
       alert(err.message);
     }
@@ -333,6 +335,7 @@
     input.select();
     navigator.clipboard.writeText(input.value).then(() => {
       document.getElementById('share-copied').style.display = 'block';
+      showToast('Link copied to clipboard!');
       setTimeout(() => {
         document.getElementById('share-copied').style.display = 'none';
       }, 2000);
@@ -401,6 +404,20 @@
     // Notify user
     addMessageToUI('assistant', `Switched to v${versionNumber}. Your next changes will branch from this version.`);
   };
+
+  // ══════════ TOAST ══════════
+
+  function showToast(message) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = 'toast show';
+    setTimeout(() => { toast.className = 'toast'; }, 3000);
+  }
 
   // ══════════ HELPERS ══════════
 

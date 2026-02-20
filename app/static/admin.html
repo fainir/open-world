@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Open World Studio</title>
+<link rel="stylesheet" href="/static/css/styles.css">
+<link rel="stylesheet" href="/static/css/admin.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="admin-app">
+  <!-- Header -->
+  <header id="admin-header">
+    <div class="header-left">
+      <a href="/" class="admin-back">&larr; Back to Studio</a>
+      <h1 class="logo">
+        <span class="logo-icon">&#9670;</span>
+        Admin Panel
+      </h1>
+    </div>
+    <div class="header-right">
+      <span id="admin-username" class="username-badge"></span>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div id="admin-content">
+    <!-- Stats Bar -->
+    <div id="stats-bar">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Total Suggestions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num stat-pending" id="stat-pending">0</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num stat-approved" id="stat-approved">0</div>
+        <div class="stat-label">Approved</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num stat-declined" id="stat-declined">0</div>
+        <div class="stat-label">Declined</div>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div id="filter-tabs">
+      <button class="filter-tab active" data-filter="all" onclick="filterSuggestions('all', this)">All</button>
+      <button class="filter-tab" data-filter="pending" onclick="filterSuggestions('pending', this)">Pending</button>
+      <button class="filter-tab" data-filter="approved" onclick="filterSuggestions('approved', this)">Approved</button>
+      <button class="filter-tab" data-filter="declined" onclick="filterSuggestions('declined', this)">Declined</button>
+    </div>
+
+    <!-- Suggestions List -->
+    <div id="suggestions-container">
+      <div id="loading" class="admin-loading">
+        <div class="spinner"></div>
+        <span>Loading suggestions...</span>
+      </div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <p>No suggestions yet.</p>
+      </div>
+      <div id="suggestions-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div id="preview-modal" class="modal-overlay" style="display:none">
+  <div class="modal modal-xl">
+    <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+    <h3 id="preview-title">Version Preview</h3>
+    <iframe id="preview-iframe" class="preview-iframe"></iframe>
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+// ══════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════
+
+let allSuggestions = [];
+let currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkAdminAuth();
+});
+
+async function checkAdminAuth() {
+  if (!Auth.isLoggedIn()) {
+    window.location.href = '/';
+    return;
+  }
+  const user = Auth.getUser();
+  document.getElementById('admin-username').textContent = user ? user.username : 'Admin';
+  loadSuggestions();
+}
+
+async function loadSuggestions() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('suggestions-list').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/admin/suggestions', {
+      headers: Auth.authHeaders(),
+    });
+    if (res.status === 403) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('suggestions-list').innerHTML =
+        '<div class="admin-error">Access denied. You are not an admin.</div>';
+      return;
+    }
+    if (!res.ok) throw new Error('Failed to load suggestions');
+
+    allSuggestions = await res.json();
+    updateStats();
+    renderSuggestions();
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('suggestions-list').innerHTML =
+      `<div class="admin-error">Error: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allSuggestions.length;
+  document.getElementById('stat-pending').textContent =
+    allSuggestions.filter(s => s.suggestion_status === 'pending').length;
+  document.getElementById('stat-approved').textContent =
+    allSuggestions.filter(s => s.suggestion_status === 'approved').length;
+  document.getElementById('stat-declined').textContent =
+    allSuggestions.filter(s => s.suggestion_status === 'declined').length;
+}
+
+function filterSuggestions(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderSuggestions();
+}
+
+function renderSuggestions() {
+  document.getElementById('loading').style.display = 'none';
+  const list = document.getElementById('suggestions-list');
+
+  const filtered = currentFilter === 'all'
+    ? allSuggestions
+    : allSuggestions.filter(s => s.suggestion_status === currentFilter);
+
+  if (filtered.length === 0) {
+    document.getElementById('empty-state').style.display = 'block';
+    list.innerHTML = '';
+    return;
+  }
+
+  document.getElementById('empty-state').style.display = 'none';
+  list.innerHTML = filtered.map(s => {
+    const statusClass = `status-${s.suggestion_status}`;
+    const time = s.suggested_at ? new Date(s.suggested_at).toLocaleString() : '';
+    const reviewedTime = s.reviewed_at ? new Date(s.reviewed_at).toLocaleString() : '';
+
+    return `
+      <div class="suggestion-card" data-id="${s.id}">
+        <div class="suggestion-header">
+          <div class="suggestion-meta">
+            <span class="suggestion-user">${escapeHtml(s.username)}</span>
+            <span class="suggestion-version">v${s.version_number}</span>
+            <span class="suggestion-status ${statusClass}">${s.suggestion_status}</span>
+          </div>
+          <span class="suggestion-time">${time}</span>
+        </div>
+
+        <div class="suggestion-prompt">
+          <div class="prompt-label">User Prompt:</div>
+          <div class="prompt-text">${escapeHtml(s.user_prompt || 'N/A')}</div>
+        </div>
+
+        <div class="suggestion-desc">
+          <div class="prompt-label">Changes:</div>
+          <div class="prompt-text">${escapeHtml(s.description)}</div>
+        </div>
+
+        <div class="suggestion-footer">
+          <div class="suggestion-actions">
+            ${s.suggestion_status === 'pending' ? `
+              <button class="btn btn-approve" onclick="approveVersion('${s.id}', this)">Approve & Merge</button>
+              <button class="btn btn-decline" onclick="declineVersion('${s.id}', this)">Decline</button>
+            ` : `
+              <span class="reviewed-info">${s.suggestion_status === 'approved' ? 'Approved' : 'Declined'}${reviewedTime ? ' on ' + reviewedTime : ''}</span>
+            `}
+            <button class="btn btn-outline btn-sm" onclick="previewVersion('${s.id}', ${s.version_number})">Preview</button>
+            ${s.share_slug ? `<a class="btn btn-ghost btn-sm" href="/shared/${s.share_slug}" target="_blank">View Shared</a>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function approveVersion(versionId, btn) {
+  if (!confirm('Approve this suggestion? It will replace the base game for all users.')) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Approving...';
+
+  try {
+    const res = await fetch(`/api/admin/approve/${versionId}`, {
+      method: 'POST',
+      headers: Auth.authHeaders(),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || 'Approve failed');
+    }
+    await loadSuggestions();
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+    btn.textContent = 'Approve & Merge';
+  }
+}
+
+async function declineVersion(versionId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Declining...';
+
+  try {
+    const res = await fetch(`/api/admin/decline/${versionId}`, {
+      method: 'POST',
+      headers: Auth.authHeaders(),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || 'Decline failed');
+    }
+    await loadSuggestions();
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+    btn.textContent = 'Decline';
+  }
+}
+
+function previewVersion(versionId, versionNumber) {
+  document.getElementById('preview-title').textContent = `Preview - v${versionNumber}`;
+  document.getElementById('preview-iframe').src = `/game/version/${versionId}`;
+  document.getElementById('preview-modal').style.display = 'flex';
+}
+
+function closePreviewModal() {
+  document.getElementById('preview-modal').style.display = 'none';
+  document.getElementById('preview-iframe').src = '';
+}
+
+function handleLogout() {
+  Auth.logout();
+  window.location.href = '/';
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

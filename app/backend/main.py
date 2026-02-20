@@ -54,11 +54,7 @@ class ChatRequest(BaseModel):
     api_key: str
 
 
-class SaveVersionRequest(BaseModel):
-    version_id: str
-
-
-class ShareVersionRequest(BaseModel):
+class VersionIdRequest(BaseModel):
     version_id: str
 
 
@@ -172,58 +168,86 @@ def api_get_versions(
             "id": v.id,
             "version_number": v.version_number,
             "description": v.description,
-            "is_saved": v.is_saved,
             "is_shared": v.is_shared,
             "share_slug": v.share_slug,
+            "is_suggested": v.is_suggested,
+            "suggestion_status": v.suggestion_status,
             "created_at": v.created_at.isoformat() if v.created_at else None,
         }
         for v in versions
     ]
 
 
-@app.post("/api/versions/save")
-def api_save_version(
-    req: SaveVersionRequest,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user_required),
-):
-    version = db.query(GameVersion).filter(GameVersion.id == req.version_id).first()
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
-
-    version.is_saved = True
-    version.user_id = user.id
-    db.commit()
-    return {"status": "saved", "version_id": version.id}
-
-
 @app.post("/api/versions/share")
 def api_share_version(
-    req: ShareVersionRequest,
+    req: VersionIdRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user_required),
 ):
     version = db.query(GameVersion).filter(GameVersion.id == req.version_id).first()
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
-
     if not version.share_slug:
         version.share_slug = str(uuid.uuid4())[:8]
     version.is_shared = True
-    version.user_id = user.id
     db.commit()
     return {"status": "shared", "share_slug": version.share_slug}
 
 
-@app.get("/api/user/versions")
-def api_user_versions(
+@app.post("/api/versions/suggest")
+def api_suggest_version(
+    req: VersionIdRequest,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user_required),
 ):
-    versions = (
+    version = db.query(GameVersion).filter(GameVersion.id == req.version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    if version.is_suggested:
+        return {"status": "already_suggested", "suggestion_status": version.suggestion_status}
+
+    # Find the user prompt that led to this version
+    user_prompt = version.description
+    if version.session_id:
+        last_user_msg = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.session_id == version.session_id, ChatMessage.role == "user")
+            .order_by(ChatMessage.created_at.desc())
+            .first()
+        )
+        if last_user_msg:
+            user_prompt = last_user_msg.content
+
+    from datetime import datetime, timezone
+    version.is_suggested = True
+    version.suggestion_status = "pending"
+    version.suggested_at = datetime.now(timezone.utc)
+    version.user_id = user.id
+    version.user_prompt = user_prompt
+    db.commit()
+    return {"status": "suggested"}
+
+
+# ── Admin routes ──
+
+ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
+
+
+def get_admin_user(user: User = Depends(get_current_user_required)) -> User:
+    is_admin = user.is_admin or user.username in ADMIN_USERNAMES
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
+@app.get("/api/admin/suggestions")
+def api_admin_suggestions(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user),
+):
+    suggestions = (
         db.query(GameVersion)
-        .filter(GameVersion.user_id == user.id, GameVersion.is_saved == True)
-        .order_by(GameVersion.created_at.desc())
+        .filter(GameVersion.is_suggested == True)
+        .order_by(GameVersion.suggested_at.desc())
         .all()
     )
     return [
@@ -231,12 +255,61 @@ def api_user_versions(
             "id": v.id,
             "version_number": v.version_number,
             "description": v.description,
-            "is_shared": v.is_shared,
+            "user_prompt": v.user_prompt,
+            "suggestion_status": v.suggestion_status,
+            "suggested_at": v.suggested_at.isoformat() if v.suggested_at else None,
+            "reviewed_at": v.reviewed_at.isoformat() if v.reviewed_at else None,
+            "username": v.user.username if v.user else "Anonymous",
             "share_slug": v.share_slug,
             "created_at": v.created_at.isoformat() if v.created_at else None,
         }
-        for v in versions
+        for v in suggestions
     ]
+
+
+@app.post("/api/admin/approve/{version_id}")
+def api_admin_approve(
+    version_id: str,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user),
+):
+    version = db.query(GameVersion).filter(GameVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    # Copy version file to replace the base game
+    import shutil
+    version_path = os.path.join(VERSIONS_DIR, version.file_path)
+    if not os.path.exists(version_path):
+        raise HTTPException(status_code=404, detail="Version file not found")
+
+    base_path = get_base_game_path()
+    shutil.copy2(version_path, base_path)
+
+    from datetime import datetime, timezone
+    version.suggestion_status = "approved"
+    version.reviewed_at = datetime.now(timezone.utc)
+    version.reviewed_by = admin.id
+    db.commit()
+    return {"status": "approved", "version_id": version.id}
+
+
+@app.post("/api/admin/decline/{version_id}")
+def api_admin_decline(
+    version_id: str,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user),
+):
+    version = db.query(GameVersion).filter(GameVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    from datetime import datetime, timezone
+    version.suggestion_status = "declined"
+    version.reviewed_at = datetime.now(timezone.utc)
+    version.reviewed_by = admin.id
+    db.commit()
+    return {"status": "declined", "version_id": version.id}
 
 
 # ── Game file serving ──
@@ -311,6 +384,13 @@ def api_chat_history(session_id: str, db: Session = Depends(get_db)):
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/admin")
+def admin_page():
+    """Serve the admin panel."""
+    admin_path = os.path.join(STATIC_DIR, "admin.html")
+    return FileResponse(admin_path, media_type="text/html")
 
 
 @app.get("/shared/{share_slug}")
