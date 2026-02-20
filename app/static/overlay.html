@@ -1,0 +1,640 @@
+<!-- Open World Studio Overlay — injected into game HTML at serve time -->
+<style id="ow-overlay-style">
+#ow-fab{position:fixed;bottom:24px;right:24px;z-index:9999;width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,#6366f1,#a78bfa);border:none;cursor:pointer;color:#fff;font-size:22px;
+  box-shadow:0 4px 20px rgba(99,102,241,.4);display:flex;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;font-family:sans-serif;pointer-events:all}
+#ow-fab:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(99,102,241,.6)}
+#ow-fab.ow-has-update{animation:ow-pulse 2s infinite}
+@keyframes ow-pulse{0%,100%{box-shadow:0 4px 20px rgba(99,102,241,.4)}50%{box-shadow:0 4px 30px rgba(99,102,241,.8)}}
+
+#ow-panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:90vw;z-index:9998;
+  background:rgba(10,10,18,.97);border-left:1px solid rgba(60,60,90,.5);
+  transform:translateX(100%);transition:transform .3s ease;
+  display:flex;flex-direction:column;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:14px;color:#e0e0f0;pointer-events:all}
+#ow-panel.ow-open{transform:translateX(0)}
+
+#ow-overlay-root{position:fixed;inset:0;z-index:9997;pointer-events:none}
+
+/* Panel header */
+.ow-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+  border-bottom:1px solid rgba(60,60,90,.4);flex-shrink:0}
+.ow-logo{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px}
+.ow-logo svg{width:18px;height:18px}
+.ow-hdr-btns{display:flex;gap:6px}
+.ow-hdr-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;
+  color:#c0c0d8;padding:5px 10px;cursor:pointer;font-size:12px;font-family:inherit;transition:background .15s}
+.ow-hdr-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+.ow-close{background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
+.ow-close:hover{color:#fff}
+
+/* API key */
+.ow-apikey{padding:10px 16px;border-bottom:1px solid rgba(60,60,90,.3);flex-shrink:0}
+.ow-apikey-row{display:flex;align-items:center;gap:6px;margin-top:6px}
+.ow-apikey label{font-size:12px;color:#888;display:flex;align-items:center;justify-content:space-between;width:100%}
+.ow-apikey label a{color:#818cf8;text-decoration:none;font-size:11px}
+.ow-apikey input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;
+  color:#e0e0f0;padding:7px 10px;font-size:13px;font-family:monospace;outline:none}
+.ow-apikey input:focus{border-color:#6366f1}
+
+/* Messages */
+#ow-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+#ow-messages::-webkit-scrollbar{width:5px}
+#ow-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+
+.ow-welcome{text-align:center;padding:40px 20px;color:#888}
+.ow-welcome h3{color:#e0e0f0;margin:0 0 8px;font-size:16px}
+.ow-welcome p{margin:0 0 20px;font-size:13px}
+.ow-examples{display:flex;flex-direction:column;gap:8px}
+.ow-example{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;
+  padding:10px 14px;color:#b0b0c8;cursor:pointer;font-size:13px;text-align:left;font-family:inherit;transition:background .15s}
+.ow-example:hover{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#e0e0f0}
+
+.ow-msg{display:flex;flex-direction:column;gap:4px}
+.ow-msg-user .ow-bubble{background:rgba(99,102,241,.2);border-radius:12px 12px 4px 12px;align-self:flex-end;
+  padding:8px 14px;max-width:85%;word-wrap:break-word;font-size:13px;line-height:1.5}
+.ow-msg-assistant .ow-bubble{background:rgba(255,255,255,.06);border-radius:12px 12px 12px 4px;align-self:flex-start;
+  padding:8px 14px;max-width:85%;word-wrap:break-word;font-size:13px;line-height:1.5}
+.ow-msg-badge{font-size:11px;color:#818cf8;font-weight:500;align-self:flex-start}
+.ow-msg-actions{display:flex;gap:6px;margin-top:4px}
+.ow-msg-action{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:5px;
+  color:#a0a0b8;padding:3px 8px;cursor:pointer;font-size:11px;font-family:inherit;transition:background .15s}
+.ow-msg-action:hover{background:rgba(255,255,255,.12);color:#fff}
+
+.ow-thinking{display:flex;align-items:center;gap:10px;color:#888;font-size:13px;padding:8px 0}
+.ow-dots{display:flex;gap:4px}
+.ow-dots span{width:6px;height:6px;border-radius:50%;background:#6366f1;animation:ow-dot 1.2s infinite}
+.ow-dots span:nth-child(2){animation-delay:.2s}
+.ow-dots span:nth-child(3){animation-delay:.4s}
+@keyframes ow-dot{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* Suggestions */
+#ow-suggestions{padding:8px 16px;border-top:1px solid rgba(60,60,90,.3);flex-shrink:0;display:none}
+.ow-sugg-label{font-size:11px;color:#888;margin-bottom:6px}
+#ow-sugg-list{display:flex;flex-direction:column;gap:4px}
+.ow-sugg{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:6px;
+  padding:6px 10px;color:#b0b0d8;cursor:pointer;font-size:12px;text-align:left;font-family:inherit;transition:background .15s}
+.ow-sugg:hover{background:rgba(99,102,241,.2);color:#e0e0f0}
+
+/* Input area */
+.ow-input-area{padding:12px 16px;border-top:1px solid rgba(60,60,90,.4);flex-shrink:0}
+.ow-input-row{display:flex;gap:8px;align-items:flex-end}
+#ow-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;
+  color:#e0e0f0;padding:9px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;
+  max-height:100px;line-height:1.4}
+#ow-input:focus{border-color:#6366f1}
+#ow-send{width:36px;height:36px;border-radius:8px;background:#6366f1;border:none;color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:background .15s}
+#ow-send:hover{background:#4f46e5}
+#ow-send:disabled{opacity:.4;cursor:default}
+.ow-input-footer{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#666}
+#ow-status{font-weight:500}
+#ow-status.ow-loading{color:#818cf8}
+#ow-status.ow-success{color:#34d399}
+#ow-status.ow-error{color:#f87171}
+
+/* Modals */
+.ow-modal-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:none;
+  align-items:center;justify-content:center;pointer-events:all}
+.ow-modal-overlay.ow-show{display:flex}
+.ow-modal{background:#141420;border:1px solid rgba(60,60,90,.5);border-radius:12px;padding:24px;
+  width:90%;max-width:480px;max-height:80vh;overflow-y:auto;position:relative}
+.ow-modal h3{margin:0 0 16px;font-size:16px;color:#e0e0f0}
+.ow-modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#888;font-size:20px;cursor:pointer}
+.ow-modal-close:hover{color:#fff}
+
+/* Auth form */
+.ow-tabs{display:flex;gap:4px;margin-bottom:16px}
+.ow-tab{flex:1;padding:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;color:#888;cursor:pointer;font-size:13px;font-family:inherit;text-align:center}
+.ow-tab.ow-active{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#e0e0f0}
+.ow-form-group{margin-bottom:12px}
+.ow-form-group label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+.ow-form-group input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;color:#e0e0f0;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box}
+.ow-form-group input:focus{border-color:#6366f1}
+.ow-form-error{color:#f87171;font-size:12px;margin-top:4px;min-height:16px}
+.ow-btn{width:100%;padding:10px;background:#6366f1;border:none;border-radius:8px;color:#fff;
+  cursor:pointer;font-size:14px;font-family:inherit;font-weight:500;transition:background .15s}
+.ow-btn:hover{background:#4f46e5}
+
+/* Version list */
+.ow-ver-item{display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid rgba(60,60,90,.2);
+  cursor:pointer;transition:background .15s;border-radius:6px}
+.ow-ver-item:hover{background:rgba(255,255,255,.04)}
+.ow-ver-item.ow-active{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.2)}
+.ow-ver-num{font-size:12px;font-weight:600;color:#818cf8;min-width:28px}
+.ow-ver-info{flex:1;min-width:0}
+.ow-ver-desc{font-size:13px;color:#c0c0d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ow-ver-time{font-size:11px;color:#666;margin-top:2px}
+.ow-ver-badge{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(99,102,241,.2);color:#818cf8}
+.ow-ver-badge.ow-active-badge{background:rgba(52,211,153,.2);color:#34d399}
+
+/* Share */
+.ow-share-box{display:flex;gap:8px;margin:12px 0}
+.ow-share-box input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;color:#e0e0f0;padding:8px 10px;font-size:12px;font-family:monospace;outline:none}
+.ow-share-copy{background:#6366f1;border:none;border-radius:6px;color:#fff;padding:8px 14px;
+  cursor:pointer;font-size:12px;font-family:inherit}
+.ow-share-copied{color:#34d399;font-size:12px;display:none}
+
+/* Toast */
+#ow-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1a1a2e;border:1px solid rgba(99,102,241,.3);color:#e0e0f0;padding:10px 20px;
+  border-radius:8px;font-size:13px;opacity:0;transition:all .3s;z-index:10001;pointer-events:none}
+#ow-toast.ow-show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Version indicator */
+#ow-ver-indicator{position:fixed;top:12px;right:80px;z-index:9999;background:rgba(10,10,18,.85);
+  border:1px solid rgba(60,60,90,.4);border-radius:8px;padding:6px 12px;font-size:12px;
+  color:#818cf8;font-family:'Inter',sans-serif;display:none;pointer-events:all;
+  cursor:pointer;transition:background .15s}
+#ow-ver-indicator:hover{background:rgba(99,102,241,.15)}
+
+@media(max-width:600px){
+  #ow-panel{width:100vw;max-width:100vw}
+  #ow-fab{width:48px;height:48px;bottom:16px;right:16px;font-size:18px}
+}
+</style>
+
+<div id="ow-overlay-root">
+  <button id="ow-fab" title="Open Studio Panel">&#9830;</button>
+  <div id="ow-ver-indicator"></div>
+  <div id="ow-panel">
+    <div class="ow-header">
+      <span class="ow-logo">&#9830; Studio</span>
+      <div class="ow-hdr-btns">
+        <button class="ow-hdr-btn" id="ow-btn-versions">Versions</button>
+        <button class="ow-hdr-btn" id="ow-btn-auth">Sign In</button>
+        <button class="ow-close" id="ow-panel-close">&times;</button>
+      </div>
+    </div>
+    <div class="ow-apikey">
+      <label>Anthropic API Key <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get key</a></label>
+      <div class="ow-apikey-row">
+        <input type="password" id="ow-api-key" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+    </div>
+    <div id="ow-messages">
+      <div class="ow-welcome" id="ow-welcome">
+        <h3>Open World Studio</h3>
+        <p>Describe changes to make to the game.</p>
+        <div class="ow-examples">
+          <button class="ow-example">Add a day/night cycle with a moving sun</button>
+          <button class="ow-example">Make the buildings taller and add neon lights</button>
+          <button class="ow-example">Add a minimap in the corner</button>
+        </div>
+      </div>
+    </div>
+    <div id="ow-suggestions">
+      <div class="ow-sugg-label">Suggested next:</div>
+      <div id="ow-sugg-list"></div>
+    </div>
+    <div class="ow-input-area">
+      <div class="ow-input-row">
+        <textarea id="ow-input" rows="1" placeholder="Describe a change..."></textarea>
+        <button id="ow-send" title="Send">&#9654;</button>
+      </div>
+      <div class="ow-input-footer">
+        <span>Enter to send</span>
+        <span id="ow-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div class="ow-modal-overlay" id="ow-auth-modal">
+    <div class="ow-modal">
+      <button class="ow-modal-close" id="ow-auth-close">&times;</button>
+      <div class="ow-tabs">
+        <button class="ow-tab ow-active" id="ow-tab-login">Sign In</button>
+        <button class="ow-tab" id="ow-tab-signup">Sign Up</button>
+      </div>
+      <form id="ow-login-form" style="display:block">
+        <div class="ow-form-group"><label>Email or Username</label><input type="text" id="ow-login-id" required></div>
+        <div class="ow-form-group"><label>Password</label><input type="password" id="ow-login-pw" required></div>
+        <div class="ow-form-error" id="ow-login-err"></div>
+        <button type="submit" class="ow-btn">Sign In</button>
+      </form>
+      <form id="ow-signup-form" style="display:none">
+        <div class="ow-form-group"><label>Username</label><input type="text" id="ow-signup-user" required minlength="2"></div>
+        <div class="ow-form-group"><label>Email</label><input type="email" id="ow-signup-email" required></div>
+        <div class="ow-form-group"><label>Password</label><input type="password" id="ow-signup-pw" required minlength="6"></div>
+        <div class="ow-form-error" id="ow-signup-err"></div>
+        <button type="submit" class="ow-btn">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Versions Modal -->
+  <div class="ow-modal-overlay" id="ow-versions-modal">
+    <div class="ow-modal">
+      <button class="ow-modal-close" id="ow-versions-close">&times;</button>
+      <h3>Version History</h3>
+      <div id="ow-versions-list"></div>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div class="ow-modal-overlay" id="ow-share-modal">
+    <div class="ow-modal">
+      <button class="ow-modal-close" id="ow-share-close">&times;</button>
+      <h3>Share Your Game</h3>
+      <p style="color:#888;font-size:13px;margin:0 0 12px">Anyone with this link can play your version:</p>
+      <div class="ow-share-box">
+        <input type="text" id="ow-share-link" readonly>
+        <button class="ow-share-copy" id="ow-share-copy-btn">Copy</button>
+      </div>
+      <div class="ow-share-copied" id="ow-share-copied">Copied to clipboard!</div>
+    </div>
+  </div>
+
+  <div id="ow-toast"></div>
+</div>
+
+<script id="ow-overlay-script">
+(function(){
+'use strict';
+
+// Load Inter font if not present
+if(!document.querySelector('link[href*="Inter"]')){
+  const l=document.createElement('link');
+  l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap';
+  l.rel='stylesheet';document.head.appendChild(l);
+}
+
+// ── Storage Keys ──
+const SK={
+  API_KEY:'ow_api_key',SESSION:'ow_session_id',VERSION:'ow_current_version',
+  TOKEN:'ow_token',USER:'ow_user',CHAT:'ow_chat_msgs',PANEL:'ow_panel_open',SUGG:'ow_suggestions'
+};
+
+// ── DOM refs ──
+const $=id=>document.getElementById(id);
+const fab=$('ow-fab'),panel=$('ow-panel'),msgs=$('ow-messages'),input=$('ow-input'),
+  sendBtn=$('ow-send'),statusEl=$('ow-status'),suggArea=$('ow-suggestions'),suggList=$('ow-sugg-list'),
+  apiKeyInput=$('ow-api-key'),verIndicator=$('ow-ver-indicator');
+
+// ── State ──
+let sessionId=localStorage.getItem(SK.SESSION);
+let currentVersionId=localStorage.getItem(SK.VERSION);
+let panelOpen=false;
+let isProcessing=false;
+
+// Detect current version from URL
+const urlMatch=window.location.pathname.match(/^\/v\/([a-f0-9-]+)/);
+if(urlMatch)currentVersionId=urlMatch[1];
+
+// ── Auth ──
+const Auth={
+  getToken(){return localStorage.getItem(SK.TOKEN)},
+  getUser(){try{return JSON.parse(localStorage.getItem(SK.USER))}catch{return null}},
+  setAuth(token,user){localStorage.setItem(SK.TOKEN,token);localStorage.setItem(SK.USER,JSON.stringify(user))},
+  clearAuth(){localStorage.removeItem(SK.TOKEN);localStorage.removeItem(SK.USER)},
+  isLoggedIn(){return!!this.getToken()},
+  headers(){const t=this.getToken();return t?{'Authorization':'Bearer '+t}:{}},
+  async login(loginId,pw){
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({login:loginId,password:pw})});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||'Login failed');
+    this.setAuth(d.access_token,d.user);return d.user;
+  },
+  async signup(email,username,pw){
+    const r=await fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,username,password:pw})});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||'Signup failed');
+    this.setAuth(d.access_token,d.user);return d.user;
+  },
+  logout(){this.clearAuth()}
+};
+
+// ── Panel toggle ──
+function openPanel(){
+  document.exitPointerLock&&document.exitPointerLock();
+  panel.classList.add('ow-open');panelOpen=true;
+  localStorage.setItem(SK.PANEL,'true');
+  input.focus();
+}
+function closePanel(){
+  panel.classList.remove('ow-open');panelOpen=false;
+  localStorage.setItem(SK.PANEL,'false');
+}
+
+fab.onclick=()=>panelOpen?closePanel():openPanel();
+$('ow-panel-close').onclick=closePanel;
+
+// ── Keyboard handling ──
+// Capture phase: intercept keys before game gets them
+document.addEventListener('keydown',(e)=>{
+  if(!panelOpen)return; // let game handle everything when panel closed
+  // Close panel on Escape
+  if(e.key==='Escape'){e.stopPropagation();e.preventDefault();closePanel();return}
+},{true});
+
+// Stop propagation on all key events inside the panel so game doesn't react
+panel.addEventListener('keydown',e=>e.stopPropagation(),false);
+panel.addEventListener('keyup',e=>e.stopPropagation(),false);
+panel.addEventListener('keypress',e=>e.stopPropagation(),false);
+
+// Also stop on modals
+document.querySelectorAll('.ow-modal-overlay').forEach(m=>{
+  m.addEventListener('keydown',e=>e.stopPropagation(),false);
+  m.addEventListener('keyup',e=>e.stopPropagation(),false);
+  m.addEventListener('keypress',e=>e.stopPropagation(),false);
+});
+
+// ── Chat send ──
+input.addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}
+});
+
+// Auto-resize textarea
+input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,100)+'px'});
+
+sendBtn.onclick=sendMessage;
+
+async function sendMessage(){
+  const message=input.value.trim();
+  if(!message||isProcessing)return;
+  const apiKey=apiKeyInput.value.trim();
+  if(!apiKey){setStatus('Enter API key first','ow-error');setTimeout(()=>setStatus(''),2000);return}
+  localStorage.setItem(SK.API_KEY,apiKey);
+
+  // Remove welcome
+  const w=$('ow-welcome');if(w)w.remove();
+
+  addMsg('user',message);
+  input.value='';input.style.height='auto';
+
+  const thinkEl=addThinking();
+  setStatus('Generating changes...','ow-loading');
+  sendBtn.disabled=true;isProcessing=true;
+
+  try{
+    const headers={'Content-Type':'application/json',...Auth.headers()};
+    const r=await fetch('/api/chat',{method:'POST',headers,
+      body:JSON.stringify({message,session_id:sessionId,current_version_id:currentVersionId,api_key:apiKey})});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.detail||'Request failed');
+
+    thinkEl.remove();
+    if(data.session_id)sessionId=data.session_id;
+    localStorage.setItem(SK.SESSION,sessionId);
+
+    if(data.message&&!data.version_id){
+      addMsg('assistant',data.message||data.description);
+    }else{
+      const desc=data.description||'Changes applied!';
+      addAssistantMsg(desc,data.version_id,data.version_number);
+      if(data.version_id){
+        currentVersionId=data.version_id;
+        localStorage.setItem(SK.VERSION,currentVersionId);
+        showSuggestions(data.suggestions||[]);
+        saveChatHistory();
+        // Navigate to new version
+        setTimeout(()=>{window.location.href='/v/'+data.version_id},300);
+        return;
+      }
+    }
+    setStatus('Done!','ow-success');setTimeout(()=>setStatus(''),2000);
+  }catch(err){
+    thinkEl.remove();
+    addMsg('assistant','Error: '+err.message);
+    setStatus('Failed','ow-error');setTimeout(()=>setStatus(''),3000);
+  }finally{
+    sendBtn.disabled=false;isProcessing=false;
+    saveChatHistory();
+  }
+}
+
+// ── Example prompts ──
+document.querySelectorAll('.ow-example').forEach(btn=>{
+  btn.onclick=()=>{input.value=btn.textContent;sendMessage()};
+});
+
+// ── Message rendering ──
+function escHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+
+function addMsg(role,content){
+  const el=document.createElement('div');
+  el.className='ow-msg ow-msg-'+role;
+  el.innerHTML='<div class="ow-bubble">'+escHtml(content)+'</div>';
+  msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+  return el;
+}
+
+function addAssistantMsg(desc,versionId,versionNum){
+  const el=document.createElement('div');
+  el.className='ow-msg ow-msg-assistant';
+  let html='<div class="ow-bubble">'+escHtml(desc)+'</div>';
+  if(versionNum)html+='<span class="ow-msg-badge">v'+versionNum+'</span>';
+  if(versionId){
+    html+='<div class="ow-msg-actions">';
+    html+='<button class="ow-msg-action" data-share="'+versionId+'">Share</button>';
+    html+='<button class="ow-msg-action" data-suggest="'+versionId+'">Suggest to Game</button>';
+    html+='</div>';
+  }
+  el.innerHTML=html;msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+
+  // Wire action buttons
+  const shareBtn=el.querySelector('[data-share]');
+  if(shareBtn)shareBtn.onclick=()=>handleShare(versionId,shareBtn);
+  const suggestBtn=el.querySelector('[data-suggest]');
+  if(suggestBtn)suggestBtn.onclick=()=>handleSuggest(versionId,suggestBtn);
+  return el;
+}
+
+function addThinking(){
+  const el=document.createElement('div');
+  el.className='ow-thinking';
+  el.innerHTML='<div class="ow-dots"><span></span><span></span><span></span></div><span>Modifying game code...</span>';
+  msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+  return el;
+}
+
+function setStatus(text,cls){statusEl.textContent=text;statusEl.className=cls||''}
+
+function showSuggestions(list){
+  if(!list||!list.length){suggArea.style.display='none';localStorage.removeItem(SK.SUGG);return}
+  localStorage.setItem(SK.SUGG,JSON.stringify(list));
+  suggList.innerHTML='';
+  list.forEach(s=>{
+    const btn=document.createElement('button');btn.className='ow-sugg';btn.textContent=s;
+    btn.onclick=()=>{input.value=s;sendMessage();suggArea.style.display='none'};
+    suggList.appendChild(btn);
+  });
+  suggArea.style.display='block';
+}
+
+// ── Share / Suggest ──
+async function handleShare(versionId,btn){
+  try{
+    const r=await fetch('/api/versions/share',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({version_id:versionId})});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||'Share failed');
+    btn.textContent='Shared!';btn.style.color='#34d399';
+    $('ow-share-link').value=location.origin+'/shared/'+d.share_slug;
+    $('ow-share-modal').classList.add('ow-show');
+  }catch(e){showToast('Error: '+e.message)}
+}
+
+async function handleSuggest(versionId,btn){
+  if(!Auth.isLoggedIn()){$('ow-auth-modal').classList.add('ow-show');return}
+  try{
+    const r=await fetch('/api/versions/suggest',{method:'POST',
+      headers:{'Content-Type':'application/json',...Auth.headers()},
+      body:JSON.stringify({version_id:versionId})});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||'Suggest failed');
+    if(d.status==='already_suggested'){btn.textContent='Already Suggested';btn.disabled=true;btn.style.color='#fbbf24'}
+    else{btn.textContent='Suggested!';btn.disabled=true;btn.style.color='#34d399';showToast('Suggestion submitted!')}
+  }catch(e){showToast('Error: '+e.message)}
+}
+
+$('ow-share-close').onclick=()=>$('ow-share-modal').classList.remove('ow-show');
+$('ow-share-copy-btn').onclick=()=>{
+  const inp=$('ow-share-link');inp.select();
+  navigator.clipboard.writeText(inp.value).then(()=>{
+    $('ow-share-copied').style.display='block';showToast('Link copied!');
+    setTimeout(()=>$('ow-share-copied').style.display='none',2000);
+  });
+};
+
+// ── Versions Modal ──
+$('ow-btn-versions').onclick=showVersionsModal;
+$('ow-versions-close').onclick=()=>$('ow-versions-modal').classList.remove('ow-show');
+
+async function showVersionsModal(){
+  const list=$('ow-versions-list');
+  const modal=$('ow-versions-modal');
+  if(!sessionId){
+    list.innerHTML='<p style="color:#888;text-align:center;padding:20px">No versions yet. Start chatting to create game versions.</p>';
+    modal.classList.add('ow-show');return;
+  }
+  list.innerHTML='<p style="color:#888;text-align:center;padding:20px">Loading...</p>';
+  modal.classList.add('ow-show');
+  try{
+    const r=await fetch('/api/versions/'+sessionId);
+    const versions=await r.json();
+    if(!versions.length){list.innerHTML='<p style="color:#888;text-align:center;padding:20px">No versions yet.</p>';return}
+    list.innerHTML=versions.map(v=>{
+      const isActive=v.id===currentVersionId;
+      const time=v.created_at?new Date(v.created_at).toLocaleString():'';
+      return '<div class="ow-ver-item'+(isActive?' ow-active':'')+'" data-vid="'+v.id+'" data-vnum="'+v.version_number+'">'+
+        '<div class="ow-ver-num">'+(v.version_number===0?'Base':'v'+v.version_number)+'</div>'+
+        '<div class="ow-ver-info"><div class="ow-ver-desc">'+escHtml(v.description)+'</div><div class="ow-ver-time">'+time+'</div></div>'+
+        '<div>'+(isActive?'<span class="ow-ver-badge ow-active-badge">Active</span>':'<button class="ow-hdr-btn" style="font-size:11px">Use</button>')+'</div>'+
+        '</div>';
+    }).join('');
+    // Wire click handlers
+    list.querySelectorAll('.ow-ver-item').forEach(item=>{
+      const btn=item.querySelector('.ow-hdr-btn');
+      if(btn){btn.onclick=(e)=>{
+        e.stopPropagation();
+        const vid=item.dataset.vid;
+        const vnum=item.dataset.vnum;
+        currentVersionId=vid;localStorage.setItem(SK.VERSION,vid);
+        saveChatHistory();
+        if(vnum==='0')window.location.href='/';
+        else window.location.href='/v/'+vid;
+      }}
+    });
+  }catch(e){list.innerHTML='<p style="color:#f87171;text-align:center;padding:20px">Error loading versions</p>'}
+}
+
+// ── Auth Modal ──
+$('ow-btn-auth').onclick=()=>{
+  if(Auth.isLoggedIn()){Auth.logout();updateAuthUI();showToast('Logged out')}
+  else $('ow-auth-modal').classList.add('ow-show');
+};
+$('ow-auth-close').onclick=()=>{$('ow-auth-modal').classList.remove('ow-show');$('ow-login-err').textContent='';$('ow-signup-err').textContent=''};
+$('ow-tab-login').onclick=()=>{
+  $('ow-tab-login').classList.add('ow-active');$('ow-tab-signup').classList.remove('ow-active');
+  $('ow-login-form').style.display='block';$('ow-signup-form').style.display='none';
+};
+$('ow-tab-signup').onclick=()=>{
+  $('ow-tab-signup').classList.add('ow-active');$('ow-tab-login').classList.remove('ow-active');
+  $('ow-signup-form').style.display='block';$('ow-login-form').style.display='none';
+};
+$('ow-login-form').onsubmit=async(e)=>{
+  e.preventDefault();
+  try{await Auth.login($('ow-login-id').value.trim(),$('ow-login-pw').value);
+    $('ow-auth-modal').classList.remove('ow-show');updateAuthUI();showToast('Signed in!')}
+  catch(err){$('ow-login-err').textContent=err.message}
+};
+$('ow-signup-form').onsubmit=async(e)=>{
+  e.preventDefault();
+  try{await Auth.signup($('ow-signup-email').value.trim(),$('ow-signup-user').value.trim(),$('ow-signup-pw').value);
+    $('ow-auth-modal').classList.remove('ow-show');updateAuthUI();showToast('Account created!')}
+  catch(err){$('ow-signup-err').textContent=err.message}
+};
+
+function updateAuthUI(){
+  const btn=$('ow-btn-auth');
+  if(Auth.isLoggedIn()){const u=Auth.getUser();btn.textContent=u?u.username:'Logout'}
+  else btn.textContent='Sign In';
+}
+
+// ── Version indicator ──
+function updateVerIndicator(){
+  if(!currentVersionId||window.location.pathname==='/'){verIndicator.style.display='none';return}
+  verIndicator.style.display='block';
+  verIndicator.textContent='Viewing version';
+  verIndicator.onclick=showVersionsModal;
+}
+
+// ── Chat history persistence ──
+function saveChatHistory(){
+  if(!sessionId)return;
+  const items=[];
+  msgs.querySelectorAll('.ow-msg').forEach(el=>{
+    const role=el.classList.contains('ow-msg-user')?'user':'assistant';
+    const bubble=el.querySelector('.ow-bubble');
+    if(bubble)items.push({role,content:bubble.textContent});
+  });
+  localStorage.setItem(SK.CHAT,JSON.stringify({sid:sessionId,items}));
+}
+
+function restoreChatHistory(){
+  const raw=localStorage.getItem(SK.CHAT);
+  if(!raw)return;
+  try{
+    const data=JSON.parse(raw);
+    if(data.sid!==sessionId||!data.items||!data.items.length)return;
+    const w=$('ow-welcome');if(w)w.remove();
+    data.items.forEach(m=>addMsg(m.role,m.content));
+  }catch{}
+  // Restore suggestions
+  const sr=localStorage.getItem(SK.SUGG);
+  if(sr){try{showSuggestions(JSON.parse(sr))}catch{}}
+}
+
+// ── Toast ──
+function showToast(message){
+  const t=$('ow-toast');t.textContent=message;t.className='ow-show';
+  setTimeout(()=>{t.className=''},3000);
+}
+
+// ── Click outside panel to close ──
+document.addEventListener('mousedown',(e)=>{
+  if(!panelOpen)return;
+  if(panel.contains(e.target)||fab.contains(e.target))return;
+  // Check if click is on a modal
+  const modals=document.querySelectorAll('.ow-modal-overlay.ow-show');
+  for(const m of modals)if(m.contains(e.target))return;
+  closePanel();
+});
+
+// ── Init ──
+const savedKey=localStorage.getItem(SK.API_KEY);
+if(savedKey)apiKeyInput.value=savedKey;
+
+restoreChatHistory();
+updateAuthUI();
+updateVerIndicator();
+
+// Re-open panel if it was open before navigation
+if(localStorage.getItem(SK.PANEL)==='true')openPanel();
+
+})();
+</script>
