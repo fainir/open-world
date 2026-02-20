@@ -74,25 +74,25 @@ const Chat = (() => {
     return await res.json();
   }
 
-  async function saveVersion(versionId) {
-    const res = await fetch('/api/versions/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...Auth.authHeaders() },
-      body: JSON.stringify({ version_id: versionId }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Save failed');
-    return data;
-  }
-
   async function shareVersion(versionId) {
     const res = await fetch('/api/versions/share', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...Auth.authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ version_id: versionId }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Share failed');
+    return data;
+  }
+
+  async function suggestVersion(versionId) {
+    const res = await fetch('/api/versions/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...Auth.authHeaders() },
+      body: JSON.stringify({ version_id: versionId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Suggest failed');
     return data;
   }
 
@@ -109,7 +109,7 @@ const Chat = (() => {
   return {
     getApiKey, saveApiKey, loadApiKey,
     getSessionId, setSessionId, getCurrentVersionId, setCurrentVersionId,
-    sendMessage, getVersions, saveVersion, shareVersion, getUserVersions,
+    sendMessage, getVersions, shareVersion, suggestVersion, getUserVersions,
     isWorking,
   };
 })();

@@ -20,6 +20,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     username = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=_now)
 
     versions = relationship("GameVersion", back_populates="user", order_by="desc(GameVersion.created_at)")
@@ -60,10 +61,16 @@ class GameVersion(Base):
     version_number = Column(Integer, nullable=False)
     description = Column(Text, nullable=False)
     file_path = Column(String, nullable=False)
-    is_saved = Column(Boolean, default=False)
     is_shared = Column(Boolean, default=False)
     share_slug = Column(String, unique=True, nullable=True, index=True)
     parent_version_id = Column(String, ForeignKey("game_versions.id"), nullable=True)
+    # Suggestion system
+    is_suggested = Column(Boolean, default=False)
+    suggestion_status = Column(String, nullable=True)  # pending, approved, declined
+    suggested_at = Column(DateTime, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    reviewed_by = Column(String, ForeignKey("users.id"), nullable=True)
+    user_prompt = Column(Text, nullable=True)  # The original user request
     created_at = Column(DateTime, default=_now)
 
     session = relationship("ChatSession", back_populates="versions")

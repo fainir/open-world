@@ -779,6 +779,41 @@ html, body {
   gap: 4px;
 }
 
+/* ══════════ TOAST ══════════ */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 2000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Suggest button accent */
+.msg-action-suggest {
+  background: var(--accent-dim);
+  color: var(--accent-hover);
+  border-color: var(--accent);
+}
+.msg-action-suggest:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* ══════════ FULLSCREEN ══════════ */
 
 body.fullscreen #header,
