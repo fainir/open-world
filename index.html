@@ -8,12 +8,12 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif}
 canvas{display:block}
-#overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;cursor:pointer;background:rgba(5,10,30,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
-#overlay h1{font-size:2.6em;letter-spacing:0.3em;margin-bottom:0.15em;background:linear-gradient(90deg,#fff,#88ccff,#ffaa44);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-#overlay .sub{font-size:1.1em;opacity:0.6;margin-bottom:1.2em}
-#overlay .click{font-size:1.3em;color:#fff;animation:pulse 2s infinite}
+#overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;cursor:pointer;background:linear-gradient(180deg,rgba(5,10,30,.25) 0%,rgba(5,10,30,.15) 40%,rgba(5,10,30,.4) 100%)}
+#overlay h1{font-size:3.5em;letter-spacing:0.35em;margin-bottom:0.15em;color:#fff;text-shadow:0 0 40px rgba(0,0,0,.8),0 0 80px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.9)}
+#overlay .sub{font-size:1.1em;opacity:0.7;margin-bottom:1.2em;color:#ddd;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+#overlay .click{font-size:1.3em;color:#fff;animation:pulse 2s infinite;text-shadow:0 1px 8px rgba(0,0,0,.7)}
 @keyframes pulse{0%,100%{opacity:0.7}50%{opacity:1}}
-#overlay .controls{margin-top:1.4em;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,auto));gap:8px 16px;justify-content:center;justify-items:center;max-width:100%;padding:14px 20px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.1)}
+#overlay .controls{margin-top:1.4em;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,auto));gap:8px 16px;justify-content:center;justify-items:center;max-width:100%;padding:14px 20px;background:rgba(0,0,0,0.5);border-radius:12px;border:1px solid rgba(255,255,255,0.15);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 #overlay .controls .ctrl-key{font-size:0.82em;color:rgba(255,255,255,0.9)}
 #overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);padding:3px 8px;border-radius:4px}
 #overlay .controls .ctrl-key .cl{color:rgba(255,255,255,0.5)}
@@ -6579,7 +6579,15 @@ document.addEventListener('keydown',e=>{
 });
 
 // ══════════════ LOOP ══════════════
-function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();if(locked&&!menuOpen&&!wpnMenuOpen)update(dt);R.render(scene,cam)}
+let introTime=0;
+function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();
+  if(!locked){
+    introTime+=dt*.15;
+    const r=420,h=220,cx=0,cz=0;
+    cam.position.set(cx+Math.cos(introTime)*r,h+Math.sin(introTime*.3)*30,cz+Math.sin(introTime)*r);
+    cam.lookAt(cx,40,cz);
+  }else if(!menuOpen&&!wpnMenuOpen)update(dt);
+  R.render(scene,cam)}
 animate();
 
 window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
