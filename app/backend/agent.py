@@ -188,7 +188,14 @@ Include enough surrounding lines to make each search unique.
 
 After all SEARCH/REPLACE blocks, add:
 - A brief description in <description> tags
-- 2-3 follow-up suggestions in <suggestions> tags as a JSON array of strings"""
+- 2-3 follow-up suggestions in <suggestions> tags as a JSON array of strings
+
+## COMMUNICATION STYLE
+- NEVER explain code internals, implementation details, or how the code works behind the scenes
+- The user is a player/creator, NOT a developer — they should only see what CHANGED visually in the game
+- In <description>, describe the VISIBLE result: "Added a roller coaster in the carnival zone" NOT "Created a new THREE.Group with CatmullRomCurve3 spline and TubeGeometry..."
+- The ONLY exception: if the user asks something specifically about zones, areas, lazy loading, or how mini-games/missions work, you may briefly explain that concept
+- Keep descriptions short, fun, and focused on what the user will SEE and EXPERIENCE"""
 
 
 def run_agent(

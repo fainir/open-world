@@ -675,14 +675,7 @@ $('ow-nv-dismiss').onclick=()=>{
   $('ow-new-version').classList.remove('ow-show');
 };
 
-// ── Click outside panel to close ──
-document.addEventListener('mousedown',(e)=>{
-  if(!panelOpen)return;
-  if(panel.contains(e.target)||fab.contains(e.target))return;
-  const modals=document.querySelectorAll('.ow-modal-overlay.ow-show');
-  for(const m of modals)if(m.contains(e.target))return;
-  closePanel();
-});
+// Panel closes only via × button or Escape key — clicking the game does NOT close it
 
 // ── Init ──
 const savedKey=localStorage.getItem(SK.API_KEY);

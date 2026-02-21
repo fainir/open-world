@@ -4805,7 +4805,8 @@ function update(dt){
   const look=new THREE.Vector3(P.x-Math.sin(yaw)*3,P.y+1.2+(isFlying?Math.sin(pitch)*3:0),P.z-Math.cos(yaw)*3);
   cam.lookAt(look);
 
-  // Shadow follow
+  // Sky + shadow follow camera
+  skyMesh.position.copy(cam.position);
   sun.position.set(P.x+sunDir.x*300,sunDir.y*300,P.z+sunDir.z*300);sun.target.position.copy(P);
 
   // Water time
