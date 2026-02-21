@@ -10,7 +10,7 @@
 <script>
 // Force reload if user has outdated cached version
 (function(){
-  var BUILD='20260222d';
+  var BUILD='20260222e';
   var stored=localStorage.getItem('ow_build');
   if(stored && stored!==BUILD){localStorage.setItem('ow_build',BUILD);location.reload(true);}
   else localStorage.setItem('ow_build',BUILD);
@@ -7771,6 +7771,659 @@ class VolleyballMatch{
     this.ball=null;this.oppMesh=null;this.playerMesh=null}
 }
 
+// ══════════════ PARK ACTIVITY ZONE CLASSES ══════════════
+
+// ── HalfpipeChallenge (Extreme Park) ──
+class HalfpipeChallenge{
+  constructor(api){this.api=api;this.group=null;this.state='playing';this.score=0;this.timeLeft=40;
+    this.playerX=0;this.playerY=0;this.velX=0;this.velY=0;this.tricks=0;this.combo=0;this.airborne=false;this.hudEl=null;this.player=null;this.spin=0}
+  async enter(group,zone){
+    this.group=group;this.state='playing';this.score=0;this.timeLeft=40;this.tricks=0;this.combo=0;
+    this.playerX=0;this.playerY=8;this.velX=0;this.velY=0;this.airborne=false;this.spin=0;
+    const{box}=this.api;
+    // Halfpipe
+    const hp=new THREE.Mesh(new THREE.CylinderGeometry(10,10,25,20,1,true,0,Math.PI),
+      new THREE.MeshStandardMaterial({color:0x888888,roughness:.4,side:THREE.DoubleSide}));
+    hp.rotation.z=Math.PI/2;hp.rotation.y=Math.PI/2;group.add(hp);
+    // Deck
+    const deckL=box(25,.5,3,0x664422);deckL.position.set(0,10,-10);group.add(deckL);
+    const deckR=box(25,.5,3,0x664422);deckR.position.set(0,10,10);group.add(deckR);
+    // Player
+    this.player=box(1,.5,1,0x4488ff);this.player.position.set(0,8,0);group.add(this.player);
+    group.add(new THREE.AmbientLight(0xffffff,.6));
+    const sun=new THREE.DirectionalLight(0xffffff,.5);sun.position.set(5,10,3);group.add(sun);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x,group.position.y+15,group.position.z+20);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Halfpipe! LEFT/RIGHT to move, SPACE at the lip to do tricks!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`SCORE: ${this.score} | TRICKS: ${this.tricks} | COMBO: x${this.combo} | TIME: ${Math.max(0,this.timeLeft|0)}s`}
+  update(dt){
+    if(this.state==='done'){const gp=this.group.position,cam=this.api.cam;cam.position.set(gp.x,gp.y+15,gp.z+15);cam.lookAt(gp);return}
+    this.timeLeft-=dt;if(this.timeLeft<=0){this.state='done';this.api.showTip(`Time! Score: ${this.score} | Tricks: ${this.tricks}`);return}
+    const{keys}=this.api;
+    // Halfpipe physics (2D cross-section: playerX = position along half-pipe curve, Y = height)
+    if(keys['ArrowLeft']||keys['KeyA'])this.velX-=20*dt;
+    if(keys['ArrowRight']||keys['KeyD'])this.velX+=20*dt;
+    // Gravity pulls toward center of pipe
+    this.velX+=-this.playerX*.8*dt;// pendulum toward center
+    this.velY-=25*dt;// gravity
+    this.playerX+=this.velX*dt;this.playerY+=this.velY*dt;
+    // Halfpipe surface: y = sqrt(100 - x^2) mapped to pipe shape
+    const pipeR=10,surfY=Math.sqrt(Math.max(0,pipeR*pipeR-this.playerX*this.playerX));
+    const wasAirborne=this.airborne;
+    if(this.playerY<=surfY&&this.velY<=0){
+      this.playerY=surfY;this.velY=0;this.airborne=false;
+      this.velX*=.98;// friction
+      if(wasAirborne&&this.spin>0){// landed a trick!
+        const pts=Math.floor(this.spin)*25*(this.combo+1);this.score+=pts;this.tricks++;this.combo++;
+        this.api.showTip(`${this.spin>=2?'DOUBLE ':''}TRICK! +${pts}pts (x${this.combo})`);this.spin=0}
+    }else{this.airborne=true}
+    // Trick input: SPACE while airborne at the lip
+    if(keys['Space']&&this.airborne){keys['Space']=false;this.spin+=.5}
+    // Clamp
+    if(this.playerX<-9.5){this.playerX=-9.5;this.velX=Math.abs(this.velX)*.8}
+    if(this.playerX>9.5){this.playerX=9.5;this.velX=-Math.abs(this.velX)*.8}
+    if(!this.airborne)this.combo=0;
+    this.player.position.set(this.playerX,this.playerY,0);
+    this.player.rotation.z=this.spin*Math.PI*2;
+    this._updateHUD();
+    const gp=this.group.position,cam=this.api.cam;
+    cam.position.set(gp.x,gp.y+12,gp.z+18);cam.lookAt(gp.x+this.playerX,gp.y+this.playerY,gp.z);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.player=null}
+}
+
+// ── BungeeJump (Extreme Park) ──
+class BungeeJump{
+  constructor(api){this.api=api;this.group=null;this.state='ready';this.height=50;this.posY=50;
+    this.velY=0;this.bounces=0;this.score=0;this.hudEl=null;this.jumper=null;this.cord=null}
+  async enter(group,zone){
+    this.group=group;this.state='ready';this.posY=50;this.velY=0;this.bounces=0;this.score=0;
+    const{box,cyl}=this.api;
+    // Tower
+    const tower=cyl(.5,.6,50,0x555555);tower.position.set(0,25,0);group.add(tower);
+    // Platform
+    const plat=box(6,1,6,0xff4400);plat.position.set(0,50,0);group.add(plat);
+    // Ground
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x44aa44}));
+    ground.rotation.x=-Math.PI/2;group.add(ground);
+    // Target zone on ground
+    const target=new THREE.Mesh(new THREE.CircleGeometry(3,16),new THREE.MeshStandardMaterial({color:0xff0000}));
+    target.rotation.x=-Math.PI/2;target.position.y=.05;group.add(target);
+    const target2=new THREE.Mesh(new THREE.CircleGeometry(6,16),new THREE.MeshStandardMaterial({color:0xffaa00}));
+    target2.rotation.x=-Math.PI/2;target2.position.y=.03;group.add(target2);
+    // Jumper
+    this.jumper=box(1,2,1,0x4488ff);this.jumper.position.set(0,50,0);group.add(this.jumper);
+    // Bungee cord (stretchy line)
+    const cordGeo=new THREE.CylinderGeometry(.05,.05,1,4);
+    this.cord=new THREE.Mesh(cordGeo,new THREE.MeshStandardMaterial({color:0x33cc33}));
+    group.add(this.cord);
+    group.add(new THREE.AmbientLight(0xffffff,.6));
+    const sun=new THREE.DirectionalLight(0xffffff,.5);sun.position.set(3,10,5);group.add(sun);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x+15,group.position.y+55,group.position.z+15);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Bungee Jump! Press SPACE to jump! Try to reach closest to ground!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`HEIGHT: ${Math.max(0,this.posY).toFixed(1)}m | BOUNCES: ${this.bounces} | SCORE: ${this.score}`}
+  update(dt){
+    if(this.state==='done'){const gp=this.group.position,cam=this.api.cam;cam.position.set(gp.x+15,gp.y+25,gp.z+15);cam.lookAt(gp.x,gp.y+25,gp.z);return}
+    const{keys}=this.api;
+    if(this.state==='ready'&&(keys['Space']||keys['mouse0'])){
+      keys['Space']=false;keys['mouse0']=false;this.state='falling';this.velY=-2;
+      this.api.showTip('FALLING! Press SPACE near the ground for bonus points!')}
+    if(this.state==='falling'){
+      this.velY-=15*dt;// gravity
+      // Bungee force: spring back when below cord rest length (30m from top = y<20)
+      if(this.posY<20){const stretch=20-this.posY;this.velY+=stretch*1.2*dt}
+      this.posY+=this.velY*dt;
+      // Score when closest to ground
+      if(keys['Space']&&this.posY<15){keys['Space']=false;
+        const closeness=Math.max(0,15-this.posY);
+        const pts=this.posY<3?100:this.posY<6?50:this.posY<10?25:10;
+        this.score+=pts;this.api.showTip(this.posY<3?`EXTREME! +${pts}`:this.posY<6?`CLOSE! +${pts}`:`+${pts}`)}
+      if(this.posY<1){this.posY=1;this.velY=Math.abs(this.velY)*.7;this.bounces++;
+        if(this.bounces>=5){this.state='done';this.api.showTip(`Bungee done! Score: ${this.score}`)}}
+      if(this.posY>50){this.posY=50;this.velY=0}
+      this.jumper.position.y=this.posY;
+      // Update cord
+      const cordLen=50-this.posY;
+      this.cord.scale.y=Math.max(.1,cordLen);this.cord.position.set(0,50-cordLen/2,0);
+    }
+    this._updateHUD();
+    const gp=this.group.position,cam=this.api.cam;
+    cam.position.set(gp.x+12,gp.y+this.posY+5,gp.z+12);cam.lookAt(gp.x,gp.y+this.posY,gp.z);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.jumper=null;this.cord=null}
+}
+
+// ── ParkourRace (Extreme Park) ──
+class ParkourRace{
+  constructor(api){this.api=api;this.group=null;this.state='countdown';this.countdown=3;
+    this.playerPos=new THREE.Vector3(0,1,-12);this.playerVel=new THREE.Vector3();this.onPlat=true;
+    this.currentPlat=0;this.raceTime=0;this.hudEl=null;this.player=null;this.platforms=[]}
+  async enter(group,zone){
+    this.group=group;this.state='countdown';this.countdown=3;this.raceTime=0;this.currentPlat=0;
+    this.playerPos.set(0,1,-12);this.playerVel.set(0,0,0);this.onPlat=true;
+    const{box}=this.api;
+    // Start platform
+    const start=box(4,1,4,0x44aa44);start.position.set(0,.5,-12);group.add(start);
+    // Platform course (15 platforms, ascending, some moving)
+    this.platforms=[];
+    const platData=[[0,1,-8],[2,2,-4],[4,3,0],[2,4,4],[0,5,8],[-2,7,12],[0,9,16],[3,11,20],
+      [0,13,24],[-3,15,28],[0,17,32],[2,19,36],[0,22,40],[-2,25,44],[0,28,48]];
+    for(let i=0;i<platData.length;i++){const [px,py,pz]=platData[i];
+      const col=i===platData.length-1?0xffdd00:0x4488cc;
+      const p=box(3,.5,3,col);p.position.set(px,py,pz);group.add(p);
+      this.platforms.push({mesh:p,x:px,y:py,z:pz,moving:i%3===2,phase:Math.random()*Math.PI*2})}
+    // Finish flag
+    const flag=box(.1,4,.1,0xffffff);flag.position.set(0,30,48);group.add(flag);
+    const cloth=box(2,1.5,.05,0xff0000);cloth.position.set(1,31.5,48);group.add(cloth);
+    this.player=box(.8,1.5,.8,0xff6600);this.player.position.copy(this.playerPos);group.add(this.player);
+    group.add(new THREE.AmbientLight(0xffffff,.6));
+    group.add(new THREE.DirectionalLight(0xffffff,.5)).position.set(3,10,5);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x+8,group.position.y+8,group.position.z-8);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Parkour Race! WASD to move, SPACE to jump! Reach the gold platform!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`PLAT: ${this.currentPlat}/${this.platforms.length} | TIME: ${this.raceTime.toFixed(1)}s`}
+  update(dt){
+    const gp=this.group.position;
+    if(this.state==='countdown'){this.countdown-=dt;this._updateHUD();
+      if(this.countdown<=0){this.state='racing';this.api.showTip('GO!')}
+      const cam=this.api.cam;cam.position.set(gp.x+8,gp.y+8,gp.z-8);cam.lookAt(gp.x,gp.y+5,gp.z+10);return}
+    if(this.state==='done'){const cam=this.api.cam;cam.position.set(gp.x,gp.y+35,gp.z+55);cam.lookAt(gp.x,gp.y+15,gp.z+20);return}
+    this.raceTime+=dt;
+    const{keys}=this.api;const spd=8;
+    // Move platforms that are "moving"
+    for(const p of this.platforms){if(p.moving){p.mesh.position.x=p.x+Math.sin(clock.elapsedTime*1.5+p.phase)*2}}
+    // Player movement
+    let mx=0,mz=0;
+    if(keys['KeyW']||keys['ArrowUp'])mz=spd*dt;
+    if(keys['KeyS']||keys['ArrowDown'])mz=-spd*dt;
+    if(keys['KeyA']||keys['ArrowLeft'])mx=-spd*dt;
+    if(keys['KeyD']||keys['ArrowRight'])mx=spd*dt;
+    this.playerPos.x+=mx;this.playerPos.z+=mz;
+    // Gravity
+    this.playerVel.y-=30*dt;
+    this.playerPos.y+=this.playerVel.y*dt;
+    // Check platform collision
+    this.onPlat=false;
+    for(let i=0;i<this.platforms.length;i++){const p=this.platforms[i];
+      const px=p.mesh.position.x,py=p.y,pz=p.z;
+      if(Math.abs(this.playerPos.x-px)<1.8&&Math.abs(this.playerPos.z-pz)<1.8&&
+        this.playerPos.y<=py+1.2&&this.playerPos.y>=py-.5&&this.playerVel.y<=0){
+        this.playerPos.y=py+1;this.playerVel.y=0;this.onPlat=true;
+        if(i+1>this.currentPlat)this.currentPlat=i+1}}
+    // Start platform collision
+    if(Math.abs(this.playerPos.x)<2.2&&Math.abs(this.playerPos.z+12)<2.2&&this.playerPos.y<=1.5&&this.playerVel.y<=0){
+      this.playerPos.y=1;this.playerVel.y=0;this.onPlat=true}
+    // Jump
+    if((keys['Space'])&&this.onPlat){keys['Space']=false;this.playerVel.y=12}
+    // Fall reset
+    if(this.playerPos.y<-10){this.playerPos.set(0,3,-12);this.playerVel.set(0,0,0);this.api.showTip('Fell! Try again!')}
+    // Win check
+    if(this.currentPlat>=this.platforms.length){this.state='done';this.api.showTip(`Finished! Time: ${this.raceTime.toFixed(1)}s`)}
+    this.player.position.copy(this.playerPos);this._updateHUD();
+    const cam=this.api.cam;
+    cam.position.set(gp.x+this.playerPos.x+8,gp.y+this.playerPos.y+5,gp.z+this.playerPos.z-6);
+    cam.lookAt(gp.x+this.playerPos.x,gp.y+this.playerPos.y,gp.z+this.playerPos.z);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.player=null;this.platforms=[]}
+}
+
+// ── WavePoolSurf (Water Park) ──
+class WavePoolSurf{
+  constructor(api){this.api=api;this.group=null;this.state='playing';this.score=0;this.timeLeft=45;
+    this.playerX=0;this.playerZ=0;this.balance=0;this.speed=0;this.tricks=0;this.hudEl=null;this.surfer=null}
+  async enter(group,zone){
+    this.group=group;this.state='playing';this.score=0;this.timeLeft=45;this.playerX=0;this.playerZ=-10;this.balance=0;this.speed=4;this.tricks=0;
+    const{box}=this.api;
+    // Wave pool
+    const pool=new THREE.Mesh(new THREE.PlaneGeometry(40,30),new THREE.MeshStandardMaterial({color:0x2288cc,transparent:true,opacity:.6}));
+    pool.rotation.x=-Math.PI/2;pool.position.y=.1;group.add(pool);
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,30),new THREE.MeshStandardMaterial({color:0x0a3366}));
+    floor.rotation.x=-Math.PI/2;floor.position.y=-1;group.add(floor);
+    // Pool walls
+    for(const [wx,wz,ww,wd] of [[-20,0,1,30],[20,0,1,30],[0,-15,40,1],[0,15,40,1]]){
+      const w=box(ww,2,wd,0x88aacc);w.position.set(wx,0,wz);group.add(w)}
+    // Surfer
+    this.surfer=box(1,.2,2.5,0xddaa44);this.surfer.position.set(0,.3,0);group.add(this.surfer);
+    group.add(new THREE.AmbientLight(0xffffff,.6));
+    group.add(new THREE.DirectionalLight(0xffffff,.5)).position.set(3,8,3);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x,group.position.y+10,group.position.z+15);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Wave Surfing! LEFT/RIGHT to steer, SPACE for tricks on wave peaks!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`SCORE: ${this.score} | TRICKS: ${this.tricks} | TIME: ${Math.max(0,this.timeLeft|0)}s`}
+  update(dt){
+    if(this.state==='done'){const gp=this.group.position,cam=this.api.cam;cam.position.set(gp.x,gp.y+10,gp.z+10);cam.lookAt(gp);return}
+    this.timeLeft-=dt;if(this.timeLeft<=0){this.state='done';this.api.showTip(`Surf done! Score: ${this.score}`);return}
+    const{keys}=this.api;
+    // Steering
+    if(keys['ArrowLeft']||keys['KeyA'])this.playerX-=8*dt;
+    if(keys['ArrowRight']||keys['KeyD'])this.playerX+=8*dt;
+    this.playerZ+=this.speed*dt;
+    if(this.playerZ>13)this.playerZ=-13;// loop
+    // Clamp to pool
+    this.playerX=Math.max(-18,Math.min(18,this.playerX));
+    // Wave height
+    const waveH=Math.sin(this.playerZ*.3+clock.elapsedTime*2)*.8+Math.sin(this.playerX*.2+clock.elapsedTime*1.5)*.4;
+    // Trick on wave peak
+    if((keys['Space']||keys['mouse0'])&&waveH>.6){keys['Space']=false;keys['mouse0']=false;
+      this.tricks++;const pts=25+Math.floor(waveH*30);this.score+=pts;
+      this.api.showTip(`WAVE TRICK! +${pts}`)}
+    // Balance challenge: waves push you sideways
+    this.playerX+=Math.sin(clock.elapsedTime*3)*.5*dt;
+    this.surfer.position.set(this.playerX,.3+waveH*.5,this.playerZ);
+    this.surfer.rotation.x=waveH*.2;this.surfer.rotation.z=-Math.sin(clock.elapsedTime*3)*.1;
+    this._updateHUD();
+    const gp=this.group.position,cam=this.api.cam;
+    cam.position.set(gp.x+this.playerX*.3,gp.y+8,gp.z+this.playerZ+12);
+    cam.lookAt(gp.x+this.playerX,gp.y+waveH,gp.z+this.playerZ);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.surfer=null}
+}
+
+// ── SlideRace (Water Park) ──
+class SlideRace{
+  constructor(api){this.api=api;this.group=null;this.state='countdown';this.countdown=3;
+    this.playerT=0;this.speed=0;this.raceTime=0;this.botTs=[];this.botSpeeds=[];
+    this.hudEl=null;this.playerMesh=null;this.botMeshes=[];this.curve=null}
+  async enter(group,zone){
+    this.group=group;this.state='countdown';this.countdown=3;this.playerT=0;this.speed=.3;this.raceTime=0;
+    const{box}=this.api;
+    // Build spiral slide
+    const pts=[];for(let i=0;i<=60;i++){const t=i/60,a=t*Math.PI*6;
+      pts.push(new THREE.Vector3(Math.cos(a)*6,35*(1-t),Math.sin(a)*6))}
+    this.curve=new THREE.CatmullRomCurve3(pts);
+    const tube=new THREE.TubeGeometry(this.curve,100,1.2,6,false);
+    group.add(new THREE.Mesh(tube,new THREE.MeshStandardMaterial({color:0xdd2222,roughness:.3,side:THREE.DoubleSide})));
+    // Splash pool at bottom
+    const pool=new THREE.Mesh(new THREE.CircleGeometry(8,12),new THREE.MeshStandardMaterial({color:0x44aaee,transparent:true,opacity:.5}));
+    pool.rotation.x=-Math.PI/2;pool.position.set(6,.05,0);group.add(pool);
+    // Player capsule
+    this.playerMesh=box(.8,.6,.8,0x4488ff);group.add(this.playerMesh);
+    // Bot racers
+    this.botMeshes=[];this.botTs=[0,0,0];this.botSpeeds=[.25,.35,.28];
+    const cols=[0xff4444,0x44ff44,0xffaa00];
+    for(let i=0;i<3;i++){const b=box(.8,.6,.8,cols[i]);group.add(b);this.botMeshes.push(b)}
+    group.add(new THREE.AmbientLight(0xffffff,.6));
+    group.add(new THREE.DirectionalLight(0xffffff,.5)).position.set(3,10,3);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x+10,group.position.y+38,group.position.z+10);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Slide Race! Tap SPACE rapidly to go faster!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=this.state==='countdown'?`GET READY... ${Math.ceil(this.countdown)}`:`POSITION: ${this._getPosition()} | TIME: ${this.raceTime.toFixed(1)}s`}
+  _getPosition(){let pos=1;for(const bt of this.botTs)if(bt>this.playerT)pos++;return pos}
+  update(dt){
+    const gp=this.group.position;
+    if(this.state==='countdown'){this.countdown-=dt;this._updateHUD();
+      if(this.countdown<=0){this.state='racing';this.api.showTip('GO! Tap SPACE!')}
+      const p=this.curve.getPointAt(0);const cam=this.api.cam;
+      cam.position.set(gp.x+p.x+5,gp.y+p.y+3,gp.z+p.z+5);cam.lookAt(gp.x+p.x,gp.y+p.y,gp.z+p.z);return}
+    if(this.state==='done'){const cam=this.api.cam;cam.position.set(gp.x+6,gp.y+5,gp.z+10);cam.lookAt(gp.x+6,gp.y,gp.z);return}
+    this.raceTime+=dt;
+    const{keys}=this.api;
+    // Tapping SPACE boosts speed
+    if(keys['Space']||keys['mouse0']){keys['Space']=false;keys['mouse0']=false;this.speed=Math.min(this.speed+.08,.6)}
+    this.speed=Math.max(.15,this.speed-.1*dt);// decelerate
+    this.playerT=Math.min(1,this.playerT+this.speed*dt);
+    // Move bots
+    for(let i=0;i<this.botTs.length;i++){
+      this.botTs[i]=Math.min(1,this.botTs[i]+this.botSpeeds[i]*dt+Math.sin(clock.elapsedTime*(i+1))*.02*dt)}
+    // Position meshes on curve
+    if(this.playerT<1){const p=this.curve.getPointAt(this.playerT);this.playerMesh.position.copy(p)}
+    for(let i=0;i<this.botMeshes.length;i++){
+      if(this.botTs[i]<1){const p=this.curve.getPointAt(this.botTs[i]);this.botMeshes[i].position.copy(p)}}
+    // Finish
+    if(this.playerT>=1){this.state='done';const pos=this._getPosition();
+      this.api.showTip(`Finished ${pos===1?'1st':pos===2?'2nd':pos===3?'3rd':'4th'}! Time: ${this.raceTime.toFixed(1)}s`)}
+    this._updateHUD();
+    const pp=this.curve.getPointAt(Math.min(.99,this.playerT));
+    const cam=this.api.cam;
+    cam.position.set(gp.x+pp.x+4,gp.y+pp.y+3,gp.z+pp.z+4);cam.lookAt(gp.x+pp.x,gp.y+pp.y,gp.z+pp.z);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.playerMesh=null;this.botMeshes=[];this.curve=null}
+}
+
+// ── DivingContest (Water Park) ──
+class DivingContest{
+  constructor(api){this.api=api;this.group=null;this.state='select';this.height=10;
+    this.posY=10;this.velY=0;this.flips=0;this.flipAngle=0;this.score=0;this.round=1;
+    this.hudEl=null;this.diver=null;this.feedbackEl=null}
+  async enter(group,zone){
+    this.group=group;this.state='select';this.round=1;this.score=0;
+    const{box,cyl}=this.api;
+    // Pool
+    const pool=new THREE.Mesh(new THREE.PlaneGeometry(12,12),new THREE.MeshStandardMaterial({color:0x2288cc,transparent:true,opacity:.6}));
+    pool.rotation.x=-Math.PI/2;pool.position.y=.05;group.add(pool);
+    const poolFloor=new THREE.Mesh(new THREE.PlaneGeometry(12,12),new THREE.MeshStandardMaterial({color:0x0a3366}));
+    poolFloor.rotation.x=-Math.PI/2;poolFloor.position.y=-4;group.add(poolFloor);
+    // Diving boards at 3 heights
+    for(const h of [5,8,12]){
+      const pole=cyl(.15,.2,h,0x888888);pole.position.set(-7,h/2,0);group.add(pole);
+      const board=box(3,.2,1.5,0x999999);board.position.set(-5.5,h,0);group.add(board)}
+    // Spectator bleachers
+    for(let i=0;i<3;i++){const s=box(10,1,3,0x888888);s.position.set(8,.5+i*1.2,i*3.5-3);group.add(s)}
+    this.diver=box(.6,1.4,.6,0xff6600);this.diver.position.set(-5.5,13,0);group.add(this.diver);
+    group.add(new THREE.AmbientLight(0xffffff,.7));
+    group.add(new THREE.DirectionalLight(0xffffff,.5)).position.set(3,10,3);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.feedbackEl=document.createElement('div');this.feedbackEl.style.cssText='position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);color:#fff;font-family:"Courier New",monospace;font-size:2.5em;font-weight:bold;z-index:9;opacity:0;transition:opacity 0.15s;text-shadow:0 0 15px rgba(255,255,255,0.5)';
+    document.body.appendChild(this.feedbackEl);
+    this.api.P.set(group.position.x+8,group.position.y+10,group.position.z+8);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Diving Contest! Press 1/2/3 to pick height, SPACE to jump, SPACE again to flip!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`ROUND: ${this.round}/3 | SCORE: ${this.score}`}
+  _showFB(t,c){if(!this.feedbackEl)return;this.feedbackEl.textContent=t;this.feedbackEl.style.color=c;
+    this.feedbackEl.style.opacity='1';setTimeout(()=>{if(this.feedbackEl)this.feedbackEl.style.opacity='0'},600)}
+  update(dt){
+    const gp=this.group.position;
+    if(this.state==='done'){const cam=this.api.cam;cam.position.set(gp.x+8,gp.y+8,gp.z+8);cam.lookAt(gp);return}
+    const{keys}=this.api;
+    if(this.state==='select'){
+      if(keys['Digit1']){this.height=5;this.state='ready';this.posY=5;this.diver.position.set(-5.5,5,0)}
+      if(keys['Digit2']){this.height=8;this.state='ready';this.posY=8;this.diver.position.set(-5.5,8,0)}
+      if(keys['Digit3']){this.height=12;this.state='ready';this.posY=12;this.diver.position.set(-5.5,12,0)}
+      const cam=this.api.cam;cam.position.set(gp.x-8,gp.y+10,gp.z+5);cam.lookAt(gp.x-5,gp.y+8,gp.z);return}
+    if(this.state==='ready'){
+      if(keys['Space']){keys['Space']=false;this.state='diving';this.velY=4;this.flips=0;this.flipAngle=0;
+        this.api.showTip('SPACE to flip!')}
+      const cam=this.api.cam;cam.position.set(gp.x-8,gp.y+this.height+2,gp.z+5);cam.lookAt(gp.x-5,gp.y+this.height,gp.z);return}
+    if(this.state==='diving'){
+      this.velY-=12*dt;this.posY+=this.velY*dt;
+      if(keys['Space']){keys['Space']=false;this.flips++;this.flipAngle+=Math.PI}
+      this.flipAngle*=.95;// slow down rotation
+      this.diver.position.set(-5.5+(5.5)*(1-this.posY/this.height),this.posY,0);
+      this.diver.rotation.z=this.flipAngle;
+      if(this.posY<=.2){// splash!
+        const multiplier=this.height===12?3:this.height===8?2:1;
+        const flipPts=this.flips*20*multiplier;
+        // Entry quality: more vertical = better
+        const vertScore=Math.abs(this.velY)>3?30*multiplier:15*multiplier;
+        const total=flipPts+vertScore;this.score+=total;
+        this._showFB(`${this.flips} flip${this.flips!==1?'s':''} +${total}pts`,this.flips>=2?'#ffdd00':'#ffffff');
+        this.round++;
+        if(this.round>3){this.state='done';this.api.showTip(`Contest over! Total: ${this.score} pts`)}
+        else{this.state='select';this.diver.position.set(-5.5,13,0);this.diver.rotation.z=0;
+          this.api.showTip('Pick height: 1/2/3')}
+      }
+      const cam=this.api.cam;
+      cam.position.set(gp.x+6,gp.y+this.posY+3,gp.z+6);cam.lookAt(gp.x+this.diver.position.x,gp.y+this.posY,gp.z);
+    }
+    this._updateHUD();
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}
+    if(this.feedbackEl){this.feedbackEl.remove();this.feedbackEl=null}this.diver=null}
+}
+
+// ── CoasterRide (Theme Park) ──
+class CoasterRide{
+  constructor(api){this.api=api;this.group=null;this.state='boarding';this.t=0;this.speed=0;
+    this.hudEl=null;this.car=null;this.curve=null;this.excitement=0}
+  async enter(group,zone){
+    this.group=group;this.state='boarding';this.t=0;this.speed=0;this.excitement=0;
+    const{box}=this.api;
+    // Build coaster track
+    const pts=[[0,5,0],[0,50,-30],[-15,8,-60],[-25,12,-50],[-20,35,-30],[-15,45,-30],[-10,35,-30],[-5,12,-30],
+      [5,15,-10],[15,8,10],[20,30,20],[25,40,20],[30,30,20],[25,10,30],[10,12,40],
+      [0,28,50],[-10,38,50],[-15,28,50],[-10,10,40],[0,8,20]].map(([x,y,z])=>new THREE.Vector3(x,y,z));
+    this.curve=new THREE.CatmullRomCurve3(pts,true,'catmullrom',.5);
+    const track=new THREE.TubeGeometry(this.curve,200,.3,5,true);
+    group.add(new THREE.Mesh(track,new THREE.MeshStandardMaterial({color:0xcc2222,metalness:.4})));
+    // Second rail
+    const pts2=pts.map(p=>new THREE.Vector3(p.x+.8,p.y,p.z));
+    const curve2=new THREE.CatmullRomCurve3(pts2,true,'catmullrom',.5);
+    group.add(new THREE.Mesh(new THREE.TubeGeometry(curve2,200,.3,5,true),new THREE.MeshStandardMaterial({color:0xcc2222,metalness:.4})));
+    // Support columns
+    const supGeos=[];
+    for(let i=0;i<pts.length;i++){const p=pts[i];if(p.y>3){
+      supGeos.push(geoAt(new THREE.CylinderGeometry(.15,.2,p.y,4),p.x+.4,p.y/2,p.z,0,0,0))}}
+    if(supGeos.length)group.add(new THREE.Mesh(mergeGeometries(supGeos),new THREE.MeshStandardMaterial({color:0x555555})));
+    // Rider car
+    this.car=box(2,1,1.5,0xffcc00);group.add(this.car);
+    group.add(new THREE.AmbientLight(0xffffff,.6));
+    group.add(new THREE.DirectionalLight(0xffffff,.5)).position.set(3,10,3);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x+10,group.position.y+15,group.position.z+10);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Roller Coaster! Press SPACE to start the ride! SPACE during drops for excitement!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=this.state==='riding'?`SPEED: ${(this.speed*100).toFixed(0)} | EXCITEMENT: ${this.excitement}`:'Press SPACE to start!'}
+  update(dt){
+    const gp=this.group.position;
+    if(this.state==='done'){const cam=this.api.cam;cam.position.set(gp.x+10,gp.y+15,gp.z+10);cam.lookAt(gp);return}
+    const{keys}=this.api;
+    if(this.state==='boarding'){
+      if(keys['Space']){keys['Space']=false;this.state='riding';this.speed=.02;this.api.showTip('Here we go!')}
+      const p=this.curve.getPointAt(0);this.car.position.copy(p);
+      const cam=this.api.cam;cam.position.set(gp.x+p.x+5,gp.y+p.y+3,gp.z+p.z+5);cam.lookAt(gp.x+p.x,gp.y+p.y,gp.z+p.z);
+      this._updateHUD();return}
+    if(this.state==='riding'){
+      // Speed varies with slope (faster going down, slower going up)
+      const t1=this.curve.getPointAt(this.t),t2=this.curve.getPointAt(Math.min(1,(this.t+.01)%1));
+      const slope=(t2.y-t1.y)/.5;
+      this.speed=Math.max(.02,Math.min(.4,this.speed-slope*.003));
+      this.t=(this.t+this.speed*dt)%1;
+      // Excitement bonus on drops
+      if(slope<-5&&(keys['Space']||keys['mouse0'])){keys['Space']=false;keys['mouse0']=false;
+        this.excitement+=5;this.api.showTip('WOOOOO! +5 excitement!')}
+      const p=this.curve.getPointAt(this.t);const ahead=this.curve.getPointAt((this.t+.02)%1);
+      this.car.position.copy(p);this.car.lookAt(ahead);
+      // One full loop = done
+      if(this.t>.98&&this.speed>.01){this.state='done';this.api.showTip(`Ride complete! Excitement: ${this.excitement}`)}
+      this._updateHUD();
+      const cam=this.api.cam;
+      cam.position.set(gp.x+p.x-3,gp.y+p.y+2,gp.z+p.z+4);cam.lookAt(gp.x+p.x,gp.y+p.y,gp.z+p.z);
+    }
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.car=null;this.curve=null}
+}
+
+// ── TeacupSpin (Theme Park) ──
+class TeacupSpin{
+  constructor(api){this.api=api;this.group=null;this.state='playing';this.spinSpeed=0;this.score=0;
+    this.timeLeft=30;this.dizziness=0;this.hudEl=null;this.cup=null;this.platform=null;this.angle=0}
+  async enter(group,zone){
+    this.group=group;this.state='playing';this.spinSpeed=0;this.score=0;this.timeLeft=30;this.dizziness=0;this.angle=0;
+    const{box}=this.api;
+    // Platform
+    this.platform=new THREE.Mesh(new THREE.CylinderGeometry(10,10,.5,16),new THREE.MeshStandardMaterial({color:0xff66aa}));
+    this.platform.position.y=.25;group.add(this.platform);
+    // Player's cup
+    this.cup=new THREE.Mesh(new THREE.CylinderGeometry(2,1.5,2,8,1,true),new THREE.MeshStandardMaterial({color:0x4488ff,side:THREE.DoubleSide}));
+    this.cup.position.set(6,1.5,0);group.add(this.cup);
+    // Other cups
+    const cols=[0xff4488,0x44ff88,0xffff44,0xaa44ff,0xff8844];
+    for(let i=0;i<5;i++){const a=(i+1)/6*Math.PI*2;
+      const c=new THREE.Mesh(new THREE.CylinderGeometry(2,1.5,2,8,1,true),new THREE.MeshStandardMaterial({color:cols[i],side:THREE.DoubleSide}));
+      c.position.set(Math.cos(a)*6,1.5,Math.sin(a)*6);group.add(c)}
+    group.add(new THREE.AmbientLight(0xffffff,.5));
+    for(let i=0;i<3;i++){const l=new THREE.PointLight([0xff0088,0x00ff88,0x8800ff][i],.5,12);
+      l.position.set(Math.cos(i*2.1)*8,3,Math.sin(i*2.1)*8);group.add(l)}
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x,group.position.y+6,group.position.z+12);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Teacup Spin! Hold LEFT/RIGHT to spin your cup! Higher speed = more points!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`SPIN: ${Math.abs(this.spinSpeed).toFixed(1)} | SCORE: ${this.score} | TIME: ${Math.max(0,this.timeLeft|0)}s`}
+  update(dt){
+    if(this.state==='done'){const gp=this.group.position,cam=this.api.cam;cam.position.set(gp.x,gp.y+8,gp.z+10);cam.lookAt(gp);return}
+    this.timeLeft-=dt;if(this.timeLeft<=0){this.state='done';this.api.showTip(`Spin done! Score: ${this.score}`);return}
+    const{keys}=this.api;
+    if(keys['ArrowLeft']||keys['KeyA'])this.spinSpeed+=10*dt;
+    if(keys['ArrowRight']||keys['KeyD'])this.spinSpeed-=10*dt;
+    this.spinSpeed*=.97;// friction
+    this.angle+=this.spinSpeed*dt;
+    this.score+=Math.floor(Math.abs(this.spinSpeed)*dt*10);
+    // Platform rotates slowly
+    if(this.platform)this.platform.rotation.y+=dt*.5;
+    // Cup orbits and spins
+    const orbitAngle=clock.elapsedTime*.5;
+    if(this.cup){this.cup.position.set(Math.cos(orbitAngle)*6,1.5,Math.sin(orbitAngle)*6);this.cup.rotation.y=this.angle}
+    // Dizziness camera effect
+    this.dizziness=Math.min(1,Math.abs(this.spinSpeed)/15);
+    this._updateHUD();
+    const gp=this.group.position,cam=this.api.cam;
+    const wobble=this.dizziness*Math.sin(clock.elapsedTime*4)*.3;
+    cam.position.set(gp.x+Math.cos(orbitAngle)*6+wobble,gp.y+3,gp.z+Math.sin(orbitAngle)*6+4);
+    cam.lookAt(gp.x,gp.y+1,gp.z);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.cup=null;this.platform=null}
+}
+
+// ── HauntedWalk (Theme Park) ──
+class HauntedWalk{
+  constructor(api){this.api=api;this.group=null;this.state='playing';this.playerZ=-14;
+    this.scares=0;this.score=0;this.hudEl=null;this.player=null;this.ghosts=[];this.flickerTimer=0}
+  async enter(group,zone){
+    this.group=group;this.state='playing';this.playerZ=-14;this.scares=0;this.score=0;this.ghosts=[];this.flickerTimer=0;
+    const{box}=this.api;
+    // Dark corridor
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,35),new THREE.MeshStandardMaterial({color:0x111111}));
+    floor.rotation.x=-Math.PI/2;group.add(floor);
+    // Walls
+    const wallL=box(.5,4,35,0x110808);wallL.position.set(-3,2,0);group.add(wallL);
+    const wallR=box(.5,4,35,0x110808);wallR.position.set(3,2,0);group.add(wallR);
+    const ceiling=box(6,.3,35,0x0a0505);ceiling.position.set(0,4,0);group.add(ceiling);
+    // Flickering lights (dim, eerie)
+    this.lights=[];
+    for(let i=0;i<5;i++){const l=new THREE.PointLight(0x33ff33,.3,6);
+      l.position.set(0,3.5,-12+i*7);group.add(l);this.lights.push(l)}
+    group.add(new THREE.AmbientLight(0x110808,.15));
+    // Ghost entities (floating white spheres that appear/disappear)
+    for(let i=0;i<6;i++){
+      const ghost=new THREE.Mesh(new THREE.SphereGeometry(.6,6,6),new THREE.MeshStandardMaterial({color:0xccffcc,emissive:0x88ff88,emissiveIntensity:2,transparent:true,opacity:0}));
+      const gz=-8+i*5,gx=(Math.random()-.5)*4;
+      ghost.position.set(gx,2,gz);group.add(ghost);
+      this.ghosts.push({mesh:ghost,z:gz,x:gx,visible:false,timer:2+Math.random()*3,scareable:true})}
+    // Cobwebs and decor
+    for(let i=0;i<8;i++){const web=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.5),
+      new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.15,side:THREE.DoubleSide}));
+      web.position.set((Math.random()-.5)*5,3.5,-14+i*4);web.rotation.set(Math.random(),Math.random(),0);group.add(web)}
+    this.player=box(.6,1.5,.6,0x4488ff);this.player.position.set(0,1,-14);group.add(this.player);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x,group.position.y+2,group.position.z-10);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Haunted House! W/S to walk, click/SPACE when you see a ghost to scare it back!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`GHOSTS SCARED: ${this.scares}/${this.ghosts.length} | SCORE: ${this.score}`}
+  update(dt){
+    const gp=this.group.position;
+    if(this.state==='done'){const cam=this.api.cam;cam.position.set(gp.x,gp.y+3,gp.z+18);cam.lookAt(gp.x,gp.y+2,gp.z);return}
+    const{keys}=this.api;
+    // Walk forward/back
+    if(keys['KeyW']||keys['ArrowUp'])this.playerZ+=4*dt;
+    if(keys['KeyS']||keys['ArrowDown'])this.playerZ-=4*dt;
+    this.playerZ=Math.max(-14,Math.min(16,this.playerZ));
+    this.player.position.z=this.playerZ;
+    // Flickering lights
+    this.flickerTimer+=dt;
+    for(const l of this.lights)l.intensity=.2+Math.sin(clock.elapsedTime*5+l.position.z)*.15+Math.random()*.1;
+    // Ghost logic
+    for(const g of this.ghosts){
+      g.timer-=dt;
+      if(!g.visible&&g.timer<=0&&g.scareable){// appear!
+        g.visible=true;g.mesh.material.opacity=.8;g.timer=2+Math.random()*2}
+      if(g.visible){
+        g.timer-=dt;
+        // Player can scare ghost if close and presses SPACE
+        const dist=Math.abs(this.playerZ-g.z);
+        if(dist<3&&(keys['Space']||keys['mouse0'])&&g.scareable){
+          keys['Space']=false;keys['mouse0']=false;
+          g.scareable=false;g.visible=false;g.mesh.material.opacity=0;
+          this.scares++;this.score+=50;this.api.showTip('BOO! Ghost scared! +50');this._updateHUD()}
+        if(g.timer<=0&&g.visible){g.visible=false;g.mesh.material.opacity=0;g.timer=3+Math.random()*3}
+      }
+    }
+    // Win check
+    if(this.scares>=this.ghosts.length){this.state='done';this.api.showTip(`All ghosts scared! Score: ${this.score}`)}
+    this._updateHUD();
+    const cam=this.api.cam;
+    cam.position.set(gp.x,gp.y+2,gp.z+this.playerZ-4);cam.lookAt(gp.x,gp.y+2,gp.z+this.playerZ+3);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.player=null;this.ghosts=[];this.lights=[]}
+}
+
+// ── FerrisWheelRide (Theme Park) ──
+class FerrisWheelRide{
+  constructor(api){this.api=api;this.group=null;this.state='riding';this.angle=0;this.timeLeft=40;
+    this.photos=0;this.score=0;this.hudEl=null;this.wheel=null}
+  async enter(group,zone){
+    this.group=group;this.state='riding';this.angle=0;this.timeLeft=40;this.photos=0;this.score=0;
+    // Build ferris wheel
+    const wheelR=18;
+    const support1=new THREE.Mesh(new THREE.CylinderGeometry(.4,.6,wheelR+3,5),new THREE.MeshStandardMaterial({color:0x555555}));
+    support1.position.set(-2,(wheelR+3)/2,0);support1.rotation.z=.1;group.add(support1);
+    const support2=new THREE.Mesh(new THREE.CylinderGeometry(.4,.6,wheelR+3,5),new THREE.MeshStandardMaterial({color:0x555555}));
+    support2.position.set(2,(wheelR+3)/2,0);support2.rotation.z=-.1;group.add(support2);
+    this.wheel=new THREE.Group();this.wheel.position.set(0,wheelR+3,0);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(wheelR,.2,6,32),new THREE.MeshStandardMaterial({color:0xdd3333}));
+    this.wheel.add(rim);
+    // Gondolas
+    for(let i=0;i<10;i++){const a=i/10*Math.PI*2;
+      const gond=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.8,1.2),new THREE.MeshStandardMaterial({color:0x2266cc}));
+      gond.position.set(Math.cos(a)*wheelR,Math.sin(a)*wheelR,0);this.wheel.add(gond);
+      const spoke=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,wheelR,3),new THREE.MeshStandardMaterial({color:0x666666}));
+      spoke.position.set(Math.cos(a)*wheelR/2,Math.sin(a)*wheelR/2,0);spoke.rotation.z=a-Math.PI/2;this.wheel.add(spoke)}
+    group.add(this.wheel);
+    // Ground
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:0x44aa44}));
+    ground.rotation.x=-Math.PI/2;group.add(ground);
+    group.add(new THREE.AmbientLight(0xffffff,.6));
+    group.add(new THREE.DirectionalLight(0xffffff,.5)).position.set(5,10,5);
+    this.hudEl=document.createElement('div');this.hudEl.id='mission-hud';
+    this.hudEl.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-family:"Courier New",monospace;font-size:1.3em;background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:8px;z-index:7';
+    document.body.appendChild(this.hudEl);
+    this.api.P.set(group.position.x,group.position.y+wheelR+3,group.position.z+5);
+    this.api.V.set(0,0,0);this.api.mode='walk';this._updateHUD();
+    this.api.showTip('Ferris Wheel! Enjoy the view! Press SPACE at the TOP for photo bonus points!');
+  }
+  _updateHUD(){if(this.hudEl)this.hudEl.textContent=`PHOTOS: ${this.photos} | SCORE: ${this.score} | TIME: ${Math.max(0,this.timeLeft|0)}s`}
+  update(dt){
+    if(this.state==='done'){const gp=this.group.position,cam=this.api.cam;cam.position.set(gp.x+20,gp.y+15,gp.z+20);cam.lookAt(gp.x,gp.y+10,gp.z);return}
+    this.timeLeft-=dt;if(this.timeLeft<=0){this.state='done';this.api.showTip(`Ride over! Photos: ${this.photos}, Score: ${this.score}`);return}
+    const{keys}=this.api;
+    this.angle+=dt*.4;// gentle rotation
+    if(this.wheel)this.wheel.rotation.z=this.angle;
+    // Player position = gondola 0 position
+    const gondAngle=this.angle;
+    const px=Math.cos(gondAngle)*18,py=Math.sin(gondAngle)*18+21;
+    // Photo at the top!
+    if(keys['Space']&&py>35){keys['Space']=false;this.photos++;
+      const pts=20+Math.floor((py-35)*5);this.score+=pts;
+      this.api.showTip(`PHOTO from the top! +${pts}`)}
+    this._updateHUD();
+    const gp=this.group.position,cam=this.api.cam;
+    cam.position.set(gp.x+px+3,gp.y+py+2,gp.z+5);cam.lookAt(gp.x,gp.y+10,gp.z);
+  }
+  async exit(){if(this.hudEl){this.hudEl.remove();this.hudEl=null}this.wheel=null}
+}
+
 // ── Zone class registry (classes defined above, instantiated lazily on enter) ──
 const ZONE_CLASSES={'coffee-shop':CoffeeShop,'bar':Bar,'clothing-store':ClothingStore,
   'rave-interior':RaveInterior,'convenience-store':ConvenienceStore,'restaurant-interior':RestaurantInterior,
@@ -7780,7 +8433,10 @@ const ZONE_CLASSES={'coffee-shop':CoffeeShop,'bar':Bar,'clothing-store':Clothing
   'go-kart-race':GoKartRace,'soccer-penalty':SoccerPenalty,'obstacle-course':ObstacleCourse,
   'sprint-race':SprintRace,'high-dive':HighDive,'arcade':Arcade,'ferris-wheel':FerrisWheel,
   'weight-lifting':WeightLifting,'haunted-house':HauntedHouse,'bowling-alley':BowlingAlley,
-  'volleyball-match':VolleyballMatch};
+  'volleyball-match':VolleyballMatch,
+  'halfpipe-challenge':HalfpipeChallenge,'bungee-jump':BungeeJump,'parkour-race':ParkourRace,
+  'wave-pool-surf':WavePoolSurf,'slide-race':SlideRace,'diving-contest':DivingContest,
+  'coaster-ride':CoasterRide,'teacup-spin':TeacupSpin,'haunted-walk':HauntedWalk,'ferris-wheel-ride':FerrisWheelRide};
 
 // ── Zone Manager (proximity detection, lazy instantiation, enter/exit) ──
 class ZoneManager{
@@ -7865,6 +8521,19 @@ function buildZones(spots){
   zones.push({id:'weight-lifting',type:'mission',zoneClass:'weight-lifting',position:[400,0,950],radius:8,label:'Weight Lifting',icon:'🏋️'});
   zones.push({id:'bowling-alley',type:'interior',zoneClass:'bowling-alley',position:[460,0,850],radius:8,label:'Bowling Alley',icon:'🎳'});
   zones.push({id:'volleyball-match',type:'mission',zoneClass:'volleyball-match',position:[350,0,830],radius:8,label:'Volleyball',icon:'🏐'});
+  // Extreme Park zones
+  zones.push({id:'halfpipe-challenge',type:'mission',zoneClass:'halfpipe-challenge',position:[-220,0,1280],radius:10,label:'Halfpipe Challenge',icon:'🛹'});
+  zones.push({id:'bungee-jump',type:'mission',zoneClass:'bungee-jump',position:[-160,0,1340],radius:8,label:'Bungee Jump',icon:'🪂'});
+  zones.push({id:'parkour-race',type:'mission',zoneClass:'parkour-race',position:[-250,0,1350],radius:8,label:'Parkour Race',icon:'🏃'});
+  // Water Park zones
+  zones.push({id:'wave-pool-surf',type:'mission',zoneClass:'wave-pool-surf',position:[130,0,1320],radius:10,label:'Wave Pool Surf',icon:'🏄'});
+  zones.push({id:'slide-race',type:'mission',zoneClass:'slide-race',position:[180,0,1380],radius:8,label:'Slide Race',icon:'🎢'});
+  zones.push({id:'diving-contest',type:'mission',zoneClass:'diving-contest',position:[100,0,1400],radius:8,label:'Diving Contest',icon:'🤿'});
+  // Mega Theme Park zones
+  zones.push({id:'coaster-ride',type:'mission',zoneClass:'coaster-ride',position:[480,0,1260],radius:10,label:'Roller Coaster',icon:'🎢'});
+  zones.push({id:'teacup-spin',type:'mission',zoneClass:'teacup-spin',position:[540,0,1320],radius:8,label:'Teacup Spin',icon:'🍵'});
+  zones.push({id:'haunted-walk',type:'mission',zoneClass:'haunted-walk',position:[450,0,1350],radius:8,label:'Haunted Walk',icon:'👻'});
+  zones.push({id:'ferris-wheel-ride',type:'mission',zoneClass:'ferris-wheel-ride',position:[550,0,1280],radius:10,label:'Ferris Wheel Ride',icon:'🎡'});
   return zones;
 }
 
