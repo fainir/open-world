@@ -222,12 +222,12 @@ const R=new THREE.WebGLRenderer({canvas,antialias:true});
 R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,1));
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.2;
-const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0xb0d4ee,0.00040);
-const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.5,4000);
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0xb0d4ee,0.00020);
+const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.5,6000);
 
 // ══════════════ SKY ══════════════
 const sunDir=new THREE.Vector3(0.45,0.55,-0.3).normalize();
-const skyMesh=new THREE.Mesh(new THREE.SphereGeometry(3800,64,32),new THREE.ShaderMaterial({
+const skyMesh=new THREE.Mesh(new THREE.SphereGeometry(5800,64,32),new THREE.ShaderMaterial({
 uniforms:{sunDir:{value:sunDir}},side:THREE.BackSide,depthWrite:false,depthTest:false,
 vertexShader:`varying vec3 vD;void main(){vD=normalize((modelMatrix*vec4(position,1.0)).xyz-cameraPosition);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
 fragmentShader:`uniform vec3 sunDir;varying vec3 vD;void main(){vec3 d=normalize(vD);float y=d.y;vec3 top=vec3(0.28,0.52,0.92),mid=vec3(0.50,0.72,0.96),hor=vec3(0.78,0.88,0.96);vec3 col=y>0.0?mix(hor,mix(mid,top,pow(y,0.5)),smoothstep(0.0,0.4,y)):mix(hor,vec3(0.45,0.55,0.7),min(-y*2.0,1.0));float sd=dot(d,sunDir);col+=vec3(1,0.95,0.8)*pow(max(sd,0.0),900.0)*3.0;col+=vec3(1,0.85,0.5)*pow(max(sd,0.0),80.0)*0.5;col+=vec3(1,0.7,0.3)*pow(max(sd,0.0),8.0)*0.12;col=mix(col,vec3(0.95,0.92,0.86),pow(1.0-abs(y),10.0)*0.5);gl_FragColor=vec4(col,1);}`
@@ -254,13 +254,25 @@ function getH(x,z){
   let ds=0;if(z<-CH+50){const d=clamp((-z-CH+50)/400,0,1.2);ds=d*8+Math.sin(x*.02+z*.015)*4*d+fbm(x*0.006,z*0.006,3)*6*d}
   // Rolling hills (north, z > CH+200)
   let nh=0;if(z>CH+200){const d=clamp((z-CH-200)/500,0,1.2);nh=fbm(x*0.005,z*0.005,4)*25*d+Math.sin(x*.008)*8*d}
-  return lerp(mt+bc+ds+nh+fbm(x*0.007,z*0.007,3)*3,0,cityB);
+  // Ski resort peaks (far west-northwest)
+  let sk=0;if(x<-2200&&z>400&&z<1600){const d=clamp((-x-2200)/600,0,1.2);sk=d*d*120+fbm(x*0.003+9,z*0.003+9,4)*80*d+Math.max(0,fbm(x*0.002,z*0.002,3)-.3)*160*d}
+  // Lagoon depression (north-east, around 900,1800)
+  let lg=0;const lgDx=x-900,lgDz=z-1800,lgDist2=lgDx*lgDx+lgDz*lgDz;
+  if(lgDist2<40000){const lgDist=Math.sqrt(lgDist2),rim=smoothstep(60,200,lgDist);lg=-rim*(1-rim)*10}
+  // River valley (gentle groove from -800,2200 to 400,0)
+  let rv=0;const rvT=clamp((x+800)/1200,0,1),rvCx=lerp(-800,400,rvT),rvCz=lerp(2200,0,rvT);
+  const rvD2=(x-rvCx)*(x-rvCx)+(z-rvCz)*(z-rvCz);if(rvD2<6400){rv=-smoothstep(80,15,Math.sqrt(rvD2))*5}
+  // Far north hills (z > 2000)
+  let fnh=0;if(z>2000){const d=clamp((z-2000)/600,0,1.2);fnh=fbm(x*0.004+3,z*0.004+3,4)*28*d+Math.sin(x*.006)*10*d}
+  return lerp(mt+bc+ds+nh+sk+lg+rv+fnh+fbm(x*0.007,z*0.007,3)*3,0,cityB);
 }
-const tG=new THREE.PlaneGeometry(8000,8000,80,80);tG.rotateX(-Math.PI/2);
+const tG=new THREE.PlaneGeometry(10000,10000,120,120);tG.rotateX(-Math.PI/2);
 const tP=tG.attributes.position,tC=new Float32Array(tP.count*3);
 for(let i=0;i<tP.count;i++){const x=tP.getX(i),z=tP.getZ(i),h=getH(x,z);tP.setY(i,h);
   let r,g,b;if(h>110){r=0.95;g=0.96;b=1}else if(h>70){const t=(h-70)/40;r=lerp(.48,.95,t);g=lerp(.44,.96,t);b=lerp(.4,1,t)}
   else if(h>25){r=.48;g=.44;b=.4}
+  else if(x>700&&z>1500&&h<-1){r=.05;g=.18;b=.38} // lagoon deep
+  else if(x>700&&z>1500&&h<2){r=.55;g=.75;b=.72} // lagoon shallows
   else if(z<-CH){const n=fbm(x*.03,z*.03,2)*.06;r=.82+n;g=.72+n;b=.48+n} // desert sand
   else if(h>5){const n=fbm(x*.05,z*.05,2)*.12;r=.18+n;g=.38+n;b=.14}
   else if(x>CH-30){const n=fbm(x*.02,z*.02,2)*.08;r=.88+n;g=.82+n;b=.58+n}
@@ -275,7 +287,7 @@ const wMat=new THREE.ShaderMaterial({uniforms:{time:{value:0},sunDir:{value:sunD
 vertexShader:`uniform float time;varying vec3 vW,vN;void main(){vec3 p=position;float w=sin(p.x*.015+time*.7)*cos(p.y*.012+time*.5)*.6+sin(p.x*.035+time*1.1)*cos(p.y*.025-time*.8)*.3+sin(p.x*.07+p.y*.06+time*1.9)*.1;p.z+=w;vN=normalize(vec3(-cos(p.x*.015+time*.7)*.015*cos(p.y*.012+time*.5)*.6,-sin(p.x*.015+time*.7)*(-sin(p.y*.012+time*.5))*.012*.6,1));vW=(modelMatrix*vec4(p,1)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1);}`,
 fragmentShader:`uniform vec3 sunDir;varying vec3 vW,vN;void main(){vec3 V2=normalize(cameraPosition-vW),n=normalize(vN);float fr=pow(1.0-max(dot(V2,n),0.0),4.0);vec3 col=mix(mix(vec3(.02,.15,.30),vec3(.01,.08,.22),.4),vec3(.25,.45,.70),fr*.65);col+=vec3(1,.9,.7)*pow(max(dot(n,normalize(sunDir+V2)),0.0),256.0)*2.0;gl_FragColor=vec4(col,.92);}`
 });
-const water=new THREE.Mesh(new THREE.PlaneGeometry(8000,8000,50,50),wMat);
+const water=new THREE.Mesh(new THREE.PlaneGeometry(12000,12000,50,50),wMat);
 water.rotation.x=-Math.PI/2;water.position.set(CH+1200,-0.8,0);scene.add(water);
 
 // ══════════════ CITY GROUND ══════════════
@@ -799,7 +811,7 @@ seedR(222);for(let i=0;i<15;i++){const x=CH+30+srand()*200,z=-400+srand()*800,h=
 const clMat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.7,roughness:1});
 const _cloudPuff=new THREE.SphereGeometry(1,4,3);
 const cloudGeos=[];
-seedR(888);for(let i=0;i<40;i++){const cx=-3500+srand()*7000,cz=-3500+srand()*7000,cy=200+srand()*300;
+seedR(888);for(let i=0;i<60;i++){const cx=-4500+srand()*9000,cz=-4500+srand()*9000,cy=200+srand()*300;
   for(let j=0;j<3+Math.floor(srand()*3);j++){const s=10+srand()*20;
     cloudGeos.push(geoAt(_cloudPuff,cx+srand()*30-15,cy+srand()*5,cz+srand()*30-15,0,0,0,s,s*.35,s))}
 }
@@ -2978,6 +2990,514 @@ let beachGroup;
   if(bpLG.length)g.add(new THREE.Mesh(mergeGeometries(bpLG),new THREE.MeshStandardMaterial({color:0x228b22,roughness:.8})));
   scene.add(g);beachGroup=g;
 })();
+
+// ══════════════ SKI RESORT (far west-northwest, -2800,1000) ══════════════
+let skiResortGroup;
+(function buildSkiResort(){
+  const g=new THREE.Group();g.name='skiresort';
+  const cx=-2800,cz=1000;
+  const woodMat=new THREE.MeshStandardMaterial({color:0x8b6914,roughness:.85});
+  const snowMat=new THREE.MeshStandardMaterial({color:0xeeeeff,roughness:.5});
+  const metalMat=new THREE.MeshStandardMaterial({color:0x555555,metalness:.5,roughness:.5});
+  seedR(7006);
+  // Lodge building
+  const lX=cx,lZ=cz,lH=getH(lX,lZ);
+  const lodge=new THREE.Mesh(new THREE.BoxGeometry(20,6,14),woodMat);lodge.position.set(lX,lH+3,lZ);lodge.castShadow=true;g.add(lodge);
+  const roofShape=new THREE.Shape();roofShape.moveTo(-10.5,0);roofShape.lineTo(0,4);roofShape.lineTo(10.5,0);roofShape.closePath();
+  const roofGeo=new THREE.ExtrudeGeometry(roofShape,{depth:15,bevelEnabled:false});
+  const roof=new THREE.Mesh(roofGeo,new THREE.MeshStandardMaterial({color:0x6b3a2a,roughness:.8}));
+  roof.rotation.x=Math.PI/2;roof.position.set(lX,lH+6,lZ-7.5);g.add(roof);
+  const glassWall=new THREE.Mesh(new THREE.PlaneGeometry(18,5),new THREE.MeshStandardMaterial({color:0x88bbff,transparent:true,opacity:.35,roughness:.05,side:THREE.DoubleSide}));
+  glassWall.position.set(lX,lH+3.5,lZ+7.05);g.add(glassWall);
+  // Gondola towers (merged)
+  const _gtwr=new THREE.CylinderGeometry(.3,.4,14,4);const twrGeos=[];
+  for(let i=0;i<6;i++){const tx=cx-200+i*80,tz=cz-150,th=getH(tx,tz);
+    twrGeos.push(geoAt(_gtwr,tx,th+7,tz))}
+  if(twrGeos.length)g.add(new THREE.Mesh(mergeGeometries(twrGeos),metalMat));
+  // Gondola cabins (merged)
+  const _cab=new THREE.BoxGeometry(1.5,1.8,2.2);const cabGeos=[];
+  for(let i=0;i<8;i++){const t=i/7;const gx=lerp(cx-200,cx+200,t),gz=cz-150,gh=getH(gx,gz)+18;
+    cabGeos.push(geoAt(_cab,gx,gh,gz))}
+  if(cabGeos.length)g.add(new THREE.Mesh(mergeGeometries(cabGeos),new THREE.MeshStandardMaterial({color:0xcc2222,roughness:.6})));
+  // Ski lift cable
+  const liftCurve=new THREE.LineCurve3(new THREE.Vector3(cx-200,getH(cx-200,cz-150)+16,cz-150),new THREE.Vector3(cx+200,getH(cx+200,cz-150)+16,cz-150));
+  const liftGeo=new THREE.TubeGeometry(liftCurve,30,.04,4,false);
+  g.add(new THREE.Mesh(liftGeo,new THREE.MeshStandardMaterial({color:0x333333,metalness:.8})));
+  // Ski trail markers (merged flags)
+  const _flag=new THREE.PlaneGeometry(.5,.5);const blueFlags=[],redFlags=[];
+  for(let i=0;i<20;i++){const fx=cx-300+srand()*600,fz=cz-50-srand()*400,fh=getH(fx,fz);
+    if(fh<5)continue;(srand()>.5?blueFlags:redFlags).push(geoAt(_flag,fx,fh+1.5,fz,0,srand()*6.28,0))}
+  if(blueFlags.length)g.add(new THREE.Mesh(mergeGeometries(blueFlags),new THREE.MeshStandardMaterial({color:0x2244cc,side:THREE.DoubleSide})));
+  if(redFlags.length)g.add(new THREE.Mesh(mergeGeometries(redFlags),new THREE.MeshStandardMaterial({color:0xcc2222,side:THREE.DoubleSide})));
+  // Snow-capped pines (merged)
+  const _pt=new THREE.CylinderGeometry(.06,.12,3,4),_pl=new THREE.ConeGeometry(.8,2,5),_ps=new THREE.ConeGeometry(.5,1,5);
+  const ptG=[],plG=[],psG=[];
+  for(let i=0;i<60;i++){const x=cx-400+srand()*800,z=cz-400+srand()*600,h=getH(x,z);
+    if(h<5)continue;ptG.push(geoAt(_pt,x,h+1.5,z));plG.push(geoAt(_pl,x,h+3.5,z));
+    if(h>30||srand()>.5)psG.push(geoAt(_ps,x,h+5,z))}
+  if(ptG.length)g.add(new THREE.Mesh(mergeGeometries(ptG),new THREE.MeshStandardMaterial({color:0x5a3a1a,roughness:.9})));
+  if(plG.length)g.add(new THREE.Mesh(mergeGeometries(plG),new THREE.MeshStandardMaterial({color:0x1a4525,roughness:.85})));
+  if(psG.length)g.add(new THREE.Mesh(mergeGeometries(psG),snowMat));
+  // Ski racks (merged)
+  const _rack=new THREE.CylinderGeometry(.04,.04,.8,3);const rackGeos=[];
+  for(let i=0;i<8;i++){rackGeos.push(geoAt(_rack,cx-8+i*2,lH+.4,lZ+9,Math.PI/2,0,0))}
+  if(rackGeos.length)g.add(new THREE.Mesh(mergeGeometries(rackGeos),metalMat));
+  scene.add(g);skiResortGroup=g;
+})();
+spawnV('ski',skiResortGroup?-2790:0,skiResortGroup?1010:0,Math.PI);
+spawnV('snowboard',skiResortGroup?-2805:0,skiResortGroup?1015:0,Math.PI);
+
+// ══════════════ NORTH TOWN (European village, 0,2800) ══════════════
+let northTownGroup;
+(function buildNorthTown(){
+  const g=new THREE.Group();g.name='northtown';
+  const cx=0,cz=2800;
+  seedR(7007);
+  const whiteMat=new THREE.MeshStandardMaterial({color:0xf0ead0,roughness:.85});
+  const roofMat=new THREE.MeshStandardMaterial({color:0x884433,roughness:.8});
+  const stoneMat=new THREE.MeshStandardMaterial({color:0xaa9988,roughness:.9});
+  // Houses (merged walls + roofs)
+  const _hw=new THREE.BoxGeometry(8,5,7),_hr=new THREE.BoxGeometry(9,.4,8);
+  const hwGeos=[],hrGeos=[];
+  for(let i=0;i<10;i++){
+    const hx=cx-120+srand()*240,hz=cz-120+srand()*240,hh=getH(hx,hz);
+    const ry=srand()*Math.PI*2;
+    hwGeos.push(geoAt(_hw,hx,hh+2.5,hz,0,ry,0));
+    hrGeos.push(geoAt(_hr,hx,hh+5.3,hz,0,ry,0));
+    _addBldg({minX:hx-4.5,maxX:hx+4.5,minZ:hz-4,maxZ:hz+4,h:hh+5});
+  }
+  if(hwGeos.length)g.add(new THREE.Mesh(mergeGeometries(hwGeos),whiteMat));
+  if(hrGeos.length)g.add(new THREE.Mesh(mergeGeometries(hrGeos),roofMat));
+  // Church tower
+  const chX=cx,chZ=cz-60,chH=getH(chX,chZ);
+  const tower=new THREE.Mesh(new THREE.BoxGeometry(6,18,6),stoneMat);tower.position.set(chX,chH+9,chZ);tower.castShadow=true;g.add(tower);
+  const steeple=new THREE.Mesh(new THREE.ConeGeometry(2.5,8,4),roofMat);steeple.position.set(chX,chH+22,chZ);g.add(steeple);
+  _addBldg({minX:chX-3.5,maxX:chX+3.5,minZ:chZ-3.5,maxZ:chZ+3.5,h:chH+18});
+  // Market square
+  const sqGnd=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0xaa9977,roughness:.85}));
+  sqGnd.rotation.x=-Math.PI/2;sqGnd.position.set(cx,getH(cx,cz)+.04,cz+20);g.add(sqGnd);
+  // Market stalls (merged awnings)
+  const _awning=new THREE.BoxGeometry(3,.12,2);const awGeos=[];
+  for(let i=0;i<6;i++){const ax=cx-10+i*4,az=cz+15;awGeos.push(geoAt(_awning,ax,getH(ax,az)+2.5,az))}
+  if(awGeos.length)g.add(new THREE.Mesh(mergeGeometries(awGeos),new THREE.MeshStandardMaterial({color:0xcc8833,roughness:.7,side:THREE.DoubleSide})));
+  // Well
+  const wH=getH(cx,cz+15);
+  const wellBase=new THREE.Mesh(new THREE.CylinderGeometry(1,1.3,1.2,8),stoneMat);wellBase.position.set(cx,wH+.6,cz+15);g.add(wellBase);
+  // Street lamps (merged)
+  const _lpole=new THREE.CylinderGeometry(.05,.05,4,4),_lbulb=new THREE.SphereGeometry(.2,4,3);
+  const lpGeos=[],lbGeos=[];
+  for(let i=0;i<6;i++){const lx=cx-20+i*8,lz=cz+5,lh=getH(lx,lz);
+    lpGeos.push(geoAt(_lpole,lx,lh+2,lz));lbGeos.push(geoAt(_lbulb,lx,lh+4.1,lz))}
+  if(lpGeos.length)g.add(new THREE.Mesh(mergeGeometries(lpGeos),new THREE.MeshStandardMaterial({color:0x555555})));
+  if(lbGeos.length)g.add(new THREE.Mesh(mergeGeometries(lbGeos),new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffeeaa,emissiveIntensity:2})));
+  // Oak trees (merged)
+  const _ot=new THREE.CylinderGeometry(.12,.2,6,4),_ol=new THREE.SphereGeometry(2,5,4);const otG=[],olG=[];
+  for(let i=0;i<20;i++){const ox=cx-180+srand()*360,oz=cz-180+srand()*360,oh=getH(ox,oz);
+    otG.push(geoAt(_ot,ox,oh+3,oz));olG.push(geoAt(_ol,ox,oh+7.5,oz,0,0,0,1,.7,1))}
+  if(otG.length)g.add(new THREE.Mesh(mergeGeometries(otG),new THREE.MeshStandardMaterial({color:0x4a3a1a,roughness:.9})));
+  if(olG.length)g.add(new THREE.Mesh(mergeGeometries(olG),new THREE.MeshStandardMaterial({color:0x2a6a1a,roughness:.8})));
+  scene.add(g);northTownGroup=g;
+})();
+spawnV('car',5,2805,0);spawnV('horse',-20,2820,Math.PI/2);
+
+// ══════════════ LAGOON TOWN (Mediterranean, 900,1800) ══════════════
+let lagoonGroup;
+(function buildLagoon(){
+  const g=new THREE.Group();g.name='lagoon';
+  const cx=900,cz=1800;
+  seedR(7008);
+  const dockMat=new THREE.MeshStandardMaterial({color:0x8b7355,roughness:.9});
+  const whiteMat=new THREE.MeshStandardMaterial({color:0xf5f0e8,roughness:.85});
+  const blueRoofMat=new THREE.MeshStandardMaterial({color:0x2255aa,roughness:.75});
+  // Dock extending over the lagoon
+  const dock=new THREE.Mesh(new THREE.BoxGeometry(40,1,8),dockMat);dock.position.set(cx-30,-.2,cz-60);g.add(dock);
+  // Dock pilings (merged)
+  const _pil=new THREE.CylinderGeometry(.25,.3,5,5);const pilGeos=[];
+  for(let i=0;i<10;i++){pilGeos.push(geoAt(_pil,cx-50+i*9,-2,cz-56))}
+  if(pilGeos.length)g.add(new THREE.Mesh(mergeGeometries(pilGeos),dockMat));
+  // Houses around lagoon rim (merged)
+  const _lhw=new THREE.BoxGeometry(6,4,5),_lhr=new THREE.BoxGeometry(7,.3,6);
+  const lhwGeos=[],lhrGeos=[];
+  for(let i=0;i<12;i++){const a=(i/12)*Math.PI*2;const r=160+srand()*30;
+    const hx=cx+Math.cos(a)*r,hz=cz+Math.sin(a)*r,hh=getH(hx,hz);
+    if(hh<-3)continue;
+    lhwGeos.push(geoAt(_lhw,hx,hh+2,hz,0,a,0));
+    lhrGeos.push(geoAt(_lhr,hx,hh+4.2,hz,0,a,0));
+    _addBldg({minX:hx-3.5,maxX:hx+3.5,minZ:hz-3,maxZ:hz+3,h:hh+4});
+  }
+  if(lhwGeos.length)g.add(new THREE.Mesh(mergeGeometries(lhwGeos),whiteMat));
+  if(lhrGeos.length)g.add(new THREE.Mesh(mergeGeometries(lhrGeos),blueRoofMat));
+  // Cafe terrace
+  const cafH=getH(cx+120,cz);
+  const caf=new THREE.Mesh(new THREE.BoxGeometry(10,3,8),new THREE.MeshStandardMaterial({color:0xf0e0c0,roughness:.8}));
+  caf.position.set(cx+120,cafH+1.5,cz);g.add(caf);
+  _addBldg({minX:cx+115,maxX:cx+125,minZ:cz-4.5,maxZ:cz+4.5,h:cafH+3});
+  const terrace=new THREE.Mesh(new THREE.PlaneGeometry(12,10),new THREE.MeshStandardMaterial({color:0xddcc99,roughness:.9}));
+  terrace.rotation.x=-Math.PI/2;terrace.position.set(cx+130,cafH+.05,cz);g.add(terrace);
+  // Palm trees along waterfront (merged)
+  const _pTrunk=new THREE.CylinderGeometry(.1,.18,6,4),_pLeaf=new THREE.ConeGeometry(.4,2.5,3);
+  const lptG=[],lplG=[];
+  for(let i=0;i<15;i++){const a=srand()*Math.PI*2,r=140+srand()*60;
+    const px=cx+Math.cos(a)*r,pz=cz+Math.sin(a)*r,ph=getH(px,pz);
+    if(ph<-2)continue;const th=5+srand()*3;
+    lptG.push(geoAt(_pTrunk,px,ph+th/2,pz,.1,srand()*6.28,0));
+    for(let j=0;j<4;j++){const la=j/4*Math.PI*2;lplG.push(geoAt(_pLeaf,px+Math.cos(la)*.4,ph+th-.3,pz+Math.sin(la)*.4,-.7+srand()*.2,la,0))}}
+  if(lptG.length)g.add(new THREE.Mesh(mergeGeometries(lptG),new THREE.MeshStandardMaterial({color:0x7a5a2a,roughness:.9})));
+  if(lplG.length)g.add(new THREE.Mesh(mergeGeometries(lplG),new THREE.MeshStandardMaterial({color:0x228b22,roughness:.8})));
+  scene.add(g);lagoonGroup=g;
+})();
+spawnV('boat',870,1740,0);spawnV('jetski',860,1745,.3);
+
+// ══════════════ SOUTHWEST TOWN (frontier, -1200,-1800) ══════════════
+let swTownGroup;
+(function buildSWTown(){
+  const g=new THREE.Group();g.name='swtown';
+  const cx=-1200,cz=-1800;
+  seedR(7009);
+  const woodMat=new THREE.MeshStandardMaterial({color:0x9b7a4a,roughness:.9});
+  const dustMat=new THREE.MeshStandardMaterial({color:0xb89a6a,roughness:.95});
+  // Town ground
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(300,300),dustMat);
+  gnd.rotation.x=-Math.PI/2;gnd.position.set(cx,getH(cx,cz)+.02,cz);g.add(gnd);
+  // Main street boards (merged)
+  const _board=new THREE.PlaneGeometry(200,3);const bdGeos=[];
+  for(let i=0;i<6;i++)bdGeos.push(geoAt(_board,cx,getH(cx,cz)+.06,cz-8+i*3.2,-Math.PI/2,0,0));
+  if(bdGeos.length)g.add(new THREE.Mesh(mergeGeometries(bdGeos),woodMat));
+  // Frontier buildings (merged walls + roofs)
+  const bldgDefs=[{x:cx-60,z:cz,w:14,d:10,h:7},{x:cx-30,z:cz,w:12,d:9,h:6},{x:cx,z:cz+15,w:10,d:8,h:6},{x:cx+30,z:cz,w:12,d:10,h:6},{x:cx+60,z:cz,w:10,d:8,h:5}];
+  const bwGeos=[],brGeos=[],ovGeos=[];
+  for(const bd of bldgDefs){const bh=getH(bd.x,bd.z);
+    bwGeos.push(geoAt(new THREE.BoxGeometry(bd.w,bd.h,bd.d),bd.x,bh+bd.h/2,bd.z));
+    brGeos.push(geoAt(new THREE.BoxGeometry(bd.w+1,.3,bd.d+1),bd.x,bh+bd.h+.15,bd.z));
+    ovGeos.push(geoAt(new THREE.BoxGeometry(bd.w,.12,2.5),bd.x,bh+bd.h*.7,bd.z+bd.d/2+1.25));
+    _addBldg({minX:bd.x-bd.w/2-.3,maxX:bd.x+bd.w/2+.3,minZ:bd.z-bd.d/2-.3,maxZ:bd.z+bd.d/2+.3,h:bh+bd.h});
+  }
+  if(bwGeos.length)g.add(new THREE.Mesh(mergeGeometries(bwGeos),woodMat));
+  if(brGeos.length)g.add(new THREE.Mesh(mergeGeometries(brGeos),new THREE.MeshStandardMaterial({color:0x7a5a2a,roughness:.9})));
+  if(ovGeos.length)g.add(new THREE.Mesh(mergeGeometries(ovGeos),woodMat));
+  // Water tower
+  const wtX=cx+90,wtZ=cz,wtH=getH(wtX,wtZ);
+  const tank=new THREE.Mesh(new THREE.CylinderGeometry(3,3,5,8),woodMat);tank.position.set(wtX,wtH+12.5,wtZ);g.add(tank);
+  const _leg=new THREE.CylinderGeometry(.2,.2,10,3);const legGeos=[];
+  for(let i=0;i<4;i++){const a=i/4*Math.PI*2;legGeos.push(geoAt(_leg,wtX+Math.cos(a)*2.5,wtH+5,wtZ+Math.sin(a)*2.5))}
+  if(legGeos.length)g.add(new THREE.Mesh(mergeGeometries(legGeos),woodMat));
+  // Cacti and rocks (merged)
+  const _cac=new THREE.CylinderGeometry(.12,.18,2,5);const _rock=new THREE.DodecahedronGeometry(1);
+  const cacGeos=[],rkGeos=[];
+  for(let i=0;i<20;i++){const x=cx-150+srand()*300,z=cz-150+srand()*300,h=getH(x,z);
+    cacGeos.push(geoAt(_cac,x,h+1,z,0,srand()*6.28,0,1,1+srand(),1))}
+  for(let i=0;i<15;i++){const rs=.5+srand()*1.5;
+    rkGeos.push(geoAt(_rock,cx-140+srand()*280,getH(cx-140+srand()*280,cz-140+srand()*280)+rs*.35,cz-140+srand()*280,srand(),srand(),0,rs,rs*.7,rs))}
+  if(cacGeos.length)g.add(new THREE.Mesh(mergeGeometries(cacGeos),new THREE.MeshStandardMaterial({color:0x3d8b37,roughness:.8})));
+  if(rkGeos.length)g.add(new THREE.Mesh(mergeGeometries(rkGeos),new THREE.MeshStandardMaterial({color:0xb8956a,roughness:.95})));
+  scene.add(g);swTownGroup=g;
+})();
+spawnV('horse',-1220,-1815,Math.PI/2);spawnV('horse',-1190,-1815,Math.PI/3);
+
+// ══════════════ RIVER (diagonal from -800,2200 to 400,0) ══════════════
+let riverGroup;
+(function buildRiver(){
+  const g=new THREE.Group();g.name='river';
+  const rPts=[[-800,2200],[-600,1900],[-400,1600],[-200,1300],[0,1000],[100,700],[200,500],[300,300],[400,50]];
+  const rVecs=rPts.map(([x,z])=>new THREE.Vector3(x,getH(x,z)-.3,z));
+  const rCurve=new THREE.CatmullRomCurve3(rVecs,false,'catmullrom',.4);
+  // River water material
+  const riverMat=new THREE.ShaderMaterial({
+    uniforms:{time:{value:0}},transparent:true,side:THREE.DoubleSide,depthWrite:false,
+    vertexShader:`uniform float time;varying vec3 vW;void main(){vec3 p=position;p.y+=sin(p.x*.04+time*.9)*.15+sin(p.x*.09+time*1.4)*.08;vW=(modelMatrix*vec4(p,1)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1);}`,
+    fragmentShader:`varying vec3 vW;void main(){gl_FragColor=vec4(0.04,0.22,0.48,0.82);}`
+  });
+  window._riverMat=riverMat;
+  // Build river strip
+  const segs=80,riverW=18;
+  const verts=[],idxs=[],uvs=[];
+  for(let i=0;i<=segs;i++){
+    const t=i/segs,pt=rCurve.getPointAt(t),tan=rCurve.getTangentAt(t).normalize();
+    const norm=new THREE.Vector3(-tan.z,0,tan.x);
+    const p1=pt.clone().add(norm.clone().multiplyScalar(riverW/2));
+    const p2=pt.clone().sub(norm.clone().multiplyScalar(riverW/2));
+    p1.y=getH(p1.x,p1.z)-.15;p2.y=getH(p2.x,p2.z)-.15;
+    verts.push(p1.x,p1.y,p1.z,p2.x,p2.y,p2.z);uvs.push(t*8,0,t*8,1);
+    if(i<segs){const b=i*2;idxs.push(b,b+1,b+2,b+1,b+3,b+2)}
+  }
+  const rGeo=new THREE.BufferGeometry();
+  rGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  rGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+  rGeo.setIndex(idxs);rGeo.computeVertexNormals();
+  g.add(new THREE.Mesh(rGeo,riverMat));
+  // River rocks at bends (merged)
+  seedR(7010);
+  const _rrk=new THREE.DodecahedronGeometry(.6,0);const rrkGeos=[];
+  for(const t of[.1,.25,.4,.55,.7,.85]){const pt=rCurve.getPointAt(t);
+    for(let r=0;r<5;r++){const rx=pt.x+(srand()-.5)*riverW,rz=pt.z+(srand()-.5)*riverW;
+      rrkGeos.push(geoAt(_rrk,rx,getH(rx,rz)+.2,rz,srand(),srand(),0,.5+srand(),.4+srand()*.3,.5+srand()))}}
+  if(rrkGeos.length)g.add(new THREE.Mesh(mergeGeometries(rrkGeos),new THREE.MeshStandardMaterial({color:0x777766,roughness:.95})));
+  // Riverside willows (merged)
+  const _wt=new THREE.CylinderGeometry(.12,.22,5,5),_wc=new THREE.SphereGeometry(2,5,4);
+  const wtG=[],wcG=[];
+  for(const t of[.05,.15,.3,.45,.6,.75,.9]){const pt=rCurve.getPointAt(t);
+    for(let s=-1;s<=1;s+=2){const wx=pt.x+s*(riverW/2+4),wz=pt.z,wh=getH(wx,wz);
+      wtG.push(geoAt(_wt,wx,wh+2.5,wz));wcG.push(geoAt(_wc,wx,wh+6,wz,0,0,0,1,.8,1))}}
+  if(wtG.length)g.add(new THREE.Mesh(mergeGeometries(wtG),new THREE.MeshStandardMaterial({color:0x5a4a2a,roughness:.9})));
+  if(wcG.length)g.add(new THREE.Mesh(mergeGeometries(wcG),new THREE.MeshStandardMaterial({color:0x3a8a2a,roughness:.7,side:THREE.DoubleSide})));
+  scene.add(g);riverGroup=g;
+})();
+
+// ══════════════ HIGHWAY NETWORK (5 routes connecting areas) ══════════════
+let highwayGroup;
+(function buildHighways(){
+  const g=new THREE.Group();g.name='highways';
+  const roadMat=new THREE.MeshStandardMaterial({color:0x2a2a2a,roughness:.5});
+  const dashMat=new THREE.MeshStandardMaterial({color:0xffff88,roughness:.5,side:THREE.DoubleSide});
+  const roadW=12;
+  function buildRoad(pts){
+    const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],getH(p[0],p[1])+.12,p[1])),false,'catmullrom',.5);
+    const segs=Math.max(20,Math.ceil(curve.getLength()/20));
+    const verts=[],idxs=[],uvs=[];
+    for(let i=0;i<=segs;i++){
+      const t=i/segs,pt=curve.getPointAt(t),tan=curve.getTangentAt(t).normalize();
+      const norm=new THREE.Vector3(-tan.z,0,tan.x);
+      const p1=pt.clone().add(norm.clone().multiplyScalar(roadW/2));
+      const p2=pt.clone().sub(norm.clone().multiplyScalar(roadW/2));
+      p1.y=getH(p1.x,p1.z)+.12;p2.y=getH(p2.x,p2.z)+.12;
+      verts.push(p1.x,p1.y,p1.z,p2.x,p2.y,p2.z);uvs.push(t*40,0,t*40,1);
+      if(i<segs){const b=i*2;idxs.push(b,b+1,b+2,b+1,b+3,b+2)}
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+    geo.setIndex(idxs);geo.computeVertexNormals();
+    g.add(new THREE.Mesh(geo,roadMat));
+    // Center dashes (merged)
+    const _dash=new THREE.PlaneGeometry(.4,4);const dashGeos=[];
+    for(let i=3;i<segs;i+=6){const t2=i/segs,pt2=curve.getPointAt(t2),tan2=curve.getTangentAt(t2).normalize();
+      dashGeos.push(geoAt(_dash,pt2.x,pt2.y+.02,pt2.z,-Math.PI/2,Math.atan2(tan2.x,tan2.z),0))}
+    if(dashGeos.length)g.add(new THREE.Mesh(mergeGeometries(dashGeos),dashMat));
+  }
+  buildRoad([[0,760],[0,1400],[0,2100],[0,2800]]);           // H1: City→North Town
+  buildRoad([[-760,0],[-1200,0],[-1800,0]]);                // H2: City→Forest
+  buildRoad([[0,-760],[-200,-1200],[-400,-1600],[0,-2200]]); // H3: City→Desert
+  buildRoad([[-1400,1400],[-700,2100],[0,2800]]);            // H4: Mountain Village→North Town
+  buildRoad([[1800,0],[1600,-700],[1400,-1400]]);             // H5: Harbor→Beach
+  scene.add(g);highwayGroup=g;
+})();
+
+// ══════════════ THEME PARK (1400,1800) ══════════════
+let themeParkGroup;
+(function buildThemePark(){
+  const g=new THREE.Group();g.name='themepark';
+  const cx=1400,cz=1800;
+  seedR(7012);
+  // Ground
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({color:0x33aa44,roughness:.9}));
+  gnd.rotation.x=-Math.PI/2;gnd.position.set(cx,getH(cx,cz)+.02,cz);g.add(gnd);
+  // Entrance arch
+  const archH=getH(cx,cz+220);
+  const archL=new THREE.Mesh(new THREE.BoxGeometry(1.5,15,2),new THREE.MeshStandardMaterial({color:0xdd2222,roughness:.6}));
+  archL.position.set(cx-10,archH+7.5,cz+220);g.add(archL);
+  const archR=archL.clone();archR.position.set(cx+10,archH+7.5,cz+220);g.add(archR);
+  const archTop=new THREE.Mesh(new THREE.BoxGeometry(22,2,2),new THREE.MeshStandardMaterial({color:0xdd2222,roughness:.6}));
+  archTop.position.set(cx,archH+15.5,cz+220);g.add(archTop);
+  // Roller coaster supports (merged)
+  const _rcPole=new THREE.CylinderGeometry(.3,.35,14,4);const rcPGeos=[];
+  const rcPts=[[cx-80,cz+50],[cx-60,cz+20],[cx-30,cz-30],[cx,cz-60],[cx+30,cz-30],[cx+60,cz+20],[cx+80,cz+50],[cx+60,cz+80],[cx+30,cz+110],[cx,cz+120],[cx-30,cz+110],[cx-60,cz+80]];
+  for(const[x,z] of rcPts){const h=getH(x,z);rcPGeos.push(geoAt(_rcPole,x,h+7,z))}
+  if(rcPGeos.length)g.add(new THREE.Mesh(mergeGeometries(rcPGeos),new THREE.MeshStandardMaterial({color:0x888888,metalness:.5})));
+  // Roller coaster track (TubeGeometry along closed spline)
+  const rcCurve=new THREE.CatmullRomCurve3(rcPts.map(([x,z])=>new THREE.Vector3(x,getH(x,z)+14,z)),true,'catmullrom',.5);
+  const rcTrack=new THREE.TubeGeometry(rcCurve,80,.3,4,true);
+  g.add(new THREE.Mesh(rcTrack,new THREE.MeshStandardMaterial({color:0xcc2222,metalness:.4,roughness:.4})));
+  // Carousel
+  const carX=cx-80,carZ=cz+80,carH=getH(carX,carZ);
+  const carBase=new THREE.Mesh(new THREE.CylinderGeometry(8,8,.8,16),new THREE.MeshStandardMaterial({color:0xffaa00,roughness:.7}));
+  carBase.position.set(carX,carH+.4,carZ);g.add(carBase);
+  const carCenter=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,6,6),new THREE.MeshStandardMaterial({color:0xaaaaaa,metalness:.5}));
+  carCenter.position.set(carX,carH+3.4,carZ);g.add(carCenter);
+  const carRoof=new THREE.Mesh(new THREE.ConeGeometry(9,4,16),new THREE.MeshStandardMaterial({color:0xff4488,roughness:.7,side:THREE.DoubleSide}));
+  carRoof.position.set(carX,carH+7,carZ);g.add(carRoof);
+  // Carousel horses (merged)
+  const _ch=new THREE.BoxGeometry(1.5,.6,.6);const chGeos=[];
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
+    chGeos.push(geoAt(_ch,carX+Math.cos(a)*6,carH+3+Math.sin(i*.8)*.5,carZ+Math.sin(a)*6,0,a,0))}
+  if(chGeos.length)g.add(new THREE.Mesh(mergeGeometries(chGeos),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.5})));
+  // Drop tower
+  const dtX=cx+80,dtZ=cz+70,dtH=getH(dtX,dtZ);
+  const dtTower=new THREE.Mesh(new THREE.BoxGeometry(3,35,3),new THREE.MeshStandardMaterial({color:0x444444,metalness:.3}));
+  dtTower.position.set(dtX,dtH+17.5,dtZ);g.add(dtTower);
+  const _xbr=new THREE.BoxGeometry(3,.15,.15);const xbrGeos=[];
+  for(let h=5;h<35;h+=5){xbrGeos.push(geoAt(_xbr,dtX,dtH+h,dtZ+1.5));xbrGeos.push(geoAt(_xbr,dtX,dtH+h,dtZ-1.5))}
+  if(xbrGeos.length)g.add(new THREE.Mesh(mergeGeometries(xbrGeos),new THREE.MeshStandardMaterial({color:0x555555})));
+  const dtCar=new THREE.Mesh(new THREE.BoxGeometry(4,3,4),new THREE.MeshStandardMaterial({color:0xcc4444,roughness:.5}));
+  dtCar.position.set(dtX,dtH+25,dtZ);g.add(dtCar);
+  // Bumper car arena
+  const bcX=cx+50,bcZ=cz-60,bcH=getH(bcX,bcZ);
+  const arena=new THREE.Mesh(new THREE.CircleGeometry(20,24),new THREE.MeshStandardMaterial({color:0x225599,roughness:.4}));
+  arena.rotation.x=-Math.PI/2;arena.position.set(bcX,bcH+.15,bcZ);g.add(arena);
+  const arenaWall=new THREE.Mesh(new THREE.TorusGeometry(20,1.2,8,24),new THREE.MeshStandardMaterial({color:0xeeeeee,roughness:.5}));
+  arenaWall.rotation.x=Math.PI/2;arenaWall.position.set(bcX,bcH+1.2,bcZ);g.add(arenaWall);
+  const _bcar=new THREE.BoxGeometry(2,.6,1.5);const bcarGeos=[];
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const r=10+srand()*5;
+    bcarGeos.push(geoAt(_bcar,bcX+Math.cos(a)*r,bcH+.5,bcZ+Math.sin(a)*r,0,a,0))}
+  if(bcarGeos.length)g.add(new THREE.Mesh(mergeGeometries(bcarGeos),new THREE.MeshStandardMaterial({color:0xff4444,roughness:.5})));
+  // Food stands (merged)
+  const _fstand=new THREE.BoxGeometry(4,3,3),_fawn=new THREE.BoxGeometry(5,.12,3.5);const fsGeos=[],faGeos=[];
+  for(let i=0;i<4;i++){const fx=cx-100+i*60,fz=cz+180,fh=getH(fx,fz);
+    fsGeos.push(geoAt(_fstand,fx,fh+1.5,fz));faGeos.push(geoAt(_fawn,fx,fh+3.1,fz-1.5,.2,0,0))}
+  if(fsGeos.length)g.add(new THREE.Mesh(mergeGeometries(fsGeos),new THREE.MeshStandardMaterial({color:0xffeecc,roughness:.7})));
+  if(faGeos.length)g.add(new THREE.Mesh(mergeGeometries(faGeos),new THREE.MeshStandardMaterial({color:0xcc8833,roughness:.7,side:THREE.DoubleSide})));
+  scene.add(g);themeParkGroup=g;
+})();
+
+// ══════════════ DEEP FOREST (dense ancient forest, -2800,-800) ══════════════
+let deepForestGroup;
+(function buildDeepForest(){
+  const g=new THREE.Group();g.name='deepforest';
+  const cx=-2800,cz=-800;
+  seedR(7013);
+  const trG=[],lfG=[],dlfG=[],rkG=[],lgG2=[],bshG=[];
+  const _ft=new THREE.CylinderGeometry(.09,.2,5,4);
+  const _fl=new THREE.ConeGeometry(1.3,3.5,5);
+  const _fdl=new THREE.ConeGeometry(.9,2.5,5);
+  const _fr=new THREE.DodecahedronGeometry(1.2);
+  const _fb=new THREE.SphereGeometry(.65,3,3);
+  const _flog=new THREE.CylinderGeometry(.15,.18,3.5,4);
+  for(let i=0;i<150;i++){const x=cx-600+srand()*1200,z=cz-700+srand()*1400,h=getH(x,z);
+    if(h<-2)continue;const th=4+srand()*5;
+    trG.push(geoAt(_ft,x,h+th/2,z,0,srand()*6.28,0,1+srand()*.4,1,1+srand()*.4));
+    lfG.push(geoAt(_fl,x,h+th-.5,z,0,srand()*6.28,0,1+srand()*.5,1+srand()*.3,1+srand()*.5));
+    if(srand()>.45)dlfG.push(geoAt(_fdl,x,h+th*.55,z,0,srand()*6.28,0,.85+srand()*.4,.85,.85+srand()*.4))}
+  for(let i=0;i<30;i++){const x=cx-500+srand()*1000,z=cz-600+srand()*1200,h=getH(x,z);
+    if(h<-2)continue;const s=.5+srand()*2;rkG.push(geoAt(_fr,x,h+s*.4,z,srand(),srand(),0,s,s*.7,s))}
+  for(let i=0;i<20;i++){const x=cx-450+srand()*900,z=cz-600+srand()*1200,h=getH(x,z);
+    if(h<-2)continue;lgG2.push(geoAt(_flog,x,h+.15,z,0,srand()*6.28,Math.PI/2,1+srand(),1,1))}
+  for(let i=0;i<60;i++){const x=cx-500+srand()*1000,z=cz-600+srand()*1200,h=getH(x,z);
+    if(h<-2)continue;const s=.4+srand()*.7;bshG.push(geoAt(_fb,x,h+s*.3,z,0,srand()*6.28,0,s,s*.7,s))}
+  if(trG.length)g.add(new THREE.Mesh(mergeGeometries(trG),new THREE.MeshStandardMaterial({color:0x4a2a0a,roughness:.95})));
+  if(lfG.length)g.add(new THREE.Mesh(mergeGeometries(lfG),new THREE.MeshStandardMaterial({color:0x0d3a1a,roughness:.85})));
+  if(dlfG.length)g.add(new THREE.Mesh(mergeGeometries(dlfG),new THREE.MeshStandardMaterial({color:0x0a2f14,roughness:.9})));
+  if(rkG.length)g.add(new THREE.Mesh(mergeGeometries(rkG),new THREE.MeshStandardMaterial({color:0x558855,roughness:.95})));
+  if(lgG2.length)g.add(new THREE.Mesh(mergeGeometries(lgG2),new THREE.MeshStandardMaterial({color:0x5a3a1a,roughness:.95})));
+  if(bshG.length)g.add(new THREE.Mesh(mergeGeometries(bshG),new THREE.MeshStandardMaterial({color:0x1a4a1a,roughness:.9})));
+  // Ancient stone ruins (3 arches)
+  const stoneMat=new THREE.MeshStandardMaterial({color:0x557755,roughness:1});
+  for(const[ax,az] of[[cx-100,cz+50],[cx+80,cz-100],[cx-50,cz-200]]){const ah=getH(ax,az);
+    const lPil=new THREE.Mesh(new THREE.BoxGeometry(2,6,2),stoneMat);lPil.position.set(ax-3,ah+3,az);g.add(lPil);
+    const rPil=new THREE.Mesh(new THREE.BoxGeometry(2,6,2),stoneMat);rPil.position.set(ax+3,ah+3,az);g.add(rPil);
+    const arch=new THREE.Mesh(new THREE.BoxGeometry(8,2,2),stoneMat);arch.position.set(ax,ah+7,az);g.add(arch);
+    _addBldg({minX:ax-4.3,maxX:ax+4.3,minZ:az-1.3,maxZ:az+1.3,h:ah+9})}
+  // Hidden campfire
+  const cX=cx+20,cZ=cz+80,cH=getH(cX,cZ);
+  const cRing=new THREE.Mesh(new THREE.RingGeometry(1,2.5,6),new THREE.MeshStandardMaterial({color:0x777766,roughness:1}));
+  cRing.rotation.x=-Math.PI/2;cRing.position.set(cX,cH+.05,cZ);g.add(cRing);
+  const cFire=new THREE.Mesh(new THREE.ConeGeometry(.3,.8,4),new THREE.MeshStandardMaterial({color:0xff6600,emissive:0xff4400,emissiveIntensity:2.5,transparent:true,opacity:.85}));
+  cFire.position.set(cX,cH+.5,cZ);g.add(cFire);
+  const cLight=new THREE.PointLight(0xff6633,.8,30);cLight.position.set(cX,cH+2,cZ);g.add(cLight);
+  scene.add(g);deepForestGroup=g;
+})();
+
+// ══════════════ HIKING AREA (meadow trails, -1800,2200) ══════════════
+let hikingGroup;
+(function buildHiking(){
+  const g=new THREE.Group();g.name='hiking';
+  const cx=-1800,cz=2200;
+  seedR(7014);
+  const woodMat=new THREE.MeshStandardMaterial({color:0x7a5a2a,roughness:.9});
+  // Meadow ground
+  const mdw=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({color:0x5a9a3a,roughness:.95}));
+  mdw.rotation.x=-Math.PI/2;mdw.position.set(cx,getH(cx,cz)+.04,cz);g.add(mdw);
+  // Hiking trails (merged dirt path quads)
+  const _trail=new THREE.PlaneGeometry(4,1);const trailGeos=[];
+  for(let i=0;i<4;i++){const a=i/4*Math.PI*2;
+    for(let d=20;d<200;d+=8){const tx=cx+Math.cos(a)*d,tz=cz+Math.sin(a)*d,th=getH(tx,tz);
+      trailGeos.push(geoAt(_trail,tx,th+.06,tz,-Math.PI/2,a+Math.PI/2,0))}}
+  if(trailGeos.length)g.add(new THREE.Mesh(mergeGeometries(trailGeos),new THREE.MeshStandardMaterial({color:0x8a6a3a,roughness:.95})));
+  // Ranger station
+  const rsX=cx,rsZ=cz-60,rsH=getH(rsX,rsZ);
+  const cabin=new THREE.Mesh(new THREE.BoxGeometry(10,4,8),woodMat);cabin.position.set(rsX,rsH+2,rsZ);cabin.castShadow=true;g.add(cabin);
+  const rsRoof=new THREE.Mesh(new THREE.BoxGeometry(11,.3,9),new THREE.MeshStandardMaterial({color:0x4a3a1a,roughness:.85}));
+  rsRoof.position.set(rsX,rsH+4.2,rsZ);g.add(rsRoof);
+  _addBldg({minX:rsX-5.5,maxX:rsX+5.5,minZ:rsZ-4.5,maxZ:rsZ+4.5,h:rsH+4});
+  // Lookout tower
+  const ltX=cx+80,ltZ=cz-80,ltH=getH(ltX,ltZ);
+  const _ltLeg=new THREE.CylinderGeometry(.2,.2,20,4);const ltLegs=[];
+  for(const[dx,dz] of[[-2,-2],[-2,2],[2,-2],[2,2]])ltLegs.push(geoAt(_ltLeg,ltX+dx,ltH+10,ltZ+dz));
+  if(ltLegs.length)g.add(new THREE.Mesh(mergeGeometries(ltLegs),woodMat));
+  const ltPlat=new THREE.Mesh(new THREE.BoxGeometry(6,.3,6),woodMat);ltPlat.position.set(ltX,ltH+20.2,ltZ);g.add(ltPlat);
+  // Cross braces (merged)
+  const _xbr2=new THREE.BoxGeometry(4,.12,.12);const xbrGeos2=[];
+  for(let h=4;h<20;h+=4){xbrGeos2.push(geoAt(_xbr2,ltX,ltH+h,ltZ+2));xbrGeos2.push(geoAt(_xbr2,ltX,ltH+h,ltZ-2))}
+  if(xbrGeos2.length)g.add(new THREE.Mesh(mergeGeometries(xbrGeos2),woodMat));
+  // Trail markers (merged posts + caps)
+  const _post=new THREE.CylinderGeometry(.04,.04,1.8,4),_cap=new THREE.BoxGeometry(.25,.2,.08);
+  const postGeos=[],capGeos=[];
+  for(let i=0;i<20;i++){const a=srand()*Math.PI*2,r=50+srand()*150;
+    const mx=cx+Math.cos(a)*r,mz=cz+Math.sin(a)*r,mh=getH(mx,mz);
+    postGeos.push(geoAt(_post,mx,mh+.9,mz));capGeos.push(geoAt(_cap,mx,mh+1.85,mz))}
+  if(postGeos.length)g.add(new THREE.Mesh(mergeGeometries(postGeos),woodMat));
+  if(capGeos.length)g.add(new THREE.Mesh(mergeGeometries(capGeos),new THREE.MeshStandardMaterial({color:0x44aaff,roughness:.6})));
+  // Picnic tables
+  for(let i=0;i<4;i++){const px=cx-40+i*25,pz=cz+20,ph=getH(px,pz);
+    const tbl=new THREE.Mesh(new THREE.BoxGeometry(2,.06,1.2),woodMat);tbl.position.set(px,ph+.8,pz);g.add(tbl);
+    for(const bx of[-1,1]){const bench=new THREE.Mesh(new THREE.BoxGeometry(2,.06,.3),woodMat);bench.position.set(px,ph+.5,pz+bx*.8);g.add(bench)}}
+  // Flowering meadow (merged)
+  const _flwr=new THREE.SphereGeometry(.15,3,2);const flGeos=[];
+  for(let i=0;i<80;i++){const fx=cx-220+srand()*440,fz=cz-220+srand()*440,fh=getH(fx,fz);
+    flGeos.push(geoAt(_flwr,fx,fh+.15,fz,0,0,0,1,.6,1))}
+  if(flGeos.length)g.add(new THREE.Mesh(mergeGeometries(flGeos),new THREE.MeshStandardMaterial({color:0xffaacc,roughness:.8})));
+  // Pine trees (merged)
+  const _hpt=new THREE.CylinderGeometry(.07,.14,4,4),_hpl=new THREE.ConeGeometry(1,2.5,5);
+  const hptG=[],hplG=[];
+  for(let i=0;i<50;i++){const x=cx-250+srand()*500,z=cz-250+srand()*500,h=getH(x,z);
+    hptG.push(geoAt(_hpt,x,h+2,z));hplG.push(geoAt(_hpl,x,h+4.5,z))}
+  if(hptG.length)g.add(new THREE.Mesh(mergeGeometries(hptG),new THREE.MeshStandardMaterial({color:0x5a3a1a,roughness:.9})));
+  if(hplG.length)g.add(new THREE.Mesh(mergeGeometries(hplG),new THREE.MeshStandardMaterial({color:0x1a5a2a,roughness:.85})));
+  scene.add(g);hikingGroup=g;
+})();
+
+// ══════════════ FISHING TOWN (coastal, 2200,-1000) ══════════════
+let fishingTownGroup;
+(function buildFishingTown(){
+  const g=new THREE.Group();g.name='fishingtown';
+  const cx=2200,cz=-1000;
+  seedR(7015);
+  const woodMat=new THREE.MeshStandardMaterial({color:0x9b7a4a,roughness:.9});
+  const whiteMat=new THREE.MeshStandardMaterial({color:0xf0eee0,roughness:.8});
+  const redRoofMat=new THREE.MeshStandardMaterial({color:0xaa3322,roughness:.75});
+  // Piers (merged planks + pilings)
+  const _plank=new THREE.PlaneGeometry(3,1);const _piling=new THREE.CylinderGeometry(.2,.25,4,4);
+  const plankGeos=[],pilGeos2=[];
+  for(let p=0;p<3;p++){const pz=cz-30+p*30;
+    for(let px=cx;px<cx+120;px+=3)plankGeos.push(geoAt(_plank,px,-.05,pz,-Math.PI/2,Math.PI/2,0));
+    for(let px=cx;px<cx+120;px+=15)pilGeos2.push(geoAt(_piling,px,-2,pz))}
+  if(plankGeos.length)g.add(new THREE.Mesh(mergeGeometries(plankGeos),woodMat));
+  if(pilGeos2.length)g.add(new THREE.Mesh(mergeGeometries(pilGeos2),woodMat));
+  // Fishing huts on stilts
+  for(let i=0;i<6;i++){const hx=cx+40+srand()*60,hz=cz-60+srand()*120,hh=-.5;
+    const hut=new THREE.Mesh(new THREE.BoxGeometry(5,3,4),woodMat);hut.position.set(hx,hh+2,hz);g.add(hut);
+    const hutRoof=new THREE.Mesh(new THREE.ConeGeometry(3.5,2,4),redRoofMat);hutRoof.position.set(hx,hh+4,hz);g.add(hutRoof);
+    for(const[dx,dz] of[[-2,-1.5],[-2,1.5],[2,-1.5],[2,1.5]]){
+      const st=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,5,4),woodMat);st.position.set(hx+dx,hh-2,hz+dz);g.add(st)}}
+  // Fish market stalls (merged)
+  const _stall=new THREE.BoxGeometry(4,2.5,3),_stallAwn=new THREE.BoxGeometry(5,.12,3.5);
+  const stGeos=[],stAGeos=[];
+  for(let i=0;i<5;i++){const sx=cx-40+i*18,sz=cz+60,sh=getH(sx,sz);
+    stGeos.push(geoAt(_stall,sx,sh+1.25,sz));stAGeos.push(geoAt(_stallAwn,sx,sh+2.6,sz-1.5,.25,0,0))}
+  if(stGeos.length)g.add(new THREE.Mesh(mergeGeometries(stGeos),whiteMat));
+  if(stAGeos.length)g.add(new THREE.Mesh(mergeGeometries(stAGeos),new THREE.MeshStandardMaterial({color:0x3366aa,roughness:.7,side:THREE.DoubleSide})));
+  // Lighthouse
+  const lhX=cx+20,lhZ=cz-80,lhH=getH(lhX,lhZ);
+  const lhBase=new THREE.Mesh(new THREE.CylinderGeometry(2,3,14,8),whiteMat);lhBase.position.set(lhX,lhH+7,lhZ);g.add(lhBase);
+  const lhStripe=new THREE.Mesh(new THREE.CylinderGeometry(2.1,2.5,2.5,8),redRoofMat);lhStripe.position.set(lhX,lhH+10,lhZ);g.add(lhStripe);
+  const lhLight=new THREE.Mesh(new THREE.SphereGeometry(.8,6,4),new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffff88,emissiveIntensity:3}));
+  lhLight.position.set(lhX,lhH+15,lhZ);g.add(lhLight);
+  const lhPL=new THREE.PointLight(0xffffaa,1,80);lhPL.position.set(lhX,lhH+15,lhZ);g.add(lhPL);
+  // Seagulls (merged)
+  const _gull=new THREE.BoxGeometry(2,.05,.4);const gullGeos=[];
+  for(let i=0;i<10;i++){gullGeos.push(geoAt(_gull,cx+srand()*80-40,8+srand()*6,cz+srand()*100-50,0,srand()*6.28,-.1+srand()*.2))}
+  if(gullGeos.length)g.add(new THREE.Mesh(mergeGeometries(gullGeos),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.8})));
+  scene.add(g);fishingTownGroup=g;
+})();
+spawnV('boat',2220,-1000,0);spawnV('boat',2225,-1030,.3);spawnV('jetski',2215,-970,Math.PI);
 
 // ══════════════ NPC SPAWNS ══════════════
 seedR(4444);
@@ -6341,11 +6861,21 @@ function update(dt){
         rc.mesh.rotation.y=Math.atan2(tan.x,tan.z);
       }}}
   // Biome proximity toggles
-  if(forestGroup){const d=Math.abs(P.x+1800)+Math.abs(P.z);forestGroup.visible=d<1200;}
-  if(desertGroup){const d=Math.abs(P.x)+Math.abs(P.z+1800);desertGroup.visible=d<1200;}
-  if(harborGroup){const d=Math.abs(P.x-1800)+Math.abs(P.z);harborGroup.visible=d<1200;}
-  if(mountainGroup){const d=Math.abs(P.x+1400)+Math.abs(P.z-1400);mountainGroup.visible=d<1200;}
-  if(beachGroup){const d=Math.abs(P.x-1400)+Math.abs(P.z+1400);beachGroup.visible=d<1200;}
+  if(forestGroup){const d=Math.abs(P.x+1800)+Math.abs(P.z);forestGroup.visible=d<2200;}
+  if(desertGroup){const d=Math.abs(P.x)+Math.abs(P.z+1800);desertGroup.visible=d<2200;}
+  if(harborGroup){const d=Math.abs(P.x-1800)+Math.abs(P.z);harborGroup.visible=d<2200;}
+  if(mountainGroup){const d=Math.abs(P.x+1400)+Math.abs(P.z-1400);mountainGroup.visible=d<2200;}
+  if(beachGroup){const d=Math.abs(P.x-1400)+Math.abs(P.z+1400);beachGroup.visible=d<2200;}
+  // New area proximity toggles
+  if(skiResortGroup){const d=Math.abs(P.x+2800)+Math.abs(P.z-1000);skiResortGroup.visible=d<2200;}
+  if(northTownGroup){const d=Math.abs(P.x)+Math.abs(P.z-2800);northTownGroup.visible=d<2200;}
+  if(lagoonGroup){const d=Math.abs(P.x-900)+Math.abs(P.z-1800);lagoonGroup.visible=d<2200;}
+  if(swTownGroup){const d=Math.abs(P.x+1200)+Math.abs(P.z+1800);swTownGroup.visible=d<2200;}
+  if(themeParkGroup){const d=Math.abs(P.x-1400)+Math.abs(P.z-1800);themeParkGroup.visible=d<2200;}
+  if(deepForestGroup){const d=Math.abs(P.x+2800)+Math.abs(P.z+800);deepForestGroup.visible=d<2200;}
+  if(hikingGroup){const d=Math.abs(P.x+1800)+Math.abs(P.z-2200);hikingGroup.visible=d<2200;}
+  if(fishingTownGroup){const d=Math.abs(P.x-2200)+Math.abs(P.z+1000);fishingTownGroup.visible=d<2200;}
+  if(window._riverMat)window._riverMat.uniforms.time.value=clock.elapsedTime;
 
   // ═══ HUD ═══
   document.getElementById('crosshair').style.display='none';
