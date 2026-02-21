@@ -2402,7 +2402,7 @@ let sportsGroup;
 // ══════════════ F1 RACING CIRCUIT — COTA-inspired (east of sports) ══════════════
 let raceCarMeshes=[];
 (function buildRacingCircuit(){
-  const RX=640,RZ=900; // shifted north to avoid buildings
+  const RX=640,RZ=900;
   const trkM=new THREE.MeshStandardMaterial({color:0x2a2a2a,roughness:.4});
   const kerbRedM=new THREE.MeshStandardMaterial({color:0xcc0000});
   const kerbWhM=new THREE.MeshStandardMaterial({color:0xffffff});
@@ -2411,326 +2411,224 @@ let raceCarMeshes=[];
   const gravelM=new THREE.MeshStandardMaterial({color:0xaa9966,roughness:.9});
   const barrierM=new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.3,metalness:.4});
 
-  // ─── COTA-inspired track: 20 turns, ~5.5km feel ───
+  // COTA-inspired: 20 turns, big layout
   const pts=[
-    // Main straight (south side, heading east ~350m)
     {x:-230,z:180},{x:-160,z:180},{x:-90,z:178},{x:-20,z:175},{x:50,z:170},{x:110,z:162},
-    // T1: signature uphill left hairpin
     {x:148,z:148},{x:175,z:120},{x:182,z:85},{x:170,z:55},{x:148,z:38},
-    // T2-T6: technical esses (flowing north)
     {x:128,z:18},{x:142,z:-10},{x:122,z:-38},{x:142,z:-65},{x:122,z:-92},{x:138,z:-115},
-    // T7-T8: right-handers heading east
     {x:162,z:-132},{x:195,z:-140},{x:228,z:-130},
-    // T9-T11: flowing section heading south-east
     {x:252,z:-110},{x:268,z:-78},{x:278,z:-42},{x:282,z:-5},
-    // Long back straight (heading south ~280m)
     {x:285,z:35},{x:288,z:80},{x:288,z:125},{x:286,z:170},
-    // T12: heavy braking hairpin
     {x:278,z:202},{x:258,z:228},{x:230,z:235},{x:208,z:222},
-    // T13-T15: technical section heading west
     {x:188,z:205},{x:165,z:218},{x:142,z:205},{x:118,z:218},
-    // T16-T18: stadium triple-apex
     {x:90,z:230},{x:60,z:245},{x:25,z:250},{x:-12,z:242},
-    // T19-T20: fast sweeping turns back to main straight
     {x:-55,z:228},{x:-100,z:215},{x:-150,z:200},{x:-200,z:188}
   ];
   for(const p of pts){p.x+=RX;p.z+=RZ}
+  const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p.x,0,p.z)),true,'catmullrom',.3);
+  const segs=200;
+  const trackW=14;
 
-  const splineV=pts.map(p=>new THREE.Vector3(p.x,0,p.z));
-  const curve=new THREE.CatmullRomCurve3(splineV,true,'catmullrom',.3);
-  const segs=300;
-  const trackW=14; // wider F1 track
+  // Single large grass ground
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(900,900),grassM);
+  gnd.rotation.x=-Math.PI/2;gnd.position.set(RX+25,.01,RZ+60);scene.add(gnd);
 
-  // ─── Large grass ground ───
-  for(let gx=-1;gx<=1;gx++)for(let gz=-1;gz<=1;gz++){
-    const gnd=new THREE.Mesh(new THREE.PlaneGeometry(400,400),grassM);
-    gnd.rotation.x=-Math.PI/2;gnd.position.set(RX+25+gx*380,.01,RZ+60+gz*380);scene.add(gnd);
-  }
-
-  // ─── Build track strip from spline ───
+  // Build track strip from spline
   function buildStrip(offset,width,mat,yOff){
     const verts=[],idxs=[],uvs=[];
     for(let i=0;i<=segs;i++){
-      const t=i/segs;
-      const pt=curve.getPointAt(t);
-      const tan=curve.getTangentAt(t).normalize();
+      const t=i/segs,pt=curve.getPointAt(t),tan=curve.getTangentAt(t).normalize();
       const norm=new THREE.Vector3(-tan.z,0,tan.x);
       const p1=pt.clone().add(norm.clone().multiplyScalar(offset+width/2));
       const p2=pt.clone().add(norm.clone().multiplyScalar(offset-width/2));
-      verts.push(p1.x,yOff,p1.z, p2.x,yOff,p2.z);
-      uvs.push(t*30,0, t*30,1);
-      if(i<segs){const b=i*2;idxs.push(b,b+1,b+2, b+1,b+3,b+2)}
+      verts.push(p1.x,yOff,p1.z,p2.x,yOff,p2.z);uvs.push(t*30,0,t*30,1);
+      if(i<segs){const b=i*2;idxs.push(b,b+1,b+2,b+1,b+3,b+2)}
     }
     const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
-    geo.setIndex(idxs);geo.computeVertexNormals();
-    return new THREE.Mesh(geo,mat);
+    geo.setIndex(idxs);geo.computeVertexNormals();return new THREE.Mesh(geo,mat);
   }
-
-  // Layers: gravel → asphalt run-off → track → lines
   scene.add(buildStrip(0,trackW+20,gravelM,.02));
   scene.add(buildStrip(0,trackW+12,runoffM,.03));
   scene.add(buildStrip(0,trackW,trkM,.05));
-  scene.add(buildStrip(0,.2,new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.4}),.06));
   scene.add(buildStrip(trackW/2-.25,.25,kerbWhM,.06));
   scene.add(buildStrip(-trackW/2+.25,.25,kerbWhM,.06));
 
-  // ─── Red-white kerbs at every corner ───
-  const kerbZones=[
-    {from:.08,to:.15},  // T1
-    {from:.17,to:.30},  // T2-T6 esses
-    {from:.32,to:.38},  // T7-T8
-    {from:.40,to:.48},  // T9-T11
-    {from:.58,to:.64},  // T12
-    {from:.66,to:.74},  // T13-T15
-    {from:.76,to:.84},  // T16-T18
-    {from:.87,to:.94}   // T19-T20
-  ];
+  // ─── Kerbs: MERGED by color (red batch + white batch) ───
+  const _kerbGeo=new THREE.PlaneGeometry(1,.8);
+  const redKerbGeos=[],whKerbGeos=[];
+  const kerbZones=[{from:.08,to:.15},{from:.17,to:.30},{from:.32,to:.38},{from:.40,to:.48},
+    {from:.58,to:.64},{from:.66,to:.74},{from:.76,to:.84},{from:.87,to:.94}];
   for(const kz of kerbZones){
-    const kSegs=Math.floor((kz.to-kz.from)*segs);
-    for(let i=0;i<kSegs;i++){
+    for(let i=0;i<Math.floor((kz.to-kz.from)*segs);i+=2){ // every 2nd for perf
       const t=kz.from+i/segs;
       const pt=curve.getPointAt(t),tan=curve.getTangentAt(t).normalize();
       const norm=new THREE.Vector3(-tan.z,0,tan.x);
       const rot=Math.atan2(tan.x,tan.z);
       for(const side of[1,-1]){
         const kp=pt.clone().add(norm.clone().multiplyScalar(side*(trackW/2+.8)));
-        const km=new THREE.Mesh(new THREE.PlaneGeometry(1,.8),i%2===(side>0?0:1)?kerbRedM:kerbWhM);
-        km.rotation.x=-Math.PI/2;km.rotation.z=rot;km.position.set(kp.x,.065,kp.z);scene.add(km);
+        const isRed=i%4===(side>0?0:2);
+        (isRed?redKerbGeos:whKerbGeos).push(geoAt(_kerbGeo,kp.x,.065,kp.z,-Math.PI/2,rot,0,1,1,1));
       }
     }
   }
+  if(redKerbGeos.length)scene.add(new THREE.Mesh(mergeGeometries(redKerbGeos),kerbRedM));
+  if(whKerbGeos.length)scene.add(new THREE.Mesh(mergeGeometries(whKerbGeos),kerbWhM));
 
-  // ─── Start/finish checkered line ───
+  // ─── Start/finish checkered: MERGED (black batch + white batch) ───
   const sfPt=curve.getPointAt(0),sfTan=curve.getTangentAt(0).normalize();
   const sfNorm=new THREE.Vector3(-sfTan.z,0,sfTan.x);
+  const _chkGeo=new THREE.PlaneGeometry(trackW/16,1);
+  const blkChk=[],whtChk=[];
   for(let ci=0;ci<16;ci++)for(let cj=0;cj<5;cj++){
     const cp=sfPt.clone().add(sfNorm.clone().multiplyScalar(-trackW/2+ci*(trackW/16)));
-    cp.add(sfTan.clone().multiplyScalar(-2+cj*1));
-    const chk=new THREE.Mesh(new THREE.PlaneGeometry(trackW/16,1),
-      new THREE.MeshStandardMaterial({color:(ci+cj)%2===0?0x000000:0xffffff}));
-    chk.rotation.x=-Math.PI/2;chk.rotation.z=Math.atan2(sfTan.x,sfTan.z);
-    chk.position.set(cp.x,.07,cp.z);scene.add(chk);
+    cp.add(sfTan.clone().multiplyScalar(-2+cj));
+    const rot=Math.atan2(sfTan.x,sfTan.z);
+    ((ci+cj)%2===0?blkChk:whtChk).push(geoAt(_chkGeo,cp.x,.07,cp.z,-Math.PI/2,rot,0,1,1,1));
   }
+  if(blkChk.length)scene.add(new THREE.Mesh(mergeGeometries(blkChk),new THREE.MeshStandardMaterial({color:0x000000})));
+  if(whtChk.length)scene.add(new THREE.Mesh(mergeGeometries(whtChk),kerbWhM));
 
-  // ─── Starting grid (20 positions, staggered) ───
+  // ─── Starting grid: MERGED ───
+  const gridGeos=[];const _gridGeo=new THREE.PlaneGeometry(3,5);
   for(let gi=0;gi<20;gi++){
     const gt=((gi*1.8+6)/curve.getLength())%1;
     const gpt=curve.getPointAt(gt),gtan=curve.getTangentAt(gt).normalize();
     const gnorm=new THREE.Vector3(-gtan.z,0,gtan.x);
-    const side=gi%2===0?2.5:-2.5;
-    const gpos=gpt.clone().add(gnorm.clone().multiplyScalar(side));
-    const gBox=new THREE.Mesh(new THREE.PlaneGeometry(3,5),
-      new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.2}));
-    gBox.rotation.x=-Math.PI/2;gBox.rotation.z=Math.atan2(gtan.x,gtan.z);
-    gBox.position.set(gpos.x,.065,gpos.z);scene.add(gBox);
+    const gpos=gpt.clone().add(gnorm.clone().multiplyScalar(gi%2===0?2.5:-2.5));
+    gridGeos.push(geoAt(_gridGeo,gpos.x,.065,gpos.z,-Math.PI/2,Math.atan2(gtan.x,gtan.z),0,1,1,1));
   }
+  if(gridGeos.length)scene.add(new THREE.Mesh(mergeGeometries(gridGeos),
+    new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.2})));
 
-  // ─── Armco barriers (both sides, full circuit) ───
+  // ─── Armco barriers: MERGED (both sides) ───
   const barrGeos=[];const _barrGeo=new THREE.BoxGeometry(.2,.7,2.5);
-  for(let i=0;i<segs;i+=2){
+  for(let i=0;i<segs;i+=3){ // every 3rd segment for perf
     const t=i/segs,pt=curve.getPointAt(t),tan=curve.getTangentAt(t).normalize();
-    const norm=new THREE.Vector3(-tan.z,0,tan.x);
-    const ry=Math.atan2(tan.x,tan.z);
-    const bp1=pt.clone().add(norm.clone().multiplyScalar(trackW/2+8));
-    barrGeos.push(geoAt(_barrGeo,bp1.x,.4,bp1.z,0,ry,0,1,1,1));
-    const bp2=pt.clone().add(norm.clone().multiplyScalar(-trackW/2-8));
-    barrGeos.push(geoAt(_barrGeo,bp2.x,.4,bp2.z,0,ry,0,1,1,1));
+    const norm=new THREE.Vector3(-tan.z,0,tan.x),ry=Math.atan2(tan.x,tan.z);
+    barrGeos.push(geoAt(_barrGeo,pt.x+norm.x*(trackW/2+8),.4,pt.z+norm.z*(trackW/2+8),0,ry,0,1,1,1));
+    barrGeos.push(geoAt(_barrGeo,pt.x-norm.x*(trackW/2+8),.4,pt.z-norm.z*(trackW/2+8),0,ry,0,1,1,1));
   }
   if(barrGeos.length)scene.add(new THREE.Mesh(mergeGeometries(barrGeos),barrierM));
 
-  // ─── Tire walls at braking zones ───
-  const tireCorners=[.12,.27,.36,.61,.72,.80];
-  const tireGeos=[];const _tireGeo=new THREE.TorusGeometry(.4,.18,4,6);
-  for(const tc of tireCorners){
+  // ─── Tire walls: MERGED ───
+  const tireGeos=[];const _tireGeo=new THREE.TorusGeometry(.4,.18,3,5);
+  for(const tc of[.12,.27,.36,.61,.72,.80]){
     const pt=curve.getPointAt(tc),tan=curve.getTangentAt(tc).normalize();
     const norm=new THREE.Vector3(-tan.z,0,tan.x);
-    for(let tr=0;tr<12;tr++){
+    for(let tr=0;tr<8;tr++){
       const tp=pt.clone().add(norm.clone().multiplyScalar(trackW/2+7+Math.random()));
-      tp.add(tan.clone().multiplyScalar(-5+tr*1));
-      tireGeos.push(geoAt(_tireGeo,tp.x,.3+Math.random()*.4,tp.z,Math.random(),Math.random(),0,1,1,1));
+      tp.add(tan.clone().multiplyScalar(-4+tr));
+      tireGeos.push(geoAt(_tireGeo,tp.x,.3+Math.random()*.3,tp.z,Math.random(),Math.random(),0,1,1,1));
     }
   }
   if(tireGeos.length)scene.add(new THREE.Mesh(mergeGeometries(tireGeos),new THREE.MeshStandardMaterial({color:0x111111,roughness:.95})));
 
-  // ─── Turn number markers (boards at each corner) ───
+  // ─── Turn markers + marshal posts: MERGED ───
+  const markerGeos=[],roofGeos=[];
+  const _markerGeo=new THREE.BoxGeometry(3,2,.3),_roofGeo=new THREE.BoxGeometry(2,.15,2);
+  const _postGeo=new THREE.BoxGeometry(1.5,2,1.5);
   const turnTs=[.10,.18,.20,.23,.26,.29,.34,.36,.42,.45,.47,.61,.68,.70,.72,.78,.80,.82,.89,.92];
-  for(let ti=0;ti<turnTs.length;ti++){
-    const tp=curve.getPointAt(turnTs[ti]),ttan=curve.getTangentAt(turnTs[ti]).normalize();
+  for(const tt of turnTs){
+    const tp=curve.getPointAt(tt),ttan=curve.getTangentAt(tt).normalize();
     const tnorm=new THREE.Vector3(-ttan.z,0,ttan.x);
     const bp=tp.clone().add(tnorm.clone().multiplyScalar(trackW/2+12));
-    const board=box(3,2,.3,0x002266);board.position.set(bp.x,2,bp.z);
-    board.rotation.y=Math.atan2(ttan.x,ttan.z);scene.add(board);
-    const numM=new THREE.Mesh(new THREE.PlaneGeometry(2,1.5),
-      new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:.3}));
-    numM.position.set(bp.x,2,bp.z-.2);numM.rotation.y=Math.atan2(ttan.x,ttan.z);scene.add(numM);
+    markerGeos.push(geoAt(_markerGeo,bp.x,2,bp.z,0,Math.atan2(ttan.x,ttan.z),0,1,1,1));
   }
+  for(let mi=0;mi<16;mi++){
+    const mt=mi/16,mp=curve.getPointAt(mt),mtan=curve.getTangentAt(mt).normalize();
+    const mnorm=new THREE.Vector3(-mtan.z,0,mtan.x);
+    const mpos=mp.clone().add(mnorm.clone().multiplyScalar(-trackW/2-10));
+    markerGeos.push(geoAt(_postGeo,mpos.x,1,mpos.z,0,0,0,1,1,1));
+    roofGeos.push(geoAt(_roofGeo,mpos.x,2.1,mpos.z,0,0,0,1,1,1));
+  }
+  if(markerGeos.length)scene.add(new THREE.Mesh(mergeGeometries(markerGeos),new THREE.MeshStandardMaterial({color:0x224488})));
+  if(roofGeos.length)scene.add(new THREE.Mesh(mergeGeometries(roofGeos),new THREE.MeshStandardMaterial({color:0xffcc00})));
 
-  // ─── Pit lane (along main straight, south side) ───
+  // ─── Pit lane ───
   const pitBaseX=RX-100,pitBaseZ=RZ+200;
-  const pitLen=120;
-  const pitRoad=new THREE.Mesh(new THREE.PlaneGeometry(pitLen,10),trkM);
-  pitRoad.rotation.x=-Math.PI/2;pitRoad.rotation.z=.05;pitRoad.position.set(pitBaseX,.04,pitBaseZ);scene.add(pitRoad);
-  const pitLine=new THREE.Mesh(new THREE.PlaneGeometry(pitLen,.2),kerbWhM);
-  pitLine.rotation.x=-Math.PI/2;pitLine.position.set(pitBaseX,.06,pitBaseZ-5);scene.add(pitLine);
+  scene.add(buildStrip(0,10,trkM,.04)); // reuse strip fn is for circuit only, use plane
+  const pitRoad=new THREE.Mesh(new THREE.PlaneGeometry(120,10),trkM);
+  pitRoad.rotation.x=-Math.PI/2;pitRoad.position.set(pitBaseX,.04,pitBaseZ);scene.add(pitRoad);
+  const pitWall=box(130,.4,1.2,0x555555);pitWall.position.set(pitBaseX,.8,pitBaseZ-6);scene.add(pitWall);
 
-  // ─── Pit garages (10 F1 teams) ───
-  const teamColors=[0xe00000,0x00d2be,0xff8700,0x0600ef,0x006f62,
-    0x2b4562,0xb6babd,0x00e701,0xc92d4b,0x1e41ff];
+  // Pit garages: MERGED by material
+  const garageGeos=[],garageRoofGeos=[],garDoorGeos=[];
+  const _garGeo=new THREE.BoxGeometry(10,4.5,8),_grfGeo=new THREE.BoxGeometry(11,.2,9),_gdrGeo=new THREE.BoxGeometry(9,4,.2);
+  const teamColors=[0xe00000,0x00d2be,0xff8700,0x0600ef,0x006f62,0x2b4562,0xb6babd,0x00e701,0xc92d4b,0x1e41ff];
   for(let pg=0;pg<10;pg++){
     const gx=pitBaseX-55+pg*11;
-    const garage=box(10,4.5,8,0x333333);garage.position.set(gx,2.25,pitBaseZ+9);scene.add(garage);
-    const gRoof=box(11,.2,9,0x444444);gRoof.position.set(gx,4.6,pitBaseZ+9);scene.add(gRoof);
+    garageGeos.push(geoAt(_garGeo,gx,2.25,pitBaseZ+9,0,0,0,1,1,1));
+    garageRoofGeos.push(geoAt(_grfGeo,gx,4.6,pitBaseZ+9,0,0,0,1,1,1));
+    // Doors are different colors, add individually (only 10)
     const gDoor=box(9,4,.2,teamColors[pg]);gDoor.position.set(gx,2,pitBaseZ+5);scene.add(gDoor);
-    // Team equipment
-    const eq1=box(1.5,1,1.2,0x222222);eq1.position.set(gx-3,.5,pitBaseZ+12);scene.add(eq1);
-    const eq2=box(1,.8,.8,teamColors[pg]);eq2.position.set(gx+3,.4,pitBaseZ+12);scene.add(eq2);
   }
+  scene.add(new THREE.Mesh(mergeGeometries(garageGeos),new THREE.MeshStandardMaterial({color:0x333333})));
+  scene.add(new THREE.Mesh(mergeGeometries(garageRoofGeos),new THREE.MeshStandardMaterial({color:0x444444})));
 
-  // Pit wall
-  const pitWall=box(pitLen+10,.4,1.2,0x555555);pitWall.position.set(pitBaseX,.8,pitBaseZ-6);scene.add(pitWall);
-
-  // ─── Control tower (race direction) ───
+  // Control tower
   const twX=pitBaseX+65,twZ=pitBaseZ+20;
   const tower=box(14,16,10,0x444455);tower.position.set(twX,8,twZ);scene.add(tower);
   const winM=new THREE.MeshStandardMaterial({color:0x224466,transparent:true,opacity:.5,roughness:.05,metalness:.8});
-  for(const dz of[-5.1,5.1]){const w=box(14.2,5,.15,0);w.material=winM;w.position.set(twX,13.5,twZ+dz);scene.add(w)}
-  for(const dx of[-7.1,7.1]){const w=box(.15,5,10,0);w.material=winM;w.position.set(twX+dx,13.5,twZ);scene.add(w)}
-  const ant=cyl(.06,.06,8,0xaaaaaa);ant.position.set(twX,20,twZ);scene.add(ant);
-  const dish=new THREE.Mesh(new THREE.SphereGeometry(1,8,4,0,Math.PI),
-    new THREE.MeshStandardMaterial({color:0xdddddd,side:THREE.DoubleSide}));
-  dish.position.set(twX-3,18,twZ);dish.rotation.x=Math.PI/4;scene.add(dish);
+  const tWin=box(14.2,5,10.2,0);tWin.material=winM;tWin.position.set(twX,13.5,twZ);scene.add(tWin);
 
-  // ─── Grandstands (5 large, covering key viewing spots) ───
-  const stands=[
-    {t:.02,side:1,len:80,label:'Main Grandstand'},   // main straight
-    {t:.11,side:1,len:50,label:'Turn 1'},             // T1
-    {t:.24,side:-1,len:60,label:'Esses'},             // esses inside
-    {t:.52,side:-1,len:70,label:'Back Straight'},     // back straight
-    {t:.80,side:1,len:55,label:'Stadium'}             // stadium section
-  ];
+  // ─── Grandstands (5, each = base + merged seats + roof) ───
+  const stands=[{t:.02,side:1,len:80},{t:.11,side:1,len:50},{t:.24,side:-1,len:60},{t:.52,side:-1,len:70},{t:.80,side:1,len:55}];
+  const seatC=[0xcc2222,0x2266cc,0xcccc22,0x22cc66,0xcc6622,0xcc22cc];
   for(const st of stands){
     const sp=curve.getPointAt(st.t),stan=curve.getTangentAt(st.t).normalize();
     const snorm=new THREE.Vector3(-stan.z,0,stan.x);
     const spos=sp.clone().add(snorm.clone().multiplyScalar(st.side*(trackW/2+18)));
     const srot=Math.atan2(stan.x,stan.z);
-    // Concrete base
-    const sBase=box(16,10,st.len,0x666666);
-    sBase.position.set(spos.x,5,spos.z);sBase.rotation.y=srot;scene.add(sBase);
-    // 6 tiered rows of colored seats
-    const seatC=[0xcc2222,0x2266cc,0xcccc22,0x22cc66,0xcc6622,0xcc22cc];
+    const sBase=box(16,10,st.len,0x666666);sBase.position.set(spos.x,5,spos.z);sBase.rotation.y=srot;scene.add(sBase);
+    // Merge all 6 seat rows into one colored mesh per stand
+    const seatGeos=[];
     for(let row=0;row<6;row++){
-      const sRow=box(14,.25,st.len-3,seatC[row]);
       const rx=Math.cos(srot)*(-6+row*2.5)*st.side,rz=Math.sin(srot)*(-6+row*2.5)*st.side;
-      sRow.position.set(spos.x+rx,1.5+row*1.6,spos.z+rz);sRow.rotation.y=srot;scene.add(sRow);
+      seatGeos.push(geoAt(new THREE.BoxGeometry(14,.25,st.len-3),spos.x+rx,1.5+row*1.6,spos.z+rz,0,srot,0,1,1,1));
     }
-    // Roof canopy
-    const roof=box(18,.25,st.len+6,0x333333);
-    roof.position.set(spos.x,11.5,spos.z);roof.rotation.y=srot;scene.add(roof);
-    // Support pillars
-    for(const pOff of[-st.len/2+3,-st.len/4,0,st.len/4,st.len/2-3]){
-      const pil=cyl(.3,.3,11.5,0x555555);
-      const px=spos.x+Math.cos(srot+Math.PI/2)*pOff+Math.cos(srot)*7*st.side;
-      const pz=spos.z+Math.sin(srot+Math.PI/2)*pOff+Math.sin(srot)*7*st.side;
-      pil.position.set(px,5.75,pz);scene.add(pil);
-    }
+    scene.add(new THREE.Mesh(mergeGeometries(seatGeos),new THREE.MeshStandardMaterial({color:seatC[stands.indexOf(st)%6]})));
+    const roof=box(18,.25,st.len+6,0x333333);roof.position.set(spos.x,11.5,spos.z);roof.rotation.y=srot;scene.add(roof);
   }
 
-  // ─── Floodlight towers (8 around circuit) ───
-  for(const la of[0,.125,.25,.375,.5,.625,.75,.875]){
+  // ─── Floodlights (6 instead of 8), merged poles ───
+  const poleGeos=[];const _poleGeo=new THREE.CylinderGeometry(.15,.35,35,4);
+  for(const la of[0,.17,.33,.5,.67,.83]){
     const lpt=curve.getPointAt(la),ltan=curve.getTangentAt(la).normalize();
     const lnorm=new THREE.Vector3(-ltan.z,0,ltan.x);
-    const lpos=lpt.clone().add(lnorm.clone().multiplyScalar(trackW/2+28));
-    const pole=cyl(.35,.2,35,0x666666);pole.position.set(lpos.x,17.5,lpos.z);scene.add(pole);
-    for(const bh of[12,24]){const beam=box(4,.2,.2,0x555555);beam.position.set(lpos.x,bh,lpos.z);scene.add(beam)}
-    const lCluster=box(5,1.2,2.5,0xeeeeee);lCluster.position.set(lpos.x,35.5,lpos.z);scene.add(lCluster);
-    const lGlow=new THREE.Mesh(new THREE.PlaneGeometry(4.5,.6),
-      new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffaa,emissiveIntensity:1}));
-    lGlow.position.set(lpos.x,35,lpos.z);lGlow.rotation.x=-Math.PI/4;scene.add(lGlow);
+    const lx=lpt.x+lnorm.x*(trackW/2+28),lz=lpt.z+lnorm.z*(trackW/2+28);
+    poleGeos.push(geoAt(_poleGeo,lx,17.5,lz,0,0,0,1,1,1));
+    const lCluster=box(5,1.2,2.5,0xeeeeee);lCluster.position.set(lx,35.5,lz);scene.add(lCluster);
   }
+  scene.add(new THREE.Mesh(mergeGeometries(poleGeos),new THREE.MeshStandardMaterial({color:0x666666})));
 
-  // ─── DRS boards (2 zones) ───
+  // DRS boards (2, minimal meshes)
   for(const dt of[.01,.50]){
     const dp=curve.getPointAt(dt),dtan=curve.getTangentAt(dt).normalize();
-    const dnorm=new THREE.Vector3(-dtan.z,0,dtan.x);
-    for(const s of[1,-1]){const post=cyl(.18,.18,10,0x444444);
-      const pp=dp.clone().add(dnorm.clone().multiplyScalar(s*(trackW/2+2)));
-      post.position.set(pp.x,5,pp.z);scene.add(post)}
     const board=box(trackW+5,1,2,0x003300);board.position.set(dp.x,10,dp.z);
     board.rotation.y=Math.atan2(dtan.x,dtan.z);scene.add(board);
-    const strip=new THREE.Mesh(new THREE.PlaneGeometry(trackW+2,.4),
-      new THREE.MeshStandardMaterial({color:0x00ff00,emissive:0x00ff00,emissiveIntensity:.8}));
-    strip.position.set(dp.x,9.5,dp.z);strip.rotation.y=Math.atan2(dtan.x,dtan.z);scene.add(strip);
   }
 
-  // ─── Starting lights gantry ───
+  // Starting lights gantry
   const slPt=curve.getPointAt(.995),slTan=curve.getTangentAt(.995).normalize();
-  const slNorm=new THREE.Vector3(-slTan.z,0,slTan.x);
-  for(const s of[1,-1]){const post=cyl(.25,.25,12,0x333333);
-    const pp=slPt.clone().add(slNorm.clone().multiplyScalar(s*(trackW/2+3)));
-    post.position.set(pp.x,6,pp.z);scene.add(post)}
   const crossBar=box(trackW+7,.5,.5,0x333333);
   crossBar.position.set(slPt.x,12,slPt.z);crossBar.rotation.y=Math.atan2(slTan.x,slTan.z);scene.add(crossBar);
-  for(let li=0;li<5;li++){
-    const lOff=slNorm.clone().multiplyScalar(-trackW/2+3+li*(trackW/5));
-    const lp=slPt.clone().add(lOff);
-    const lightBox=box(1.5,1,.5,0x222222);lightBox.position.set(lp.x,11.5,lp.z);scene.add(lightBox);
-    const redL=new THREE.Mesh(new THREE.CircleGeometry(.3,8),
-      new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:1}));
-    redL.position.set(lp.x,11.5,lp.z-.3);redL.rotation.y=Math.atan2(slTan.x,slTan.z);scene.add(redL);
-  }
 
-  // ─── Sponsor billboards around circuit ───
-  const billboardTs=[.05,.15,.30,.45,.55,.70,.85,.93];
-  const adColors=[0xe00000,0x00d2be,0xff8700,0x0600ef,0x006f62,0x2b4562,0xffcc00,0xcc22aa];
-  for(let bi=0;bi<billboardTs.length;bi++){
-    const bp=curve.getPointAt(billboardTs[bi]),btan=curve.getTangentAt(billboardTs[bi]).normalize();
-    const bnorm=new THREE.Vector3(-btan.z,0,btan.x);
-    const bpos=bp.clone().add(bnorm.clone().multiplyScalar(trackW/2+14));
-    const bb=box(8,4,.3,adColors[bi]);bb.position.set(bpos.x,3,bpos.z);
-    bb.rotation.y=Math.atan2(btan.x,btan.z);scene.add(bb);
-    const support=cyl(.1,.1,4,0x444444);support.position.set(bpos.x,2,bpos.z);scene.add(support);
-  }
-
-  // ─── Marshal posts (yellow-green boxes at intervals) ───
-  for(let mi=0;mi<20;mi++){
-    const mt=mi/20,mp=curve.getPointAt(mt),mtan=curve.getTangentAt(mt).normalize();
-    const mnorm=new THREE.Vector3(-mtan.z,0,mtan.x);
-    const mpos=mp.clone().add(mnorm.clone().multiplyScalar(-trackW/2-10));
-    const mPost=box(1.5,2,1.5,0x228822);mPost.position.set(mpos.x,1,mpos.z);scene.add(mPost);
-    const mRoof=box(2,.15,2,0xffcc00);mRoof.position.set(mpos.x,2.1,mpos.z);scene.add(mRoof);
-  }
-
-  // ─── 10 F1 cars on circuit ───
-  const f1Colors=[0xe00000,0x00d2be,0xff8700,0x0600ef,0x006f62,
-    0x2b4562,0xb6babd,0x00e701,0xc92d4b,0x1e41ff];
+  // ─── 10 F1 cars (simplified geometry per car) ───
+  const f1Colors=[0xe00000,0x00d2be,0xff8700,0x0600ef,0x006f62,0x2b4562,0xb6babd,0x00e701,0xc92d4b,0x1e41ff];
   for(let ci=0;ci<10;ci++){
     const carG=new THREE.Group();const cc=f1Colors[ci];
-    const nose=new THREE.Mesh(new THREE.ConeGeometry(.4,.8,4),
-      new THREE.MeshStandardMaterial({color:cc,roughness:.3,metalness:.3}));
-    nose.rotation.x=Math.PI/2;nose.position.set(0,.35,2);carG.add(nose);
-    const mbody=box(1.4,.35,3.2,cc);mbody.material=new THREE.MeshStandardMaterial({color:cc,roughness:.25,metalness:.4});
-    mbody.position.set(0,.38,0);carG.add(mbody);
-    const cockpit=box(.7,.15,1,0x111111);cockpit.position.set(0,.55,.5);carG.add(cockpit);
-    const halo=new THREE.Mesh(new THREE.TorusGeometry(.35,.04,4,8,Math.PI),
-      new THREE.MeshStandardMaterial({color:0x444444,metalness:.6}));
-    halo.rotation.x=-Math.PI/2;halo.rotation.z=Math.PI;halo.position.set(0,.65,.5);carG.add(halo);
-    const intake=box(.4,.5,.3,cc);intake.position.set(0,.75,.2);carG.add(intake);
-    for(const sx of[-.75,.75]){const sp=box(.3,.2,1.8,cc);sp.position.set(sx,.35,-.2);carG.add(sp)}
-    const floor=box(1.6,.03,3.5,0x111111);floor.position.set(0,.18,0);carG.add(floor);
-    const rwM=box(1.8,.04,.4,cc);rwM.position.set(0,.7,-1.6);carG.add(rwM);
-    const rwF=box(1.8,.03,.25,0x222222);rwF.position.set(0,.75,-1.55);carG.add(rwF);
-    for(const ex of[-.9,.9]){const ep=box(.04,.25,.5,cc);ep.position.set(ex,.6,-1.6);carG.add(ep)}
-    const fwM=box(1.6,.03,.3,cc);fwM.position.set(0,.2,2.2);carG.add(fwM);
-    for(const ex of[-.8,.8]){const ep=box(.04,.12,.4,cc);ep.position.set(ex,.2,2.2);carG.add(ep)}
+    const cM=new THREE.MeshStandardMaterial({color:cc,roughness:.25,metalness:.4});
+    const mbody=box(1.4,.4,4,cc);mbody.material=cM;mbody.position.y=.38;carG.add(mbody);
+    const cockpit=box(.7,.15,1,0x111111);cockpit.position.set(0,.58,.5);carG.add(cockpit);
+    const intake=box(.4,.45,.3,cc);intake.position.set(0,.72,.2);carG.add(intake);
+    const rwing=box(1.8,.05,.4,cc);rwing.position.set(0,.68,-1.7);carG.add(rwing);
+    const fwing=box(1.6,.04,.3,cc);fwing.position.set(0,.2,2.2);carG.add(fwing);
     for(const wx of[-.85,.85])for(const wz of[-1,1.4]){
-      const tire=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.22,8),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:.9}));
-      tire.rotation.z=Math.PI/2;tire.position.set(wx,.3,wz);carG.add(tire);
-      const rim=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.23,6),
-        new THREE.MeshStandardMaterial({color:0xcccccc,metalness:.7}));
-      rim.rotation.z=Math.PI/2;rim.position.set(wx,.3,wz);carG.add(rim);
+      const tire=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.2,6),
+        new THREE.MeshStandardMaterial({color:0x1a1a1a}));
+      tire.rotation.z=Math.PI/2;tire.position.set(wx,.28,wz);carG.add(tire);
     }
     const startT=(ci*3/curve.getLength())%1;
     const spt=curve.getPointAt(startT);
@@ -2738,7 +2636,6 @@ let raceCarMeshes=[];
     raceCarMeshes.push({mesh:carG,t:startT,speed:.18+ci*.006,lane:ci%2===0?2:-2});
   }
 
-  // ─── Parked player vehicles near pit ───
   spawnV('car',pitBaseX+70,pitBaseZ+18,Math.PI/2);
   spawnV('motorcycle',pitBaseX+75,pitBaseZ+18,Math.PI/2);
   spawnV('gokart',pitBaseX+80,pitBaseZ+18,Math.PI/2);
