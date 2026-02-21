@@ -174,10 +174,10 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
 </style>
 
 <div id="ow-overlay-root">
-  <button id="ow-fab" title="Open Chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+  <button id="ow-fab" title="Edit this game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
   <div id="ow-panel">
     <div class="ow-header">
-      <span class="ow-logo">Studio</span>
+      <span class="ow-logo">Edit Game</span>
       <div class="ow-hdr-btns">
         <button class="ow-hdr-btn" id="ow-btn-versions">Versions</button>
         <button class="ow-hdr-btn" id="ow-btn-auth">Sign In</button>
@@ -192,8 +192,8 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
     </div>
     <div id="ow-messages">
       <div class="ow-welcome" id="ow-welcome">
-        <h3>Open World Studio</h3>
-        <p>Describe changes to make to the game.</p>
+        <h3>Make It Yours</h3>
+        <p>Tell AI what to change and it will modify the game in real time.</p>
         <div class="ow-examples">
           <button class="ow-example">Add a day/night cycle with a moving sun</button>
           <button class="ow-example">Make the buildings taller and add neon lights</button>
@@ -210,7 +210,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
       <div class="ow-input-row">
         <button id="ow-img-btn" title="Attach image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
         <input type="file" id="ow-img-file" accept="image/*" style="display:none">
-        <textarea id="ow-input" rows="1" placeholder="Describe a change..."></textarea>
+        <textarea id="ow-input" rows="1" placeholder="What should we change?"></textarea>
         <button id="ow-send" title="Send">&#9654;</button>
       </div>
       <div class="ow-input-footer">
