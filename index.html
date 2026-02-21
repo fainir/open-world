@@ -7262,13 +7262,22 @@ function update(dt){
     }
   }
 
+  // ═══ HARD FLOOR CLAMP — never go underground ═══
+  {const _floorY=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));if(P.y<_floorY){P.y=_floorY;if(V.y<0)V.y=0;if(!isFlying)onGround=true;}}
+
   // ═══ CAMERA ═══
   const cv=currentVeh;
   let camD=3.5,camH=1.8;
   if(isFlying){camD=lerp(6,14,clamp(V.length()/100,0,1));camH=2}
   if(cv){camD=cv.def.pt==='air'?12:cv.type==='yacht'?14:6;camH=cv.def.pt==='air'?3:cv.type==='yacht'?5:2}
   const ideal=new THREE.Vector3(P.x+Math.sin(yaw)*camD,P.y+camH+(isFlying?-Math.sin(pitch)*camD*.3:0),P.z+Math.cos(yaw)*camD);
+  // Clamp camera target above terrain at camera position
+  const _camFloor=Math.max(getH(ideal.x,ideal.z),getSurfaceH(ideal.x,ideal.z))+1.0;
+  if(ideal.y<_camFloor)ideal.y=_camFloor;
   cam.position.lerp(ideal,1-Math.pow(.01,dt));
+  // Clamp final cam position after lerp so it never dips underground
+  const _camFloor2=Math.max(getH(cam.position.x,cam.position.z),getSurfaceH(cam.position.x,cam.position.z))+0.5;
+  if(cam.position.y<_camFloor2)cam.position.y=_camFloor2;
   // Fight screen shake
   if(fightShake>0){
     fightShake-=dt;
