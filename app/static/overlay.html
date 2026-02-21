@@ -299,6 +299,15 @@ let currentVersionId=localStorage.getItem(SK.VERSION);
 let panelOpen=false;
 let isProcessing=false;
 let pendingVersionUrl=null;
+const PANEL_W=300;
+
+// ── Override innerWidth so game renderer shrinks when panel is open ──
+const _iwDesc=Object.getOwnPropertyDescriptor(Window.prototype,'innerWidth')||
+              Object.getOwnPropertyDescriptor(window,'innerWidth');
+Object.defineProperty(window,'innerWidth',{
+  get(){const real=_iwDesc.get.call(this);return panelOpen?real-PANEL_W:real},
+  configurable:true
+});
 
 // Detect current version from URL
 const urlMatch=window.location.pathname.match(/^\/v\/([a-f0-9-]+)/);
@@ -333,12 +342,14 @@ function openPanel(){
   panel.classList.add('ow-open');panelOpen=true;
   fab.style.display='none';
   localStorage.setItem(SK.PANEL,'true');
+  window.dispatchEvent(new Event('resize'));
   input.focus();
 }
 function closePanel(){
   panel.classList.remove('ow-open');panelOpen=false;
   fab.style.display='flex';
   localStorage.setItem(SK.PANEL,'false');
+  window.dispatchEvent(new Event('resize'));
 }
 
 fab.onclick=()=>panelOpen?closePanel():openPanel();
