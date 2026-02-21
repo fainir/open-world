@@ -337,19 +337,29 @@ const Auth={
 };
 
 // ── Panel toggle ──
+function resizeGame(){
+  // Directly resize the Three.js canvas so it doesn't sit under the panel
+  const c=document.querySelector('canvas');
+  if(c){
+    const w=panelOpen?window.innerWidth:_iwDesc.get.call(window);
+    c.style.width=w+'px';
+    c.width=w*Math.min(devicePixelRatio,1);
+  }
+  window.dispatchEvent(new Event('resize'));
+}
 function openPanel(){
   document.exitPointerLock&&document.exitPointerLock();
   panel.classList.add('ow-open');panelOpen=true;
   fab.style.display='none';
   localStorage.setItem(SK.PANEL,'true');
-  window.dispatchEvent(new Event('resize'));
+  resizeGame();
   input.focus();
 }
 function closePanel(){
   panel.classList.remove('ow-open');panelOpen=false;
   fab.style.display='flex';
   localStorage.setItem(SK.PANEL,'false');
-  window.dispatchEvent(new Event('resize'));
+  resizeGame();
 }
 
 fab.onclick=()=>panelOpen?closePanel():openPanel();
