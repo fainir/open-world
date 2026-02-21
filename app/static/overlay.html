@@ -35,7 +35,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
 .ow-close{background:none;border:none;color:#6b7280;font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
 .ow-close:hover{color:#e8ecf0}
 
-.ow-apikey{padding:10px 16px;border-bottom:1px solid rgba(80,90,110,.2);flex-shrink:0}
+.ow-apikey{padding:10px 16px;border-bottom:1px solid rgba(80,90,110,.2);flex-shrink:0;display:none}
 .ow-apikey-row{display:flex;align-items:center;gap:6px;margin-top:6px}
 .ow-apikey label{font-size:12px;color:#6b7280;display:flex;align-items:center;justify-content:space-between;width:100%}
 .ow-apikey label a{color:#60a5fa;text-decoration:none;font-size:11px}
@@ -179,6 +179,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
     <div class="ow-header">
       <span class="ow-logo">Edit Game</span>
       <div class="ow-hdr-btns">
+        <button class="ow-hdr-btn" id="ow-btn-apikey" title="API Key" style="font-size:14px;padding:4px 8px">&#128273;</button>
         <button class="ow-hdr-btn" id="ow-btn-versions">Versions</button>
         <button class="ow-hdr-btn" id="ow-btn-auth">Sign In</button>
         <button class="ow-close" id="ow-panel-close">&times;</button>
@@ -217,6 +218,21 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
         <span>Enter to send</span>
         <span id="ow-status"></span>
       </div>
+    </div>
+  </div>
+
+  <!-- API Key Modal -->
+  <div class="ow-modal-overlay" id="ow-apikey-modal">
+    <div class="ow-modal">
+      <button class="ow-modal-close" id="ow-apikey-close">&times;</button>
+      <h3>Enter Your API Key</h3>
+      <p style="color:#6b7280;font-size:13px;margin:0 0 16px">To edit the game, you need an <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:none">Anthropic API key</a>.</p>
+      <div class="ow-form-group">
+        <label>API Key</label>
+        <input type="password" id="ow-apikey-input" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div class="ow-form-error" id="ow-apikey-err"></div>
+      <button class="ow-btn" id="ow-apikey-save">Save &amp; Continue</button>
     </div>
   </div>
 
@@ -305,7 +321,7 @@ const SK={
 const $=id=>document.getElementById(id);
 const fab=$('ow-fab'),panel=$('ow-panel'),msgs=$('ow-messages'),input=$('ow-input'),
   sendBtn=$('ow-send'),statusEl=$('ow-status'),suggArea=$('ow-suggestions'),suggList=$('ow-sugg-list'),
-  apiKeyInput=$('ow-api-key');
+  apiKeyInput=$('ow-api-key'),apikeyModalInput=$('ow-apikey-input');
 
 // ── State ──
 let sessionId=localStorage.getItem(SK.SESSION);
@@ -315,6 +331,7 @@ let isProcessing=false;
 let pendingVersionUrl=null;
 let pendingImageB64=null;
 let pendingImageType=null;
+let pendingSendAfterKey=false;
 const PANEL_W=300;
 
 // ── Override innerWidth so game renderer uses correct size ──
@@ -422,9 +439,16 @@ $('ow-img-remove').onclick=()=>{pendingImageB64=null;pendingImageType=null;imgPr
 async function sendMessage(){
   const message=input.value.trim();
   if(!message||isProcessing)return;
-  const apiKey=apiKeyInput.value.trim();
-  if(!apiKey){setStatus('Enter API key first','ow-error');setTimeout(()=>setStatus(''),2000);return}
+  const apiKey=apiKeyInput.value.trim()||localStorage.getItem(SK.API_KEY)||'';
+  if(!apiKey){
+    pendingSendAfterKey=true;
+    apikeyModalInput.value='';
+    $('ow-apikey-err').textContent='';
+    $('ow-apikey-modal').classList.add('ow-show');
+    return;
+  }
   localStorage.setItem(SK.API_KEY,apiKey);
+  apiKeyInput.value=apiKey;
 
   const w=$('ow-welcome');if(w)w.remove();
 
@@ -479,6 +503,29 @@ async function sendMessage(){
     saveChatHistory();
   }
 }
+
+// ── API Key Modal ──
+$('ow-btn-apikey').onclick=()=>{
+  pendingSendAfterKey=false;
+  apikeyModalInput.value=localStorage.getItem(SK.API_KEY)||'';
+  $('ow-apikey-err').textContent='';
+  $('ow-apikey-modal').classList.add('ow-show');
+  setTimeout(()=>apikeyModalInput.focus(),100);
+};
+$('ow-apikey-close').onclick=()=>{$('ow-apikey-modal').classList.remove('ow-show');pendingSendAfterKey=false};
+$('ow-apikey-save').onclick=()=>{
+  const key=apikeyModalInput.value.trim();
+  if(!key){$('ow-apikey-err').textContent='Please enter an API key';return}
+  if(!key.startsWith('sk-ant-')){$('ow-apikey-err').textContent='Key should start with sk-ant-';return}
+  localStorage.setItem(SK.API_KEY,key);
+  apiKeyInput.value=key;
+  $('ow-apikey-modal').classList.remove('ow-show');
+  showToast('API key saved');
+  if(pendingSendAfterKey){pendingSendAfterKey=false;sendMessage()}
+};
+apikeyModalInput.addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'){e.preventDefault();$('ow-apikey-save').click()}
+});
 
 // ── Example prompts ──
 document.querySelectorAll('.ow-example').forEach(btn=>{
@@ -691,7 +738,7 @@ $('ow-nv-dismiss').onclick=()=>{
 
 // ── Init ──
 const savedKey=localStorage.getItem(SK.API_KEY);
-if(savedKey)apiKeyInput.value=savedKey;
+if(savedKey){apiKeyInput.value=savedKey;apikeyModalInput.value=savedKey}
 
 restoreChatHistory();
 updateAuthUI();
