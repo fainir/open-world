@@ -648,9 +648,8 @@ if(savedKey)apiKeyInput.value=savedKey;
 restoreChatHistory();
 updateAuthUI();
 
-// Open panel by default, or restore previous state
-if(localStorage.getItem(SK.PANEL)==='false')closePanel();
-else openPanel();
+// Always open panel on load
+openPanel();
 
 })();
 </script>
