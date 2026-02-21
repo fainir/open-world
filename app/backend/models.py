@@ -75,3 +75,14 @@ class GameVersion(Base):
 
     session = relationship("ChatSession", back_populates="versions")
     user = relationship("User", back_populates="versions", foreign_keys=[user_id])
+
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=_now)
