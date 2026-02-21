@@ -4601,11 +4601,10 @@ function update(dt){
     const hs=Math.sqrt(V.x*V.x+V.z*V.z);V.y+=clamp(hs*.08,0,12)*dt;
     V.x*=Math.pow(.98,dt*60);V.z*=Math.pow(.98,dt*60);V.y*=Math.pow(.985,dt*60);
     // Boost
-    if(keys['ShiftLeft']||keys['ShiftRight']){if(boostFuel>0){V.add(ff.clone().multiplyScalar(70*dt));V.y+=15*dt;boostFuel=Math.max(0,boostFuel-12*dt);engineOn=true;
-      const bd=ff.clone().multiplyScalar(-1);for(let ei=0;ei<4;ei++){const ep2=charG.localToWorld(new THREE.Vector3(engX[ei],1.14,-.35));emit(ep2,bd)}}}
-    if(keys['Space']){if(boostFuel>0){V.y+=28*dt;boostFuel=Math.max(0,boostFuel-8*dt);engineOn=true;
-      emit(charG.localToWorld(new THREE.Vector3(0,.5,-.3)),new THREE.Vector3(0,-1,0))}}
-    if(!keys['ShiftLeft']&&!keys['ShiftRight']&&!keys['Space'])boostFuel=Math.min(100,boostFuel+8*dt);
+    if(keys['ShiftLeft']||keys['ShiftRight']){V.add(ff.clone().multiplyScalar(70*dt));V.y+=15*dt;engineOn=true;
+      const bd=ff.clone().multiplyScalar(-1);for(let ei=0;ei<4;ei++){const ep2=charG.localToWorld(new THREE.Vector3(engX[ei],1.14,-.35));emit(ep2,bd)}}
+    if(keys['Space']){V.y+=28*dt;engineOn=true;
+      emit(charG.localToWorld(new THREE.Vector3(0,.5,-.3)),new THREE.Vector3(0,-1,0))}
     if(V.length()>160)V.setLength(160);
     P.add(V.clone().multiplyScalar(dt));
     if(P.y<gH+.5){P.y=gH+.5;if(V.y<-5){isFlying=false;V.set(0,0,0);showTip('Crash!')}else{V.y=0;isFlying=false}}
@@ -4641,9 +4640,8 @@ function update(dt){
     if(Math.abs(v.speed)<.1&&!kU()&&!kD())v.speed=0;}
 
     // Boost
-    if((keys['ShiftLeft']||keys['ShiftRight'])&&boostFuel>0){v.speed=Math.min(v.speed+d.ac*2*dt,d.ms*1.5);boostFuel=Math.max(0,boostFuel-15*dt);engineOn=true;
+    if(keys['ShiftLeft']||keys['ShiftRight']){v.speed=Math.min(v.speed+d.ac*2*dt,d.ms*1.5);engineOn=true;
       if(pt!=='water')emit(m.position.clone().add(new THREE.Vector3(0,.5,0)),fwd().multiplyScalar(-1))}
-    else if(!keys['ShiftLeft']&&!keys['ShiftRight'])boostFuel=Math.min(100,boostFuel+6*dt);
 
     const ff=fwd(),spd=v.speed;
     const moveX=ff.x*spd*dt,moveZ=ff.z*spd*dt;
@@ -4674,7 +4672,7 @@ function update(dt){
     } else if(pt==='air'){
       const af=flyFwd();
       P.x+=af.x*spd*dt;P.y+=af.y*spd*dt;P.z+=af.z*spd*dt;
-      if(keys['Space']&&boostFuel>0){P.y+=20*dt;boostFuel=Math.max(0,boostFuel-8*dt);engineOn=true}
+      if(keys['Space']){P.y+=20*dt;engineOn=true}
       if(P.y<gH+3){P.y=gH+3;if(spd>30)showTip('Pull up!')}
       // Emit particles for airplane
       emit(m.position.clone(),af.clone().multiplyScalar(-1));
