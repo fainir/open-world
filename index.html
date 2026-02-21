@@ -324,6 +324,9 @@ seedR(777);
 const emptyLots=[],enterableSpots=[];
 for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
   const cx=bx+(BK-ST)/2,cz=bz+(BK-ST)/2;
+  // Exclude buildings from F1 racing circuit area and lake area
+  if(cx>510&&cx<790&&cz>660){srand();continue}
+  if(cx>90&&cx<290&&cz>670){srand();continue}
   if(srand()<.14){emptyLots.push({cx,cz,bx,bz});continue}
   const dist=Math.sqrt(bx*bx+bz*bz)/CH,maxH=lerp(160,12,Math.pow(dist,.55));
   const h=8+srand()*maxH,w=BK-ST-2-srand()*5,d=BK-ST-2-srand()*5;
@@ -6047,9 +6050,17 @@ function update(dt){
     if(pt==='ground'||pt==='wearable'||pt==='snow'){
       P.x+=moveX;P.z+=moveZ;
       const gh=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
-      // Building collision
+      // Building collision — wall sliding (try each axis separately)
       const bl=colBldg(P.x,P.z,1);
-      if(bl){P.x-=moveX;P.z-=moveZ;v.speed*=.1}
+      if(bl){
+        P.x-=moveX;P.z-=moveZ;
+        // Try sliding along X only
+        P.x+=moveX;
+        if(colBldg(P.x,P.z,1)){P.x-=moveX}else{v.speed*=.85}
+        // Try sliding along Z only
+        P.z+=moveZ;
+        if(colBldg(P.x,P.z,1)){P.z-=moveZ;v.speed*=.85}
+      }
       // Snow check
       if(pt==='snow'&&!isOnSnow(P.x,P.z)){v.speed*=.95;if(v.speed<1)showTip('Need snow!')}
       // Jump with space
