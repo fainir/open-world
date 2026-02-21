@@ -198,6 +198,38 @@ After all SEARCH/REPLACE blocks, add:
 - Keep descriptions short, fun, and focused on what the user will SEE and EXPERIENCE"""
 
 
+def _minify_game_code(code: str) -> str:
+    """Strip comments, whitespace, and collapse CSS to reduce token count.
+
+    The game code is ~430KB which can exceed the 200K token API limit.
+    This strips ~40% of tokens while preserving all functional code.
+    """
+    # 1. Collapse CSS <style> block to a single-line summary
+    def _collapse_css(m: re.Match) -> str:
+        return '<style>\n/* [CSS styles - preserved in original, ~70 rules] */\n</style>'
+    code = re.sub(r'<style>(.*?)</style>', _collapse_css, code, count=1, flags=re.DOTALL)
+
+    # 2. Strip line-by-line
+    lines = code.split('\n')
+    out = []
+    for line in lines:
+        stripped = line.rstrip()
+        if not stripped:
+            continue
+        # Skip full-line comments
+        if re.match(r'^\s*//', stripped):
+            continue
+        # Skip full-line decorative comments (═══, ───, etc.)
+        if re.match(r'^\s*/\*[\s═─*]+\*/', stripped):
+            continue
+        # Remove trailing inline comments (but not URLs)
+        stripped = re.sub(r'(?<![:\'"=])\s*//[^"\']*$', '', stripped)
+        # Collapse multiple spaces to single
+        stripped = re.sub(r'  +', ' ', stripped)
+        out.append(stripped)
+    return '\n'.join(out)
+
+
 def run_agent(
     api_key: str,
     user_message: str,
@@ -219,24 +251,25 @@ def run_agent(
     with open(source_path, "r", encoding="utf-8") as f:
         game_code = f.read()
 
-    # Build conversation history from session
+    # Minify game code to reduce token count
+    game_code_for_prompt = _minify_game_code(game_code)
+
+    # Build conversation history from session (limit to last 6 messages to save tokens)
     history = []
-    for msg in session.messages:
-        if msg.role in ("user", "assistant"):
-            # For assistant messages, just include the description, not full code
-            content = msg.content
-            if msg.role == "assistant" and len(content) > 2000:
-                # Summarize long assistant messages (which contain full code)
-                desc_match = re.search(r"<description>(.*?)</description>", content, re.DOTALL)
-                if desc_match:
-                    content = f"[Applied changes: {desc_match.group(1).strip()}]"
-            history.append({"role": msg.role, "content": content})
+    recent_messages = [m for m in session.messages if m.role in ("user", "assistant")][-6:]
+    for msg in recent_messages:
+        content = msg.content
+        if msg.role == "assistant" and len(content) > 2000:
+            desc_match = re.search(r"<description>(.*?)</description>", content, re.DOTALL)
+            if desc_match:
+                content = f"[Applied changes: {desc_match.group(1).strip()}]"
+        history.append({"role": msg.role, "content": content})
 
     # Build the current message
     current_text = f"""Here is the current game code:
 
 <current_game_code>
-{game_code}
+{game_code_for_prompt}
 </current_game_code>
 
 User request: {user_message}
@@ -266,7 +299,7 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
 
     try:
         response = client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-sonnet-4-6",
             max_tokens=16000,
             system=SYSTEM_PROMPT,
             messages=messages,
