@@ -10,7 +10,7 @@
 <script>
 // Force reload if user has outdated cached version
 (function(){
-  var BUILD='20260222c';
+  var BUILD='20260222d';
   var stored=localStorage.getItem('ow_build');
   if(stored && stored!==BUILD){localStorage.setItem('ow_build',BUILD);location.reload(true);}
   else localStorage.setItem('ow_build',BUILD);
@@ -4765,6 +4765,622 @@ let dragstripGroup;
 })();
 spawnV('car',3200,-1650,Math.PI);spawnV('car',3205,-1660,Math.PI);
 
+// ══════════════ MALDIVES OVERWATER RESORT (3800, 2400) ══════════════
+let maldivesGroup;
+(function buildMaldives(){
+  const g=new THREE.Group();g.name='maldives';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=3800,cz=2400,baseH=0;
+  seedR(9401);
+  // Sandy island base
+  const island=new THREE.Mesh(new THREE.CircleGeometry(80,24),new THREE.MeshStandardMaterial({color:0xf0dca0,roughness:.9}));
+  island.rotation.x=-Math.PI/2;island.position.set(cx,baseH+.2,cz);scene.add(island);
+  // Shallow turquoise lagoon ring
+  const lagoon=new THREE.Mesh(new THREE.RingGeometry(80,160,24),new THREE.MeshStandardMaterial({color:0x33ddcc,transparent:true,opacity:.55,roughness:.1}));
+  lagoon.rotation.x=-Math.PI/2;lagoon.position.set(cx,baseH+.05,cz);scene.add(lagoon);
+  // Main resort building on island
+  const lodge=box(30,5,20,0xeeeeee);lodge.position.set(cx,baseH+2.8,cz);scene.add(lodge);
+  const lodgeRoof=box(32,1,22,0x996633);lodgeRoof.position.set(cx,baseH+5.5,cz);scene.add(lodgeRoof);
+  _addBldg({minX:cx-15,maxX:cx+15,minZ:cz-10,maxZ:cz+10,h:baseH+5});
+  // Infinity pool
+  const poolFloor=new THREE.Mesh(new THREE.PlaneGeometry(20,10),new THREE.MeshStandardMaterial({color:0x0a4488}));
+  poolFloor.rotation.x=-Math.PI/2;poolFloor.position.set(cx+30,baseH-.3,cz);scene.add(poolFloor);
+  const poolWater=new THREE.Mesh(new THREE.PlaneGeometry(20,10),new THREE.MeshStandardMaterial({color:0x44ccee,transparent:true,opacity:.5}));
+  poolWater.rotation.x=-Math.PI/2;poolWater.position.set(cx+30,baseH+.15,cz);scene.add(poolWater);
+  // Overwater bungalows on jetty
+  const bungGeos=[],roofGeos=[],jettyGeos=[];
+  const _bung=new THREE.BoxGeometry(6,3,5);const _roof=new THREE.BoxGeometry(7,.3,6);
+  const _jetty=new THREE.BoxGeometry(3,.3,8);const _pole=new THREE.CylinderGeometry(.1,.1,3,4);
+  for(let i=0;i<12;i++){const a=-Math.PI/3+i*(Math.PI*2/3)/11,r=110+((i%2)?10:0);
+    const bx=cx+Math.cos(a)*r,bz=cz+Math.sin(a)*r;
+    bungGeos.push(geoAt(_bung,bx,baseH+1.8,bz,0,a,0));
+    roofGeos.push(geoAt(_roof,bx,baseH+3.5,bz,0,a,0));
+    // Stilts
+    for(const [ox,oz] of [[-2,-2],[2,-2],[-2,2],[2,2]])
+      jettyGeos.push(geoAt(_pole,bx+ox*Math.cos(a)-oz*Math.sin(a),baseH,.5+bz+ox*Math.sin(a)+oz*Math.cos(a),0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(bungGeos),new THREE.MeshStandardMaterial({color:0xddccaa,roughness:.7})));
+  scene.add(new THREE.Mesh(mergeGeometries(roofGeos),new THREE.MeshStandardMaterial({color:0x886633})));
+  scene.add(new THREE.Mesh(mergeGeometries(jettyGeos),new THREE.MeshStandardMaterial({color:0x664422})));
+  // Walkway jetty (curved path to bungalows)
+  const jwGeos=[];const _jw=new THREE.BoxGeometry(2.5,.2,4);
+  for(let i=0;i<20;i++){const a=-Math.PI/3+i*(Math.PI*2/3)/19,r=95;
+    jwGeos.push(geoAt(_jw,cx+Math.cos(a)*r,baseH+.3,cz+Math.sin(a)*r,0,a,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(jwGeos),new THREE.MeshStandardMaterial({color:0x886644})));
+  // Palm trees on island
+  const pTGeos=[],pLGeos=[];const _pT=new THREE.CylinderGeometry(.12,.22,7,5);const _pL=new THREE.ConeGeometry(2.2,.7,5);
+  for(let i=0;i<15;i++){const px=cx-50+srand()*100,pz=cz-50+srand()*100;
+    const d=Math.sqrt((px-cx)**2+(pz-cz)**2);if(d>70)continue;
+    pTGeos.push(geoAt(_pT,px,baseH+3.5,pz,.1,srand()*6,0));
+    for(let l=0;l<4;l++){const la=l/4*Math.PI*2;
+      pLGeos.push(geoAt(_pL,px+Math.cos(la)*1.2,baseH+7.5,pz+Math.sin(la)*1.2,Math.PI/4,la,0))}}
+  if(pTGeos.length)scene.add(new THREE.Mesh(mergeGeometries(pTGeos),new THREE.MeshStandardMaterial({color:0x664422})));
+  if(pLGeos.length)scene.add(new THREE.Mesh(mergeGeometries(pLGeos),new THREE.MeshStandardMaterial({color:0x22aa44})));
+  // Hammocks (decorative)
+  const hamGeos=[];const _ham=new THREE.BoxGeometry(3,.05,1.2);
+  for(let i=0;i<6;i++){const hx=cx-30+srand()*60,hz=cz-30+srand()*60;
+    hamGeos.push(geoAt(_ham,hx,baseH+1.2,hz,-.1,srand()*Math.PI,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(hamGeos),new THREE.MeshStandardMaterial({color:0xee6633})));
+  // Coral shapes underwater
+  const coralGeos=[];const _coral=new THREE.ConeGeometry(.6,2,5);
+  const coralCols=[0xff4466,0xff8833,0xaa33ff,0xff33aa];
+  for(let c=0;c<4;c++){const batch=[];
+    for(let i=0;i<15;i++){const a=srand()*Math.PI*2,r=90+srand()*60;
+      batch.push(geoAt(_coral,cx+Math.cos(a)*r,baseH-1+srand(),cz+Math.sin(a)*r,srand()*.3,srand()*6,0))}
+    if(batch.length)scene.add(new THREE.Mesh(mergeGeometries(batch),new THREE.MeshStandardMaterial({color:coralCols[c],emissive:coralCols[c],emissiveIntensity:.3})))}
+  scene.add=_sa;scene.add(g);maldivesGroup=g;
+})();
+spawnV('jetski',3800,2250,0);spawnV('boat',3830,2250,.5);
+
+// ══════════════ AFRICAN SAFARI LODGE (-2200, -2600) ══════════════
+let safariGroup;
+(function buildSafari(){
+  const g=new THREE.Group();g.name='safari';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=-2200,cz=-2600,baseH=getH(cx,cz);
+  seedR(9402);
+  // Savanna ground
+  const savanna=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({color:0xc4a84a,roughness:1}));
+  savanna.rotation.x=-Math.PI/2;savanna.position.set(cx,baseH+.03,cz);scene.add(savanna);
+  // Dirt paths
+  const pathGeos=[];const _path=new THREE.PlaneGeometry(6,200);
+  pathGeos.push(geoAt(_path,cx,baseH+.05,cz,-Math.PI/2,0,0));
+  pathGeos.push(geoAt(_path,cx,baseH+.05,cz,-Math.PI/2,Math.PI/2,0));
+  scene.add(new THREE.Mesh(mergeGeometries(pathGeos),new THREE.MeshStandardMaterial({color:0x9a7a3a,roughness:1})));
+  // Safari lodge
+  const lodgeBody=box(25,4,15,0x885533);lodgeBody.position.set(cx,baseH+2,cz);scene.add(lodgeBody);
+  const lodgeRoof=box(28,1,18,0x554422);lodgeRoof.position.set(cx,baseH+4.5,cz);scene.add(lodgeRoof);
+  const lodgeDeck=box(30,.3,8,0x664422);lodgeDeck.position.set(cx,baseH+.2,cz+12);scene.add(lodgeDeck);
+  _addBldg({minX:cx-12,maxX:cx+12,minZ:cz-7,maxZ:cz+7,h:baseH+4});
+  // Observation deck (stilts)
+  const obsDeck=box(10,1,10,0x664422);obsDeck.position.set(cx+60,baseH+8,cz);scene.add(obsDeck);
+  const obsGeos=[];const _obsLeg=new THREE.CylinderGeometry(.15,.2,8,4);
+  for(const [ox,oz] of [[-4,-4],[4,-4],[-4,4],[4,4]])
+    obsGeos.push(geoAt(_obsLeg,cx+60+ox,baseH+4,cz+oz,0,0,0));
+  scene.add(new THREE.Mesh(mergeGeometries(obsGeos),new THREE.MeshStandardMaterial({color:0x554422})));
+  const obsRail=box(10,1,.2,0x664422);obsRail.position.set(cx+60,baseH+9,cz-5);scene.add(obsRail);
+  // Watering hole
+  const waterHole=new THREE.Mesh(new THREE.CircleGeometry(18,16),new THREE.MeshStandardMaterial({color:0x5588aa,transparent:true,opacity:.6}));
+  waterHole.rotation.x=-Math.PI/2;waterHole.position.set(cx-80,baseH+.06,cz+60);scene.add(waterHole);
+  const mud=new THREE.Mesh(new THREE.RingGeometry(18,25,16),new THREE.MeshStandardMaterial({color:0x7a6a3a}));
+  mud.rotation.x=-Math.PI/2;mud.position.set(cx-80,baseH+.04,cz+60);scene.add(mud);
+  // Acacia trees (flat umbrella canopy)
+  const aTGeos=[],aLGeos=[];const _aT=new THREE.CylinderGeometry(.15,.2,8,5);
+  const _aL=new THREE.CylinderGeometry(4,.5,.8,6);
+  for(let i=0;i<20;i++){const tx=cx-200+srand()*400,tz=cz-200+srand()*400;
+    aTGeos.push(geoAt(_aT,tx,baseH+4,tz,.05,srand()*6,0));
+    aLGeos.push(geoAt(_aL,tx,baseH+8.5,tz,0,srand()*6,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(aTGeos),new THREE.MeshStandardMaterial({color:0x665533})));
+  scene.add(new THREE.Mesh(mergeGeometries(aLGeos),new THREE.MeshStandardMaterial({color:0x558833})));
+  // Animal shapes (geometric/low-poly decorative)
+  // Elephants (box combos)
+  const aniGeos=[];
+  for(let i=0;i<3;i++){const ax=cx-60+srand()*40,az=cz+40+srand()*40;
+    aniGeos.push(geoAt(new THREE.BoxGeometry(3,2.5,4),ax,baseH+1.5,az,0,srand()*6,0));// body
+    aniGeos.push(geoAt(new THREE.BoxGeometry(1.5,1.5,1.5),ax+2,baseH+2.5,az,0,0,0));// head
+    aniGeos.push(geoAt(new THREE.CylinderGeometry(.2,.15,2,4),ax+2.8,baseH+1.5,az,Math.PI/4,0,0))}// trunk
+  scene.add(new THREE.Mesh(mergeGeometries(aniGeos),new THREE.MeshStandardMaterial({color:0x888888})));
+  // Giraffes
+  const girGeos=[];
+  for(let i=0;i<4;i++){const gx=cx+40+srand()*80,gz=cz-60+srand()*80;
+    girGeos.push(geoAt(new THREE.BoxGeometry(1.5,1.5,3),gx,baseH+3,gz,0,srand()*6,0));// body
+    girGeos.push(geoAt(new THREE.CylinderGeometry(.2,.25,4,4),gx+.8,baseH+5.5,gz,0,0,0));// neck
+    girGeos.push(geoAt(new THREE.BoxGeometry(.8,.6,.8),gx+.8,baseH+7.8,gz,0,0,0))}// head
+  scene.add(new THREE.Mesh(mergeGeometries(girGeos),new THREE.MeshStandardMaterial({color:0xcc9933})));
+  // Zebras
+  const zebGeos=[];
+  for(let i=0;i<5;i++){const zx=cx-120+srand()*60,zz=cz-40+srand()*60;
+    zebGeos.push(geoAt(new THREE.BoxGeometry(1.2,1.2,2.5),zx,baseH+1,zz,0,srand()*6,0));
+    zebGeos.push(geoAt(new THREE.BoxGeometry(.6,.8,.6),zx+1.3,baseH+1.8,zz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(zebGeos),new THREE.MeshStandardMaterial({color:0xeeeeee})));
+  // Campfire
+  const campfire=new THREE.Mesh(new THREE.ConeGeometry(.8,2,6),new THREE.MeshStandardMaterial({color:0xff6622,emissive:0xff4400,emissiveIntensity:3}));
+  campfire.position.set(cx,baseH+1,cz+18);scene.add(campfire);
+  const campLight=new THREE.PointLight(0xff6622,3,25);campLight.position.set(cx,baseH+2,cz+18);scene.add(campLight);
+  // Rocks around watering hole
+  const rkGeos=[];const _rk=new THREE.DodecahedronGeometry(1.2,0);
+  for(let i=0;i<12;i++){const a=srand()*Math.PI*2,r=20+srand()*8;
+    rkGeos.push(geoAt(_rk,cx-80+Math.cos(a)*r,baseH+.5,cz+60+Math.sin(a)*r,srand(),srand(),0,1+srand()*.5,1+srand()*.5,1+srand()*.5))}
+  scene.add(new THREE.Mesh(mergeGeometries(rkGeos),new THREE.MeshStandardMaterial({color:0x887766,roughness:.9})));
+  scene.add=_sa;scene.add(g);safariGroup=g;
+})();
+spawnV('atv',-2200,-2450,0);spawnV('horse',-2180,-2450,.3);spawnV('horse',-2220,-2450,-.3);
+
+// ══════════════ SANTORINI VILLAGE (1200, 3400) ══════════════
+let santoriniGroup;
+(function buildSantorini(){
+  const g=new THREE.Group();g.name='santorini';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=1200,cz=3400,baseH=getH(cx,cz);
+  seedR(9403);
+  // Cliff base
+  const cliff=box(200,25,80,0xd4c4a0);cliff.position.set(cx,baseH+12,cz);scene.add(cliff);
+  // White houses on cliff top (cascading)
+  const hGeos=[],rGeos=[],dGeos=[];
+  const _h=new THREE.BoxGeometry(5,4,5);const _r=new THREE.BoxGeometry(5.5,.4,5.5);const _dome=new THREE.SphereGeometry(2,8,6,0,Math.PI*2,0,Math.PI/2);
+  for(let i=0;i<25;i++){
+    const hx=cx-80+srand()*160,hz=cz-30+srand()*60;
+    const hy=baseH+25+srand()*4;
+    hGeos.push(geoAt(_h,hx,hy+2,hz,0,srand()*.3,0));
+    rGeos.push(geoAt(_r,hx,hy+4.2,hz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(hGeos),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.6})));
+  scene.add(new THREE.Mesh(mergeGeometries(rGeos),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.7})));
+  // Blue domed churches (iconic Santorini)
+  for(let i=0;i<4;i++){
+    const dx=cx-60+i*40,dz=cz-10;
+    const church=box(6,5,6,0xffffff);church.position.set(dx,baseH+27.5,dz);scene.add(church);
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(3.5,8,6,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x2255cc,roughness:.3}));
+    dome.position.set(dx,baseH+30,dz);scene.add(dome);
+    const cross=box(.15,1.5,.15,0xffffff);cross.position.set(dx,baseH+33.8,dz);scene.add(cross);
+    const crossArm=box(1,.15,.15,0xffffff);crossArm.position.set(dx,baseH+33.2,dz);scene.add(crossArm);
+    _addBldg({minX:dx-3,maxX:dx+3,minZ:dz-3,maxZ:dz+3,h:baseH+30})}
+  // Windmills
+  for(let i=0;i<3;i++){
+    const wx=cx+70+i*15,wz=cz+10;
+    const millBody=cyl(2,2.5,6,0xddccaa);millBody.position.set(wx,baseH+28,wz);scene.add(millBody);
+    const millCone=new THREE.Mesh(new THREE.ConeGeometry(2.5,2,8),new THREE.MeshStandardMaterial({color:0xbbaa88}));
+    millCone.position.set(wx,baseH+32,wz);scene.add(millCone);
+    // Blades
+    for(let b=0;b<4;b++){const ba=b/4*Math.PI*2;
+      const blade=box(.3,5,.05,0x886644);blade.position.set(wx+Math.cos(ba)*2.5,baseH+30+Math.sin(ba)*2.5,wz-2.6);scene.add(blade)}}
+  // Cobblestone paths
+  const cobble=new THREE.Mesh(new THREE.PlaneGeometry(160,8),new THREE.MeshStandardMaterial({color:0xccbbaa,roughness:.9}));
+  cobble.rotation.x=-Math.PI/2;cobble.position.set(cx,baseH+25.05,cz-5);scene.add(cobble);
+  // Stairways down the cliff
+  const stairGeos=[];const _stair=new THREE.BoxGeometry(4,.3,1);
+  for(let i=0;i<20;i++)stairGeos.push(geoAt(_stair,cx+80,baseH+25-i*1.2,cz+i*1.5,0,0,0));
+  scene.add(new THREE.Mesh(mergeGeometries(stairGeos),new THREE.MeshStandardMaterial({color:0xeeeeee})));
+  // Blue doors/shutters
+  const doorGeos=[];const _door=new THREE.PlaneGeometry(1,2);
+  for(let i=0;i<15;i++){const dx=cx-70+srand()*140,dz=cz-28;
+    doorGeos.push(geoAt(_door,dx,baseH+26,dz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(doorGeos),new THREE.MeshStandardMaterial({color:0x2255cc})));
+  // Bougainvillea flowers (bright pink/purple accents)
+  const flGeos=[];const _fl=new THREE.SphereGeometry(.4,4,4);
+  for(let i=0;i<40;i++){const fx=cx-80+srand()*160,fz=cz-30+srand()*50;
+    flGeos.push(geoAt(_fl,fx,baseH+25+srand()*5,fz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(flGeos),new THREE.MeshStandardMaterial({color:0xdd33aa,emissive:0xaa2288,emissiveIntensity:.5})));
+  // Boats at base of cliff
+  const boatGeos=[];const _bt=new THREE.BoxGeometry(2,1,4);
+  for(let i=0;i<5;i++){const bx=cx-40+i*20,bz=cz+45;
+    boatGeos.push(geoAt(_bt,bx,baseH-.2,bz,0,srand()*.5,0))}
+  const btColors=[0xdd4444,0x4444dd,0x44dd44,0xdddd44,0xdd8844];
+  for(let i=0;i<5;i++){if(boatGeos[i])scene.add(new THREE.Mesh(boatGeos[i],new THREE.MeshStandardMaterial({color:btColors[i]})))}
+  scene.add=_sa;scene.add(g);santoriniGroup=g;
+})();
+
+// ══════════════ VEGAS ENTERTAINMENT STRIP (-1800, -3200) ══════════════
+let vegasGroup;
+(function buildVegas(){
+  const g=new THREE.Group();g.name='vegas';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=-1800,cz=-3200,baseH=getH(cx,cz);
+  seedR(9404);
+  // Main strip road
+  const strip=new THREE.Mesh(new THREE.PlaneGeometry(300,20),new THREE.MeshStandardMaterial({color:0x333333,roughness:.7}));
+  strip.rotation.x=-Math.PI/2;strip.position.set(cx,baseH+.04,cz);scene.add(strip);
+  // Sidewalks
+  for(const side of [-12,12]){
+    const sw=new THREE.Mesh(new THREE.PlaneGeometry(300,6),new THREE.MeshStandardMaterial({color:0x999999}));
+    sw.rotation.x=-Math.PI/2;sw.position.set(cx,baseH+.05,cz+side);scene.add(sw)}
+  // Casino buildings (tall, colorful, neon)
+  const casinoData=[[cx-120,cz-25,40,20,35,0xcc8800],[cx-60,cz+25,35,18,45,0x8800cc],
+    [cx,cz-25,50,22,50,0xcc0044],[cx+60,cz+25,30,20,40,0x0088cc],
+    [cx+120,cz-25,45,18,38,0x00cc44],[cx-90,cz+25,35,20,30,0xcc4400]];
+  const casGeos=[];
+  for(const [bx,bz,bw,bd,bh,col] of casinoData){
+    const cas=box(bw,bh,bd,col);cas.position.set(bx,baseH+bh/2,bz);scene.add(cas);
+    _addBldg({minX:bx-bw/2,maxX:bx+bw/2,minZ:bz-bd/2,maxZ:bz+bd/2,h:baseH+bh});
+    // Neon sign on front
+    const sign=new THREE.Mesh(new THREE.PlaneGeometry(bw*.7,5),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:3}));
+    sign.position.set(bx,baseH+bh-5,bz+(bz>cz?-bd/2-.1:bd/2+.1));scene.add(sign)}
+  // Fountain plaza (center of strip)
+  const fountain=new THREE.Mesh(new THREE.CylinderGeometry(12,14,.8,16),new THREE.MeshStandardMaterial({color:0x888899,roughness:.3}));
+  fountain.position.set(cx,baseH+.4,cz);scene.add(fountain);
+  const ftnWater=new THREE.Mesh(new THREE.CircleGeometry(11,16),new THREE.MeshStandardMaterial({color:0x4488cc,transparent:true,opacity:.6}));
+  ftnWater.rotation.x=-Math.PI/2;ftnWater.position.set(cx,baseH+.9,cz);scene.add(ftnWater);
+  // Fountain jets (tall)
+  const jetGeos=[];const _jet=new THREE.CylinderGeometry(.08,.02,8,4);
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
+    jetGeos.push(geoAt(_jet,cx+Math.cos(a)*6,baseH+4.5,cz+Math.sin(a)*6,0,0,0))}
+  jetGeos.push(geoAt(new THREE.CylinderGeometry(.12,.03,12,4),cx,baseH+6.5,cz,0,0,0));
+  scene.add(new THREE.Mesh(mergeGeometries(jetGeos),new THREE.MeshStandardMaterial({color:0x88ccff,emissive:0x4488ff,emissiveIntensity:1.5,transparent:true,opacity:.6})));
+  // Neon palm trees (decorative light sculptures)
+  const neonGeos=[];const _neonTrunk=new THREE.CylinderGeometry(.15,.15,6,4);
+  for(let i=0;i<10;i++){const nx=cx-130+i*30,nz=cz+(i%2?16:-16);
+    neonGeos.push(geoAt(_neonTrunk,nx,baseH+3,nz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(neonGeos),new THREE.MeshStandardMaterial({color:0x00ff88,emissive:0x00cc66,emissiveIntensity:2})));
+  // Street lamps with neon
+  const lampGeos=[];const _lp=new THREE.CylinderGeometry(.06,.08,5,4);const _lh=new THREE.SphereGeometry(.25,4,4);
+  for(let i=0;i<20;i++){const lx=cx-140+i*15,lz=cz+(i%2?18:-18);
+    lampGeos.push(geoAt(_lp,lx,baseH+2.5,lz,0,0,0));
+    lampGeos.push(geoAt(_lh,lx,baseH+5.2,lz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(lampGeos),new THREE.MeshStandardMaterial({color:0xffee88,emissive:0xffcc44,emissiveIntensity:1.5})));
+  // Marquee arches over entrances
+  for(const [mx,mz] of [[cx-120,cz],[cx,cz],[cx+120,cz]]){
+    const archL=box(1,8,1,0xffdd00);archL.position.set(mx-5,baseH+4,mz);scene.add(archL);
+    const archR=box(1,8,1,0xffdd00);archR.position.set(mx+5,baseH+4,mz);scene.add(archR);
+    const archT=box(12,2,2,0xffdd00);archT.position.set(mx,baseH+8,mz);scene.add(archT);
+    const glow=new THREE.Mesh(new THREE.PlaneGeometry(10,1.5),new THREE.MeshStandardMaterial({color:0xff2266,emissive:0xff0044,emissiveIntensity:3}));
+    glow.position.set(mx,baseH+9.5,mz-.1);scene.add(glow)}
+  scene.add=_sa;scene.add(g);vegasGroup=g;
+})();
+spawnV('car',-1800,-3080,Math.PI);spawnV('car',-1780,-3080,Math.PI);
+
+// ══════════════ TROPICAL JUNGLE (-3800, -1400) ══════════════
+let jungleGroup;
+(function buildJungle(){
+  const g=new THREE.Group();g.name='jungle';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=-3800,cz=-1400,baseH=getH(cx,cz);
+  seedR(9405);
+  // Dense jungle floor
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshStandardMaterial({color:0x2a5a1a,roughness:1}));
+  floor.rotation.x=-Math.PI/2;floor.position.set(cx,baseH+.03,cz);scene.add(floor);
+  // Massive jungle trees (tall trunks + wide canopy)
+  const jTGeos=[],jLGeos=[],jDGeos=[];
+  const _jT=new THREE.CylinderGeometry(.3,.5,15,5);const _jL=new THREE.SphereGeometry(5,6,5);const _jD=new THREE.SphereGeometry(3.5,5,4);
+  for(let i=0;i<80;i++){const tx=cx-180+srand()*360,tz=cz-180+srand()*360;
+    jTGeos.push(geoAt(_jT,tx,baseH+7.5,tz,.05,srand()*6,0));
+    jLGeos.push(geoAt(_jL,tx+srand()*2,baseH+16+srand()*3,tz+srand()*2,0,srand()*6,0));
+    if(srand()>.5)jDGeos.push(geoAt(_jD,tx+srand()*3,baseH+12,tz+srand()*3,0,srand()*6,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(jTGeos),new THREE.MeshStandardMaterial({color:0x553322})));
+  scene.add(new THREE.Mesh(mergeGeometries(jLGeos),new THREE.MeshStandardMaterial({color:0x226622})));
+  if(jDGeos.length)scene.add(new THREE.Mesh(mergeGeometries(jDGeos),new THREE.MeshStandardMaterial({color:0x1a4a1a})));
+  // Treehouses (3 connected)
+  const thGeos=[];
+  for(const [tx,tz] of [[cx-40,cz-40],[cx+50,cz],[cx-20,cz+50]]){
+    // Platform
+    thGeos.push(geoAt(new THREE.BoxGeometry(8,.3,8),tx,baseH+12,tz,0,0,0));
+    // Walls
+    thGeos.push(geoAt(new THREE.BoxGeometry(8,3,.3),tx,baseH+13.5,tz-4,0,0,0));
+    thGeos.push(geoAt(new THREE.BoxGeometry(8,3,.3),tx,baseH+13.5,tz+4,0,0,0));
+    // Roof
+    thGeos.push(geoAt(new THREE.ConeGeometry(6,3,4),.01,0,0,tx,baseH+16,tz,0,Math.PI/4,0));
+    // Ladder
+    for(let r=0;r<8;r++)thGeos.push(geoAt(new THREE.BoxGeometry(.3,1.5,.05),tx+4.1,baseH+1+r*1.5,tz,0,0,0));
+    _addBldg({minX:tx-4,maxX:tx+4,minZ:tz-4,maxZ:tz+4,h:baseH+12})}
+  scene.add(new THREE.Mesh(mergeGeometries(thGeos),new THREE.MeshStandardMaterial({color:0x664422,roughness:.8})));
+  // Rope bridges between treehouses
+  const bridgePairs=[[[-40,-40],[50,0]],[[50,0],[-20,50]],[[-20,50],[-40,-40]]];
+  for(const [[x1,z1],[x2,z2]] of bridgePairs){
+    const pts=[new THREE.Vector3(cx+x1,baseH+12,cz+z1),new THREE.Vector3((cx+x1+cx+x2)/2,baseH+10,(cz+z1+cz+z2)/2),new THREE.Vector3(cx+x2,baseH+12,cz+z2)];
+    const curve=new THREE.CatmullRomCurve3(pts);
+    scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve,20,.15,4,false),new THREE.MeshStandardMaterial({color:0x886644})))}
+  // Jungle waterfall
+  const wfWall=box(3,15,20,0x556644);wfWall.position.set(cx+120,baseH+7.5,cz-80);scene.add(wfWall);
+  const wfWater=new THREE.Mesh(new THREE.PlaneGeometry(6,14),new THREE.MeshStandardMaterial({color:0x66bbdd,transparent:true,opacity:.5,emissive:0x2288aa,emissiveIntensity:.3}));
+  wfWater.position.set(cx+121.6,baseH+7,cz-80);scene.add(wfWater);
+  const wfPool=new THREE.Mesh(new THREE.CircleGeometry(8,12),new THREE.MeshStandardMaterial({color:0x44aacc,transparent:true,opacity:.5}));
+  wfPool.rotation.x=-Math.PI/2;wfPool.position.set(cx+122,baseH+.1,cz-80);scene.add(wfPool);
+  // Vines (hanging cylinders)
+  const vineGeos=[];const _vine=new THREE.CylinderGeometry(.03,.03,6,3);
+  for(let i=0;i<40;i++){const vx=cx-150+srand()*300,vz=cz-150+srand()*300;
+    vineGeos.push(geoAt(_vine,vx,baseH+13,vz,srand()*.3,0,srand()*.3))}
+  scene.add(new THREE.Mesh(mergeGeometries(vineGeos),new THREE.MeshStandardMaterial({color:0x336622})));
+  // Ferns and undergrowth
+  const fernGeos=[];const _fern=new THREE.ConeGeometry(1,.5,5);
+  for(let i=0;i<60;i++){const fx=cx-180+srand()*360,fz=cz-180+srand()*360;
+    fernGeos.push(geoAt(_fern,fx,baseH+.3,fz,0,srand()*6,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(fernGeos),new THREE.MeshStandardMaterial({color:0x33aa33})));
+  scene.add=_sa;scene.add(g);jungleGroup=g;
+})();
+spawnV('atv',-3800,-1200,0);
+
+// ══════════════ HOT SPRINGS SPA (2600, 2800) ══════════════
+let hotSpringsGroup;
+(function buildHotSprings(){
+  const g=new THREE.Group();g.name='hotsprings';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=2600,cz=2800,baseH=getH(cx,cz);
+  seedR(9406);
+  // Natural stone ground
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:0x8a7a6a,roughness:1}));
+  ground.rotation.x=-Math.PI/2;ground.position.set(cx,baseH+.03,cz);scene.add(ground);
+  // Hot spring pools (5 pools of different sizes)
+  const poolData=[[cx-40,cz-30,18],[cx+30,cz-50,14],[cx-60,cz+40,12],[cx+50,cz+30,16],[cx,cz+60,20]];
+  for(const [px,pz,pr] of poolData){
+    // Rock rim
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(pr,1.5,6,16),new THREE.MeshStandardMaterial({color:0x776655,roughness:.9}));
+    rim.rotation.x=Math.PI/2;rim.position.set(px,baseH+.5,pz);scene.add(rim);
+    // Pool floor
+    const pFloor=new THREE.Mesh(new THREE.CircleGeometry(pr-1,12),new THREE.MeshStandardMaterial({color:0x335566}));
+    pFloor.rotation.x=-Math.PI/2;pFloor.position.set(px,baseH-.5,pz);scene.add(pFloor);
+    // Steaming water surface
+    const pWater=new THREE.Mesh(new THREE.CircleGeometry(pr-1,12),new THREE.MeshStandardMaterial({color:0x55bbcc,transparent:true,opacity:.5,emissive:0x338899,emissiveIntensity:.3}));
+    pWater.rotation.x=-Math.PI/2;pWater.position.set(px,baseH+.15,pz);scene.add(pWater);
+    // Steam effect (vertical translucent cones)
+    const steamGeos=[];const _steam=new THREE.ConeGeometry(.5,3,4);
+    for(let s=0;s<5;s++){const sa=srand()*Math.PI*2,sr=srand()*pr*.6;
+      steamGeos.push(geoAt(_steam,px+Math.cos(sa)*sr,baseH+2,pz+Math.sin(sa)*sr,0,0,0))}
+    scene.add(new THREE.Mesh(mergeGeometries(steamGeos),new THREE.MeshStandardMaterial({color:0xdddddd,transparent:true,opacity:.2})))}
+  // Wooden walkways connecting pools
+  const wkGeos=[];const _wk=new THREE.BoxGeometry(3,.2,1);
+  const walkPairs=[[0,1],[1,3],[2,0],[3,4],[4,2]];
+  for(const [a,b] of walkPairs){const [ax,az]=poolData[a],bx=poolData[b][0],bz=poolData[b][1];
+    const dx=bx-ax,dz=bz-az,dist=Math.sqrt(dx*dx+dz*dz),ang=Math.atan2(dx,dz);
+    for(let s=0;s<dist;s+=1.5)wkGeos.push(geoAt(_wk,ax+dx*s/dist,baseH+.15,az+dz*s/dist,0,ang,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(wkGeos),new THREE.MeshStandardMaterial({color:0x886644,roughness:.8})));
+  // Spa building (traditional Japanese-style)
+  const spa=box(20,5,15,0x886644);spa.position.set(cx+80,baseH+2.5,cz);scene.add(spa);
+  const spaRoof=box(22,1,17,0x553322);spaRoof.position.set(cx+80,baseH+5.5,cz);scene.add(spaRoof);
+  _addBldg({minX:cx+70,maxX:cx+90,minZ:cz-7,maxZ:cz+7,h:baseH+5});
+  // Changing rooms
+  const chGeos=[];const _ch=new THREE.BoxGeometry(4,3,4);
+  for(let i=0;i<4;i++)chGeos.push(geoAt(_ch,cx+80+i*6-9,baseH+1.5,cz-12,0,0,0));
+  scene.add(new THREE.Mesh(mergeGeometries(chGeos),new THREE.MeshStandardMaterial({color:0x664433})));
+  // Rocks scattered
+  const hrkGeos=[];const _hrk=new THREE.DodecahedronGeometry(1,0);
+  for(let i=0;i<30;i++){const rx=cx-120+srand()*240,rz=cz-120+srand()*240;
+    hrkGeos.push(geoAt(_hrk,rx,baseH+.5,rz,srand(),srand(),0,1+srand(),1+srand()*.5,1+srand()))}
+  scene.add(new THREE.Mesh(mergeGeometries(hrkGeos),new THREE.MeshStandardMaterial({color:0x776655,roughness:1})));
+  // Pine trees
+  const hpTGeos=[],hpLGeos=[];const _hpT=new THREE.CylinderGeometry(.12,.18,6,4);const _hpL=new THREE.ConeGeometry(1.8,4,5);
+  for(let i=0;i<25;i++){const tx=cx-130+srand()*260,tz=cz-130+srand()*260;
+    hpTGeos.push(geoAt(_hpT,tx,baseH+3,tz,0,srand()*6,0));
+    hpLGeos.push(geoAt(_hpL,tx,baseH+7,tz,0,srand()*6,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(hpTGeos),new THREE.MeshStandardMaterial({color:0x553322})));
+  scene.add(new THREE.Mesh(mergeGeometries(hpLGeos),new THREE.MeshStandardMaterial({color:0x336633})));
+  // Stone lanterns
+  const lanGeos=[];
+  for(let i=0;i<8;i++){const lx=cx-80+srand()*160,lz=cz-80+srand()*160;
+    lanGeos.push(geoAt(new THREE.BoxGeometry(.6,.6,.6),lx,baseH+.3,lz,0,0,0));
+    lanGeos.push(geoAt(new THREE.CylinderGeometry(.15,.15,1.5,4),lx,baseH+1.3,lz,0,0,0));
+    lanGeos.push(geoAt(new THREE.BoxGeometry(.8,.3,.8),lx,baseH+2.2,lz,0,Math.PI/4,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(lanGeos),new THREE.MeshStandardMaterial({color:0x999988})));
+  scene.add=_sa;scene.add(g);hotSpringsGroup=g;
+})();
+
+// ══════════════ CRUISE SHIP PORT (4000, 0) ══════════════
+let cruiseGroup;
+(function buildCruise(){
+  const g=new THREE.Group();g.name='cruiseship';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=4000,cz=0,baseH=0;
+  seedR(9407);
+  // Port dock
+  const dock=box(120,.5,30,0x888888);dock.position.set(cx-20,baseH+.5,cz);scene.add(dock);
+  // MASSIVE cruise ship
+  const hull=box(30,12,120,0xeeeeee);hull.position.set(cx+40,baseH+4,cz);scene.add(hull);
+  // Ship hull bottom (darker)
+  const hullBot=box(28,5,118,0x222244);hullBot.position.set(cx+40,baseH-1,cz);scene.add(hullBot);
+  // Decks (stacked)
+  for(let d=0;d<5;d++){
+    const deck=box(26,.3,110,0xdddddd);deck.position.set(cx+40,baseH+10+d*4,cz);scene.add(deck);
+    // Deck railings
+    const rail=box(26,.5,.15,0xaaaaaa);rail.position.set(cx+40,baseH+11.2+d*4,cz-55);scene.add(rail);
+    const rail2=box(26,.5,.15,0xaaaaaa);rail2.position.set(cx+40,baseH+11.2+d*4,cz+55);scene.add(rail2)}
+  // Bridge (top deck, front)
+  const bridge=box(20,5,15,0x336699);bridge.position.set(cx+40,baseH+32.5,cz-40);scene.add(bridge);
+  // Bridge windows
+  const bWin=new THREE.Mesh(new THREE.PlaneGeometry(18,3),new THREE.MeshStandardMaterial({color:0x88ccff,emissive:0x4488cc,emissiveIntensity:1,transparent:true,opacity:.7}));
+  bWin.position.set(cx+25,baseH+33,cz-40);bWin.rotation.y=Math.PI/2;scene.add(bWin);
+  // Funnels (smokestacks)
+  const funnel1=cyl(2,2.5,10,0x2244aa);funnel1.position.set(cx+40,baseH+35,cz+10);scene.add(funnel1);
+  const funnel2=cyl(2,2.5,10,0x2244aa);funnel2.position.set(cx+40,baseH+35,cz+25);scene.add(funnel2);
+  // Red stripe on funnels
+  const fStripe1=cyl(2.1,2.6,2,0xcc2222);fStripe1.position.set(cx+40,baseH+38,cz+10);scene.add(fStripe1);
+  const fStripe2=cyl(2.1,2.6,2,0xcc2222);fStripe2.position.set(cx+40,baseH+38,cz+25);scene.add(fStripe2);
+  // Pool on top deck
+  const sPool=new THREE.Mesh(new THREE.PlaneGeometry(12,8),new THREE.MeshStandardMaterial({color:0x44bbee,transparent:true,opacity:.5}));
+  sPool.rotation.x=-Math.PI/2;sPool.position.set(cx+40,baseH+26.2,cz-10);scene.add(sPool);
+  // Ship bow (pointed front)
+  const bow=new THREE.Mesh(new THREE.ConeGeometry(8,20,4),new THREE.MeshStandardMaterial({color:0xeeeeee}));
+  bow.position.set(cx+40,baseH+4,cz-70);bow.rotation.x=Math.PI/2;bow.rotation.y=Math.PI/4;scene.add(bow);
+  // Gangway (boarding ramp)
+  const gangway=box(4,.3,20,0x888888);gangway.position.set(cx+20,baseH+5,cz);gangway.rotation.x=-.15;scene.add(gangway);
+  // Port buildings
+  const termGeos=[];
+  termGeos.push(geoAt(new THREE.BoxGeometry(30,6,20),cx-60,baseH+3,cz,0,0,0));
+  termGeos.push(geoAt(new THREE.BoxGeometry(20,5,15),cx-100,baseH+2.5,cz-20,0,0,0));
+  scene.add(new THREE.Mesh(mergeGeometries(termGeos),new THREE.MeshStandardMaterial({color:0xcccccc})));
+  _addBldg({minX:cx-75,maxX:cx-45,minZ:cz-10,maxZ:cz+10,h:baseH+6});
+  // Promenade with shops
+  const shopGeos=[];const _shop=new THREE.BoxGeometry(6,3,5);
+  for(let i=0;i<8;i++)shopGeos.push(geoAt(_shop,cx-80+i*12,baseH+1.5,cz+25,0,0,0));
+  scene.add(new THREE.Mesh(mergeGeometries(shopGeos),new THREE.MeshStandardMaterial({color:0xddbb88})));
+  // Bollards and rope
+  const bollGeos=[];const _boll=new THREE.CylinderGeometry(.2,.25,1,6);
+  for(let i=0;i<10;i++)bollGeos.push(geoAt(_boll,cx-70+i*10,baseH+.8,cz-13,0,0,0));
+  scene.add(new THREE.Mesh(mergeGeometries(bollGeos),new THREE.MeshStandardMaterial({color:0x444444,metalness:.5})));
+  // Ship cabin windows (rows of small lit rectangles)
+  const winGeos=[];const _shipWin=new THREE.PlaneGeometry(.8,.6);
+  for(let d=0;d<4;d++){for(let w=0;w<30;w++){
+    winGeos.push(geoAt(_shipWin,cx+25,baseH+11+d*4,cz-52+w*3.5,0,Math.PI/2,0))}}
+  scene.add(new THREE.Mesh(mergeGeometries(winGeos),new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffeeaa,emissiveIntensity:1})));
+  scene.add=_sa;scene.add(g);cruiseGroup=g;
+})();
+spawnV('boat',4000,-70,Math.PI);spawnV('jetski',3970,-70,Math.PI);
+
+// ══════════════ AMALFI COAST (3600, -2600) ══════════════
+let amalfiGroup;
+(function buildAmalfi(){
+  const g=new THREE.Group();g.name='amalfi';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=3600,cz=-2600,baseH=getH(cx,cz);
+  seedR(9408);
+  // Steep coastal cliff
+  const cliff=box(180,30,60,0xc4a484);cliff.position.set(cx,baseH+15,cz);scene.add(cliff);
+  // Colorful houses cascading down cliff
+  const houseColors=[0xff7744,0xffcc44,0xff5577,0xffaa66,0xdd6655,0xffee77,0xee8855,0xff9988,0xddaa55,0xffbb88,
+    0xff6666,0xffdd55,0xee7744,0xff8866,0xddcc66,0xffaa77,0xff9955,0xee6644,0xffbb55,0xdd8844,
+    0xff7755,0xffcc66,0xee9944,0xff6633,0xddbb44];
+  const ahGeos=[];
+  for(let i=0;i<25;i++){
+    const hx=cx-80+srand()*160,hz=cz-25+srand()*40;
+    const hy=baseH+30+srand()*5-Math.abs(hx-cx)*.05;
+    const hw=3+srand()*3,hh=3+srand()*3,hd=3+srand()*2;
+    const hGeo=new THREE.BoxGeometry(hw,hh,hd);
+    scene.add(new THREE.Mesh(geoAt(hGeo,hx,hy-hh/2,hz,0,srand()*.2,0),new THREE.MeshStandardMaterial({color:houseColors[i]})))}
+  // Church with tall bell tower
+  const church=box(8,6,8,0xeeeecc);church.position.set(cx,baseH+33,cz-5);scene.add(church);
+  const tower=box(4,15,4,0xeeeecc);tower.position.set(cx+6,baseH+37.5,cz-5);scene.add(tower);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(3,8,6,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x44aa77}));
+  dome.position.set(cx,baseH+36,cz-5);scene.add(dome);
+  _addBldg({minX:cx-4,maxX:cx+8,minZ:cz-9,maxZ:cz-1,h:baseH+36});
+  // Harbor with colorful boats
+  const harbor=new THREE.Mesh(new THREE.CircleGeometry(25,16,0,Math.PI),new THREE.MeshStandardMaterial({color:0x3388aa,transparent:true,opacity:.5}));
+  harbor.rotation.x=-Math.PI/2;harbor.position.set(cx,baseH-.1,cz+35);scene.add(harbor);
+  const harborWall=new THREE.Mesh(new THREE.TorusGeometry(25,1,4,16,Math.PI),new THREE.MeshStandardMaterial({color:0x888877}));
+  harborWall.rotation.x=Math.PI/2;harborWall.position.set(cx,baseH+.5,cz+35);scene.add(harborWall);
+  const btGeos=[];const _abt=new THREE.BoxGeometry(1.5,.8,3);
+  const btCols=[0xff4444,0x4488ff,0x44cc44,0xffff44,0xff8844,0xff44aa];
+  for(let i=0;i<6;i++){const batch=[];
+    batch.push(geoAt(_abt,cx-15+i*6,baseH+.2,cz+35+srand()*10,0,srand()*.5,0));
+    scene.add(new THREE.Mesh(mergeGeometries(batch),new THREE.MeshStandardMaterial({color:btCols[i]})))}
+  // Lemon trees (Amalfi is famous for lemons!)
+  const lTGeos=[],lLGeos=[],lemonGeos=[];
+  const _lT=new THREE.CylinderGeometry(.1,.15,4,4);const _lL=new THREE.SphereGeometry(1.5,5,4);const _lem=new THREE.SphereGeometry(.2,4,4);
+  for(let i=0;i<12;i++){const tx=cx-70+srand()*140,tz=cz-20+srand()*15;
+    lTGeos.push(geoAt(_lT,tx,baseH+32,tz,0,srand()*6,0));
+    lLGeos.push(geoAt(_lL,tx,baseH+35,tz,0,srand()*6,0));
+    for(let l=0;l<4;l++)lemonGeos.push(geoAt(_lem,tx+srand()*2-1,baseH+34.5+srand(),tz+srand()*2-1,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(lTGeos),new THREE.MeshStandardMaterial({color:0x553322})));
+  scene.add(new THREE.Mesh(mergeGeometries(lLGeos),new THREE.MeshStandardMaterial({color:0x337722})));
+  scene.add(new THREE.Mesh(mergeGeometries(lemonGeos),new THREE.MeshStandardMaterial({color:0xffee00,emissive:0xccaa00,emissiveIntensity:.3})));
+  // Winding coastal road
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(180,6),new THREE.MeshStandardMaterial({color:0x555555}));
+  road.rotation.x=-Math.PI/2;road.position.set(cx,baseH+30.05,cz+20);scene.add(road);
+  scene.add=_sa;scene.add(g);amalfiGroup=g;
+})();
+spawnV('scooter',3600,-2580,0);spawnV('car',3620,-2580,.3);
+
+// ══════════════ MACHU PICCHU (-2600, -3200) ══════════════
+let machuPicchuGroup;
+(function buildMachuPicchu(){
+  const g=new THREE.Group();g.name='machupicchu';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=-2600,cz=-3200,baseH=getH(cx,cz);
+  seedR(9409);
+  // Mountain base
+  const mountain=new THREE.Mesh(new THREE.ConeGeometry(120,80,8),new THREE.MeshStandardMaterial({color:0x668844,roughness:1}));
+  mountain.position.set(cx,baseH+40,cz);scene.add(mountain);
+  // Terraced platforms (iconic Inca terraces)
+  const terrGeos=[];
+  for(let t=0;t<10;t++){const tr=90-t*7,th=baseH+5+t*6;
+    terrGeos.push(geoAt(new THREE.CylinderGeometry(tr,tr+2,2,12),cx,th,cz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(terrGeos),new THREE.MeshStandardMaterial({color:0x779944,roughness:.9})));
+  // Stone walls on terraces
+  const wallGeos=[];
+  for(let t=0;t<10;t++){const tr=90-t*7,th=baseH+4+t*6;
+    const wall=new THREE.TorusGeometry(tr,.6,4,16);
+    wallGeos.push(geoAt(wall,cx,th,cz,Math.PI/2,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(wallGeos),new THREE.MeshStandardMaterial({color:0x998866,roughness:.9})));
+  // Main temple complex at top
+  const templeFloor=new THREE.Mesh(new THREE.PlaneGeometry(40,30),new THREE.MeshStandardMaterial({color:0xaa9977}));
+  templeFloor.rotation.x=-Math.PI/2;templeFloor.position.set(cx,baseH+62,cz);scene.add(templeFloor);
+  // Temple of the Sun (circular)
+  const sunTemple=new THREE.Mesh(new THREE.CylinderGeometry(6,7,5,12,1,true),new THREE.MeshStandardMaterial({color:0xbb9966,roughness:.8,side:THREE.DoubleSide}));
+  sunTemple.position.set(cx,baseH+64.5,cz);scene.add(sunTemple);
+  // Intihuatana stone (ritual stone)
+  const intiStone=box(2,3,2,0xaa8855);intiStone.position.set(cx-10,baseH+63.5,cz);scene.add(intiStone);
+  const intiTop=box(3,.5,3,0xbb9966);intiTop.position.set(cx-10,baseH+65,cz);scene.add(intiTop);
+  // Stone houses
+  const shGeos=[];const _sh=new THREE.BoxGeometry(5,3,4);const _shR=new THREE.BoxGeometry(5.5,.5,5);
+  for(let i=0;i<12;i++){const hx=cx-15+srand()*30,hz=cz-12+srand()*24;
+    shGeos.push(geoAt(_sh,hx,baseH+63.5,hz,0,srand()*.3,0));
+    shGeos.push(geoAt(_shR,hx,baseH+65.2,hz,.2,srand()*.1,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(shGeos),new THREE.MeshStandardMaterial({color:0x998866,roughness:.9})));
+  // Stairway up the mountain
+  const stGeos=[];const _st=new THREE.BoxGeometry(3,.3,1);
+  for(let i=0;i<50;i++){const a=(i/50)*Math.PI*1.5-Math.PI*.5;const r=90-i*1.2;
+    stGeos.push(geoAt(_st,cx+Math.cos(a)*r,baseH+5+i*1.15,cz+Math.sin(a)*r,0,a,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(stGeos),new THREE.MeshStandardMaterial({color:0xaa9977})));
+  // Llama shapes at various terraces
+  const llamaGeos=[];
+  for(let i=0;i<6;i++){const la=srand()*Math.PI*2,lr=40+srand()*30,lh=baseH+20+srand()*30;
+    const lx=cx+Math.cos(la)*lr,lz=cz+Math.sin(la)*lr;
+    llamaGeos.push(geoAt(new THREE.BoxGeometry(.8,.8,1.5),lx,lh+.6,lz,0,la,0));// body
+    llamaGeos.push(geoAt(new THREE.CylinderGeometry(.1,.12,1.5,4),lx+Math.cos(la)*.8,lh+1.5,lz+Math.sin(la)*.8,.3,0,0));// neck
+    llamaGeos.push(geoAt(new THREE.BoxGeometry(.4,.3,.4),lx+Math.cos(la)*1.2,lh+2.3,lz+Math.sin(la)*1.2,0,0,0))}// head
+  scene.add(new THREE.Mesh(mergeGeometries(llamaGeos),new THREE.MeshStandardMaterial({color:0xddccaa})));
+  // Mist/cloud effect at base
+  const mistGeos=[];const _mist=new THREE.SphereGeometry(8,5,4);
+  for(let i=0;i<8;i++){const mx=cx-60+srand()*120,mz=cz-60+srand()*120;
+    mistGeos.push(geoAt(_mist,mx,baseH+srand()*10,mz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(mistGeos),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.15})));
+  scene.add=_sa;scene.add(g);machuPicchuGroup=g;
+})();
+
+// ══════════════ DUBAI SKYLINE (-3600, 2800) ══════════════
+let dubaiGroup;
+(function buildDubai(){
+  const g=new THREE.Group();g.name='dubai';
+  const _sa=scene.add.bind(scene);scene.add=function(...a){g.add(...a)};
+  const cx=-3600,cz=2800,baseH=getH(cx,cz);
+  seedR(9410);
+  // Desert ground with golden tint
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshStandardMaterial({color:0xe0c880,roughness:.8}));
+  ground.rotation.x=-Math.PI/2;ground.position.set(cx,baseH+.03,cz);scene.add(ground);
+  // Ultra-tall tower (Burj Khalifa inspired) - tallest structure in game
+  const towerBase=box(12,80,12,0x88aacc);towerBase.position.set(cx,baseH+40,cz);scene.add(towerBase);
+  const towerMid=box(8,50,8,0x99bbdd);towerMid.position.set(cx,baseH+105,cz);scene.add(towerMid);
+  const towerTop=box(4,30,4,0xaaccee);towerTop.position.set(cx,baseH+145,cz);scene.add(towerTop);
+  const spire=cyl(.3,.05,20,4);spire.position.set(cx,baseH+170,cz);scene.add(spire);
+  const spireM=new THREE.MeshStandardMaterial({color:0xdddddd,metalness:.8});spire.material=spireM;
+  _addBldg({minX:cx-6,maxX:cx+6,minZ:cz-6,maxZ:cz+6,h:baseH+160});
+  // Surrounding luxury towers
+  const towerData=[[cx-50,cz-40,60,10],[cx+50,cz-30,55,8],[cx-40,cz+50,50,9],[cx+60,cz+40,45,8],
+    [cx-80,cz,40,7],[cx+80,cz+10,42,7],[cx-20,cz-60,48,9],[cx+30,cz+60,38,8]];
+  for(const [tx,tz,th,tw] of towerData){
+    const t=box(tw,th,tw,0x6699bb);t.position.set(tx,baseH+th/2,tz);scene.add(t);
+    _addBldg({minX:tx-tw/2,maxX:tx+tw/2,minZ:tz-tw/2,maxZ:tz+tw/2,h:baseH+th});
+    // Glass facade
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(tw-.5,th-2),new THREE.MeshStandardMaterial({color:0x88ccee,transparent:true,opacity:.3,metalness:.8}));
+    glass.position.set(tx-tw/2-.1,baseH+th/2,tz);glass.rotation.y=Math.PI/2;scene.add(glass)}
+  // Gold-accented mall
+  const mall=box(60,8,30,0xddaa44);mall.position.set(cx,baseH+4,cz-50);scene.add(mall);
+  const mallRoof=box(62,1,32,0xcc9933);mallRoof.position.set(cx,baseH+8.5,cz-50);scene.add(mallRoof);
+  _addBldg({minX:cx-30,maxX:cx+30,minZ:cz-65,maxZ:cz-35,h:baseH+8});
+  // Fountain show (Dubai Fountain)
+  const ftnPool=new THREE.Mesh(new THREE.PlaneGeometry(80,20),new THREE.MeshStandardMaterial({color:0x336688,transparent:true,opacity:.6}));
+  ftnPool.rotation.x=-Math.PI/2;ftnPool.position.set(cx,baseH+.1,cz+50);scene.add(ftnPool);
+  const ftnJetGeos=[];
+  for(let i=0;i<15;i++){const h=10+Math.sin(i*.5)*8;
+    ftnJetGeos.push(geoAt(new THREE.CylinderGeometry(.05,.02,h,3),cx-35+i*5,baseH+h/2+.2,cz+50,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(ftnJetGeos),new THREE.MeshStandardMaterial({color:0x88ddff,emissive:0x44aadd,emissiveIntensity:2,transparent:true,opacity:.6})));
+  // Palm-shaped island (Palm Jumeirah reference)
+  const palmIsland=new THREE.Mesh(new THREE.CircleGeometry(40,16),new THREE.MeshStandardMaterial({color:0xe8d4a0}));
+  palmIsland.rotation.x=-Math.PI/2;palmIsland.position.set(cx+140,baseH+.15,cz);scene.add(palmIsland);
+  // Palm fronds (wedge shapes radiating from center)
+  const frondGeos=[];
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
+    frondGeos.push(geoAt(new THREE.BoxGeometry(3,.2,25),cx+140+Math.cos(a)*20,baseH+.2,cz+Math.sin(a)*20,0,a,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(frondGeos),new THREE.MeshStandardMaterial({color:0xe0c890})));
+  // Luxury villas on palm island
+  const villaGeos=[];const _villa=new THREE.BoxGeometry(4,2,4);
+  for(let i=0;i<12;i++){const a=i/12*Math.PI*2,r=30;
+    villaGeos.push(geoAt(_villa,cx+140+Math.cos(a)*r,baseH+1.2,cz+Math.sin(a)*r,0,a,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(villaGeos),new THREE.MeshStandardMaterial({color:0xffeedd})));
+  // Street of gold-tinted lamps
+  const dlGeos=[];const _dl=new THREE.CylinderGeometry(.06,.08,8,4);const _dlH=new THREE.SphereGeometry(.3,4,4);
+  for(let i=0;i<12;i++){const lx=cx-55+i*10,lz=cz-35;
+    dlGeos.push(geoAt(_dl,lx,baseH+4,lz,0,0,0));
+    dlGeos.push(geoAt(_dlH,lx,baseH+8.2,lz,0,0,0))}
+  scene.add(new THREE.Mesh(mergeGeometries(dlGeos),new THREE.MeshStandardMaterial({color:0xddaa44,emissive:0xcc9933,emissiveIntensity:1})));
+  scene.add=_sa;scene.add(g);dubaiGroup=g;
+})();
+spawnV('car',-3600,2650,0);spawnV('car',-3580,2650,.2);spawnV('motorcycle',-3560,2650,0);
+
 // ══════════════ NPC SPAWNS ══════════════
 seedR(4444);
 for(let i=0;i<25;i++){const x=-CH+BK*3+srand()*(CS-BK*6),z=-CH+BK*3+srand()*(CS-BK*6);
@@ -8172,6 +8788,16 @@ function update(dt){
   if(cliffsGroup){const d=Math.abs(P.x-3000)+Math.abs(P.z+600);cliffsGroup.visible=d<2200;}
   if(bambooGroup){const d=Math.abs(P.x+3000)+Math.abs(P.z-1800);bambooGroup.visible=d<2200;}
   if(dragstripGroup){const d=Math.abs(P.x-3200)+Math.abs(P.z+1800);dragstripGroup.visible=d<2200;}
+  if(maldivesGroup){const d=Math.abs(P.x-3800)+Math.abs(P.z-2400);maldivesGroup.visible=d<2200;}
+  if(safariGroup){const d=Math.abs(P.x+2200)+Math.abs(P.z+2600);safariGroup.visible=d<2200;}
+  if(santoriniGroup){const d=Math.abs(P.x-1200)+Math.abs(P.z-3400);santoriniGroup.visible=d<2200;}
+  if(vegasGroup){const d=Math.abs(P.x+1800)+Math.abs(P.z+3200);vegasGroup.visible=d<2200;}
+  if(jungleGroup){const d=Math.abs(P.x+3800)+Math.abs(P.z+1400);jungleGroup.visible=d<2200;}
+  if(hotSpringsGroup){const d=Math.abs(P.x-2600)+Math.abs(P.z-2800);hotSpringsGroup.visible=d<2200;}
+  if(cruiseGroup){const d=Math.abs(P.x-4000)+Math.abs(P.z);cruiseGroup.visible=d<2200;}
+  if(amalfiGroup){const d=Math.abs(P.x-3600)+Math.abs(P.z+2600);amalfiGroup.visible=d<2200;}
+  if(machuPicchuGroup){const d=Math.abs(P.x+2600)+Math.abs(P.z+3200);machuPicchuGroup.visible=d<2200;}
+  if(dubaiGroup){const d=Math.abs(P.x+3600)+Math.abs(P.z-2800);dubaiGroup.visible=d<2200;}
   if(window._riverMat)window._riverMat.uniforms.time.value=clock.elapsedTime;
 
   // ═══ HUD ═══
