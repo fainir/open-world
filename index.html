@@ -6050,16 +6050,16 @@ function update(dt){
     if(pt==='ground'||pt==='wearable'||pt==='snow'){
       P.x+=moveX;P.z+=moveZ;
       const gh=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
-      // Building collision — wall sliding (try each axis separately)
-      const bl=colBldg(P.x,P.z,1);
+      // Building collision — height-aware wall sliding (allows rooftop driving)
+      const bl=colBldgY(P.x,P.z,P.y,1);
       if(bl){
         P.x-=moveX;P.z-=moveZ;
         // Try sliding along X only
         P.x+=moveX;
-        if(colBldg(P.x,P.z,1)){P.x-=moveX}else{v.speed*=.85}
+        if(colBldgY(P.x,P.z,P.y,1)){P.x-=moveX}else{v.speed*=.85}
         // Try sliding along Z only
         P.z+=moveZ;
-        if(colBldg(P.x,P.z,1)){P.z-=moveZ;v.speed*=.85}
+        if(colBldgY(P.x,P.z,P.y,1)){P.z-=moveZ;v.speed*=.85}
       }
       // Snow check
       if(pt==='snow'&&!isOnSnow(P.x,P.z)){v.speed*=.95;if(v.speed<1)showTip('Need snow!')}
