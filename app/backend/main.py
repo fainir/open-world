@@ -1,8 +1,11 @@
 import os
+import re
 import uuid
 import asyncio
 import functools
 from typing import Optional
+
+import rjsmin
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
@@ -446,6 +449,26 @@ def _inject_overlay(game_html: str) -> str:
     return game_html + f"\n{overlay}"
 
 
+_INLINE_SCRIPT_RE = re.compile(r"<script((?:(?!src=)[^>])*)>(.*?)</script>", re.DOTALL)
+
+
+def _obfuscate_html(html: str) -> str:
+    """Minify inline JS in HTML so source code is not easily readable."""
+
+    def _minify_script(match: re.Match) -> str:
+        attrs = match.group(1)
+        content = match.group(2)
+        if not content.strip():
+            return match.group(0)
+        try:
+            minified = rjsmin.jsmin(content)
+            return f"<script{attrs}>{minified}</script>"
+        except Exception:
+            return match.group(0)
+
+    return _INLINE_SCRIPT_RE.sub(_minify_script, html)
+
+
 @app.get("/")
 def serve_home():
     """Serve the base game with studio overlay (no iframe)."""
@@ -454,7 +477,7 @@ def serve_home():
         raise HTTPException(status_code=404, detail="Base game not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return HTMLResponse(_inject_overlay(game_html))
+    return HTMLResponse(_inject_overlay(_obfuscate_html(game_html)))
 
 
 @app.get("/v/{version_id}")
@@ -465,7 +488,7 @@ def serve_version_with_overlay(version_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Version not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return HTMLResponse(_inject_overlay(game_html))
+    return HTMLResponse(_inject_overlay(_obfuscate_html(game_html)))
 
 
 @app.get("/admin")
@@ -488,7 +511,9 @@ def shared_page(share_slug: str, db: Session = Depends(get_db)):
     path = os.path.join(VERSIONS_DIR, version.file_path)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Game file not found")
-    return FileResponse(path, media_type="text/html")
+    with open(path, "r", encoding="utf-8") as f:
+        game_html = f.read()
+    return HTMLResponse(_obfuscate_html(game_html))
 
 
 @app.get("/{path:path}")
