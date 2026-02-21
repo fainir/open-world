@@ -325,7 +325,7 @@ const emptyLots=[],enterableSpots=[];
 for(let bx=-CH+ST;bx<CH-ST;bx+=BK)for(let bz=-CH+ST;bz<CH-ST;bz+=BK){
   const cx=bx+(BK-ST)/2,cz=bz+(BK-ST)/2;
   // Exclude buildings from F1 racing circuit area (COTA-sized) and lake area
-  if(cx>380&&cz>680){srand();continue}
+  if(cx>240&&cz>680){srand();continue}
   if(cx>90&&cx<290&&cz>670){srand();continue}
   if(srand()<.14){emptyLots.push({cx,cz,bx,bz});continue}
   const dist=Math.sqrt(bx*bx+bz*bz)/CH,maxH=lerp(160,12,Math.pow(dist,.55));
@@ -2402,7 +2402,7 @@ let sportsGroup;
 // ══════════════ F1 RACING CIRCUIT — COTA-inspired (east of sports) ══════════════
 let raceCarMeshes=[];
 (function buildRacingCircuit(){
-  const RX=640,RZ=900;
+  const RX=500,RZ=900;
   const trkM=new THREE.MeshStandardMaterial({color:0x2a2a2a,roughness:.4});
   const kerbRedM=new THREE.MeshStandardMaterial({color:0xcc0000});
   const kerbWhM=new THREE.MeshStandardMaterial({color:0xffffff});
@@ -6328,7 +6328,7 @@ function update(dt){
   if(window._lakeMat){const lDist=Math.abs(P.x-190)+Math.abs(P.z-850);if(lDist<400)window._lakeMat.uniforms.time.value=clock.elapsedTime}
   // F1 racing circuit NPC cars (spline-following)
   if(raceCarMeshes.length&&window._f1Curve){
-    const rcDist=Math.abs(P.x-(window._f1RX||640))+Math.abs(P.z-(window._f1RZ||900));
+    const rcDist=Math.abs(P.x-(window._f1RX||500))+Math.abs(P.z-(window._f1RZ||900));
     if(rcDist<600){const crv=window._f1Curve;
       for(const rc of raceCarMeshes){
         rc.t=(rc.t+rc.speed*dt)%1;
