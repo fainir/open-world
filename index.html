@@ -8,7 +8,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif}
 canvas{display:block}
-#overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;cursor:pointer;background:linear-gradient(135deg,#050a1e 0%,#0a1530 40%,#0f1a3a 100%)}
+#overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;cursor:pointer;background:rgba(5,10,30,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 #overlay h1{font-size:2.6em;letter-spacing:0.3em;margin-bottom:0.15em;background:linear-gradient(90deg,#fff,#88ccff,#ffaa44);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #overlay .sub{font-size:1.1em;opacity:0.6;margin-bottom:1.2em}
 #overlay .click{font-size:1.3em;color:#fff;animation:pulse 2s infinite}
@@ -215,26 +215,26 @@ const canvas=document.getElementById('game');
 const R=new THREE.WebGLRenderer({canvas,antialias:true});
 R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,1));
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
-R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=0.9;
-const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x88bbdd,0.00045);
+R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.2;
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0xb0d4ee,0.00040);
 const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.5,2500);
 
 // ══════════════ SKY ══════════════
 const sunDir=new THREE.Vector3(0.45,0.55,-0.3).normalize();
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(5000,16,10),new THREE.ShaderMaterial({
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(2400,16,10),new THREE.ShaderMaterial({
 uniforms:{sunDir:{value:sunDir}},side:THREE.BackSide,depthWrite:false,
 vertexShader:`varying vec3 vD;void main(){vD=normalize((modelMatrix*vec4(position,1.0)).xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-fragmentShader:`uniform vec3 sunDir;varying vec3 vD;void main(){vec3 d=normalize(vD);float y=d.y;vec3 top=vec3(0.12,0.32,0.78),mid=vec3(0.38,0.62,0.92),hor=vec3(0.72,0.82,0.92);vec3 col=y>0.0?mix(hor,mix(mid,top,pow(y,0.45)),smoothstep(0.0,0.35,y)):mix(hor,vec3(0.25,0.35,0.5),min(-y*2.0,1.0));float sd=dot(d,sunDir);col+=vec3(1,0.95,0.8)*pow(max(sd,0.0),900.0)*3.0;col+=vec3(1,0.85,0.5)*pow(max(sd,0.0),80.0)*0.5;col+=vec3(1,0.7,0.3)*pow(max(sd,0.0),8.0)*0.12;col=mix(col,vec3(0.9,0.85,0.78),pow(1.0-abs(y),10.0)*0.5);gl_FragColor=vec4(col,1);}`
+fragmentShader:`uniform vec3 sunDir;varying vec3 vD;void main(){vec3 d=normalize(vD);float y=d.y;vec3 top=vec3(0.28,0.52,0.92),mid=vec3(0.50,0.72,0.96),hor=vec3(0.78,0.88,0.96);vec3 col=y>0.0?mix(hor,mix(mid,top,pow(y,0.5)),smoothstep(0.0,0.4,y)):mix(hor,vec3(0.45,0.55,0.7),min(-y*2.0,1.0));float sd=dot(d,sunDir);col+=vec3(1,0.95,0.8)*pow(max(sd,0.0),900.0)*3.0;col+=vec3(1,0.85,0.5)*pow(max(sd,0.0),80.0)*0.5;col+=vec3(1,0.7,0.3)*pow(max(sd,0.0),8.0)*0.12;col=mix(col,vec3(0.95,0.92,0.86),pow(1.0-abs(y),10.0)*0.5);gl_FragColor=vec4(col,1);}`
 })));
 
 // ══════════════ LIGHTING ══════════════
-const sun=new THREE.DirectionalLight(0xffeedd,2.5);
+const sun=new THREE.DirectionalLight(0xffeedd,3.0);
 sun.position.copy(sunDir).multiplyScalar(500);sun.castShadow=true;
 sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.near=1;sun.shadow.camera.far=400;
 [-100,100,-100,100].forEach((v,i)=>sun.shadow.camera[['left','right','top','bottom'][i]]=v);
 sun.shadow.bias=-0.002;scene.add(sun,sun.target);
-scene.add(new THREE.AmbientLight(0x667788,1.2));
-scene.add(new THREE.HemisphereLight(0x88bbff,0x556633,0.8));
+scene.add(new THREE.AmbientLight(0x88aacc,1.5));
+scene.add(new THREE.HemisphereLight(0x99ccff,0x88aa66,1.0));
 
 // ══════════════ TERRAIN ══════════════
 function getH(x,z){
