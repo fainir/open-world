@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.backend.database import get_db, init_db
-from app.backend.models import User, ChatSession, ChatMessage, GameVersion
+from app.backend.models import User, ChatSession, ChatMessage, GameVersion, ContactMessage
 from app.backend.auth import (
     SignupRequest, LoginRequest, TokenResponse,
     signup, login, get_current_user_optional, get_current_user_required,
@@ -65,6 +65,12 @@ class ChatRequest(BaseModel):
 
 class VersionIdRequest(BaseModel):
     version_id: str
+
+
+class ContactRequest(BaseModel):
+    name: str
+    email: str
+    message: str
 
 
 # ── Auth routes ──
@@ -357,6 +363,44 @@ def api_admin_decline(
     return {"status": "declined", "version_id": version.id}
 
 
+# ── Contact routes ──
+
+@app.post("/api/contact")
+def api_contact(req: ContactRequest, db: Session = Depends(get_db)):
+    if not req.name.strip() or not req.email.strip() or not req.message.strip():
+        raise HTTPException(status_code=400, detail="All fields are required")
+    msg = ContactMessage(name=req.name.strip(), email=req.email.strip(), message=req.message.strip())
+    db.add(msg)
+    db.commit()
+    return {"status": "ok"}
+
+
+@app.get("/api/admin/contacts")
+def api_admin_contacts(db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    messages = db.query(ContactMessage).order_by(ContactMessage.created_at.desc()).all()
+    return [
+        {
+            "id": m.id,
+            "name": m.name,
+            "email": m.email,
+            "message": m.message,
+            "is_read": m.is_read,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in messages
+    ]
+
+
+@app.post("/api/admin/contacts/{contact_id}/read")
+def api_admin_mark_read(contact_id: str, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    msg = db.query(ContactMessage).filter(ContactMessage.id == contact_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_read = True
+    db.commit()
+    return {"status": "ok"}
+
+
 # ── Game file serving ──
 
 @app.get("/game/base")
@@ -496,6 +540,13 @@ def admin_page():
     """Serve the admin panel."""
     admin_path = os.path.join(STATIC_DIR, "admin.html")
     return FileResponse(admin_path, media_type="text/html")
+
+
+@app.get("/contact")
+def contact_page():
+    """Serve the contact page."""
+    contact_path = os.path.join(STATIC_DIR, "contact.html")
+    return FileResponse(contact_path, media_type="text/html")
 
 
 @app.get("/shared/{share_slug}")

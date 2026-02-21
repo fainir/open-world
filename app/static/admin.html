@@ -26,8 +26,17 @@
     </div>
   </header>
 
+  <!-- Nav Tabs -->
+  <div id="nav-tabs" style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg-secondary);padding:0 24px">
+    <button class="nav-tab active" onclick="switchTab('versions',this)" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">Versions</button>
+    <button class="nav-tab" onclick="switchTab('contacts',this)" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">Contact Messages <span id="unread-badge" style="background:var(--error);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></button>
+  </div>
+
   <!-- Main Content -->
   <div id="admin-content">
+
+    <!-- VERSIONS TAB -->
+    <div id="tab-versions">
     <!-- Stats Bar -->
     <div id="stats-bar">
       <div class="stat-card">
@@ -73,6 +82,20 @@
       </div>
       <div id="suggestions-list"></div>
     </div>
+    </div><!-- /tab-versions -->
+
+    <!-- CONTACTS TAB -->
+    <div id="tab-contacts" style="display:none">
+      <div id="contacts-loading" class="admin-loading">
+        <div class="spinner"></div>
+        <span>Loading messages...</span>
+      </div>
+      <div id="contacts-empty" class="empty-state" style="display:none">
+        <p>No contact messages yet.</p>
+      </div>
+      <div id="contacts-list"></div>
+    </div>
+
   </div>
 </div>
 
@@ -93,10 +116,25 @@
 
 let allVersions = [];
 let currentFilter = 'all';
+let contactMessages = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAdminAuth();
 });
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.style.borderBottomColor = 'transparent';
+    t.style.color = 'var(--text-secondary)';
+    t.classList.remove('active');
+  });
+  btn.style.borderBottomColor = 'var(--accent)';
+  btn.style.color = 'var(--accent)';
+  btn.classList.add('active');
+  document.getElementById('tab-versions').style.display = tab === 'versions' ? '' : 'none';
+  document.getElementById('tab-contacts').style.display = tab === 'contacts' ? '' : 'none';
+  if (tab === 'contacts') loadContacts();
+}
 
 async function checkAdminAuth() {
   if (!Auth.isLoggedIn()) {
@@ -106,6 +144,7 @@ async function checkAdminAuth() {
   const user = Auth.getUser();
   document.getElementById('admin-username').textContent = user ? user.username : 'Admin';
   loadVersions();
+  loadUnreadCount();
 }
 
 async function loadVersions() {
@@ -289,6 +328,99 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ── CONTACTS ──
+
+async function loadContacts() {
+  document.getElementById('contacts-loading').style.display = 'flex';
+  document.getElementById('contacts-empty').style.display = 'none';
+  document.getElementById('contacts-list').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/admin/contacts', { headers: Auth.authHeaders() });
+    if (!res.ok) throw new Error('Failed to load contacts');
+    contactMessages = await res.json();
+    renderContacts();
+    updateUnreadBadge();
+  } catch (err) {
+    document.getElementById('contacts-loading').style.display = 'none';
+    document.getElementById('contacts-list').innerHTML =
+      `<div class="admin-error">Error: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function updateUnreadBadge() {
+  const unread = contactMessages.filter(m => !m.is_read).length;
+  const badge = document.getElementById('unread-badge');
+  if (unread > 0) {
+    badge.textContent = unread;
+    badge.style.display = 'inline';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderContacts() {
+  document.getElementById('contacts-loading').style.display = 'none';
+  const list = document.getElementById('contacts-list');
+
+  if (contactMessages.length === 0) {
+    document.getElementById('contacts-empty').style.display = 'block';
+    return;
+  }
+
+  list.innerHTML = contactMessages.map(m => {
+    const time = m.created_at ? new Date(m.created_at).toLocaleString() : '';
+    const unreadStyle = m.is_read ? 'opacity:0.6' : 'border-left:3px solid var(--accent)';
+    return `
+      <div class="suggestion-card" style="${unreadStyle}" data-contact-id="${m.id}">
+        <div class="suggestion-header">
+          <div class="suggestion-meta">
+            <span class="suggestion-user">${escapeHtml(m.name)}</span>
+            <a href="mailto:${escapeHtml(m.email)}" style="color:var(--accent);text-decoration:none;font-size:13px">${escapeHtml(m.email)}</a>
+            ${!m.is_read ? '<span class="suggestion-status status-pending">new</span>' : ''}
+          </div>
+          <span class="suggestion-time">${time}</span>
+        </div>
+        <div class="suggestion-desc">
+          <div class="prompt-text">${escapeHtml(m.message)}</div>
+        </div>
+        ${!m.is_read ? `
+        <div class="suggestion-footer">
+          <div class="suggestion-actions">
+            <button class="btn btn-outline btn-sm" onclick="markRead('${m.id}', this)">Mark as Read</button>
+          </div>
+        </div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+async function markRead(contactId, btn) {
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    await fetch(`/api/admin/contacts/${contactId}/read`, {
+      method: 'POST',
+      headers: Auth.authHeaders(),
+    });
+    await loadContacts();
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Mark as Read';
+  }
+}
+
+// Load unread count on page load
+async function loadUnreadCount() {
+  try {
+    const res = await fetch('/api/admin/contacts', { headers: Auth.authHeaders() });
+    if (res.ok) {
+      contactMessages = await res.json();
+      updateUnreadBadge();
+    }
+  } catch (e) {}
 }
 </script>
 </body>
