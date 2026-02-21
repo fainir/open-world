@@ -48,11 +48,16 @@ def healthz():
 
 # ── Pydantic schemas ──
 
+class ImageData(BaseModel):
+    data: str  # base64
+    media_type: str = "image/png"
+
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     current_version_id: Optional[str] = None
     api_key: str
+    image: Optional[ImageData] = None
 
 
 class VersionIdRequest(BaseModel):
@@ -133,9 +138,14 @@ async def api_chat(
             current_path = os.path.join(VERSIONS_DIR, latest_version.file_path)
             parent_version_id = latest_version.id
 
+    # Prepare image data if provided
+    image_data = None
+    if req.image:
+        image_data = {"data": req.image.data, "media_type": req.image.media_type}
+
     # Run agent in thread to not block the event loop
     result = await asyncio.to_thread(
-        run_agent, req.api_key, req.message, session, db, current_path, parent_version_id
+        run_agent, req.api_key, req.message, session, db, current_path, parent_version_id, image_data
     )
 
     if result.get("error"):
