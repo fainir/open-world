@@ -50,6 +50,7 @@
 .ow-example:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#d0d4dc}
 
 .ow-msg{display:flex;flex-direction:column;gap:4px}
+.ow-msg-user{align-items:flex-end}
 .ow-msg-user .ow-bubble{background:rgba(255,255,255,.08);border-radius:12px 12px 4px 12px;align-self:flex-end;
   padding:8px 14px;max-width:85%;word-wrap:break-word;font-size:13px;line-height:1.5}
 .ow-msg-assistant .ow-bubble{background:rgba(255,255,255,.04);border-radius:12px 12px 12px 4px;align-self:flex-start;
@@ -75,7 +76,16 @@
 .ow-sugg:hover{background:rgba(255,255,255,.1);color:#d0d4dc}
 
 .ow-input-area{padding:12px 16px;border-top:1px solid rgba(80,90,110,.3);flex-shrink:0}
+#ow-img-preview{display:none;padding:0 0 8px;position:relative}
+#ow-img-preview img{max-width:120px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+#ow-img-preview .ow-img-remove{position:absolute;top:-4px;left:112px;width:18px;height:18px;border-radius:50%;
+  background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;line-height:1}
 .ow-input-row{display:flex;gap:8px;align-items:flex-end}
+#ow-img-btn{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:#9ca3af;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;padding:0}
+#ow-img-btn:hover{background:rgba(255,255,255,.12);color:#e8ecf0}
+#ow-img-btn svg{width:16px;height:16px}
 #ow-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;
   color:#d0d4dc;padding:9px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;
   max-height:100px;line-height:1.4}
@@ -190,7 +200,10 @@
       <div id="ow-sugg-list"></div>
     </div>
     <div class="ow-input-area">
+      <div id="ow-img-preview"><img id="ow-img-thumb" src="" alt=""><button class="ow-img-remove" id="ow-img-remove">&times;</button></div>
       <div class="ow-input-row">
+        <button id="ow-img-btn" title="Attach image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <input type="file" id="ow-img-file" accept="image/*" style="display:none">
         <textarea id="ow-input" rows="1" placeholder="Describe a change..."></textarea>
         <button id="ow-send" title="Send">&#9654;</button>
       </div>
@@ -294,6 +307,8 @@ let currentVersionId=localStorage.getItem(SK.VERSION);
 let panelOpen=false;
 let isProcessing=false;
 let pendingVersionUrl=null;
+let pendingImageB64=null;
+let pendingImageType=null;
 const PANEL_W=300;
 
 // ── Override innerWidth so game renderer uses correct size ──
@@ -377,6 +392,24 @@ input.addEventListener('input',()=>{input.style.height='auto';input.style.height
 
 sendBtn.onclick=sendMessage;
 
+// ── Image upload ──
+const imgBtn=$('ow-img-btn'),imgFile=$('ow-img-file'),imgPreview=$('ow-img-preview'),imgThumb=$('ow-img-thumb');
+imgBtn.onclick=()=>imgFile.click();
+imgFile.onchange=()=>{
+  const file=imgFile.files[0];if(!file)return;
+  if(file.size>10*1024*1024){showToast('Image too large (max 10MB)');imgFile.value='';return}
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const dataUrl=reader.result;
+    pendingImageB64=dataUrl.split(',')[1];
+    pendingImageType=file.type||'image/png';
+    imgThumb.src=dataUrl;
+    imgPreview.style.display='block';
+  };
+  reader.readAsDataURL(file);
+};
+$('ow-img-remove').onclick=()=>{pendingImageB64=null;pendingImageType=null;imgPreview.style.display='none';imgFile.value='';};
+
 async function sendMessage(){
   const message=input.value.trim();
   if(!message||isProcessing)return;
@@ -386,7 +419,13 @@ async function sendMessage(){
 
   const w=$('ow-welcome');if(w)w.remove();
 
-  addMsg('user',message);
+  // Capture and clear pending image
+  const imgB64=pendingImageB64;
+  const imgType=pendingImageType;
+  pendingImageB64=null;pendingImageType=null;
+  imgPreview.style.display='none';imgFile.value='';
+
+  addMsg('user',message,imgB64?'data:'+imgType+';base64,'+imgB64:null);
   input.value='';input.style.height='auto';
 
   const thinkEl=addThinking();
@@ -395,8 +434,9 @@ async function sendMessage(){
 
   try{
     const headers={'Content-Type':'application/json',...Auth.headers()};
-    const r=await fetch('/api/chat',{method:'POST',headers,
-      body:JSON.stringify({message,session_id:sessionId,current_version_id:currentVersionId,api_key:apiKey})});
+    const body={message,session_id:sessionId,current_version_id:currentVersionId,api_key:apiKey};
+    if(imgB64)body.image={data:imgB64,media_type:imgType};
+    const r=await fetch('/api/chat',{method:'POST',headers,body:JSON.stringify(body)});
     const data=await r.json();
     if(!r.ok)throw new Error(data.detail||'Request failed');
 
@@ -436,10 +476,13 @@ document.querySelectorAll('.ow-example').forEach(btn=>{
 // ── Message rendering ──
 function escHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 
-function addMsg(role,content){
+function addMsg(role,content,imgSrc){
   const el=document.createElement('div');
   el.className='ow-msg ow-msg-'+role;
-  el.innerHTML='<div class="ow-bubble">'+escHtml(content)+'</div>';
+  let html='';
+  if(imgSrc)html+='<img src="'+imgSrc+'" style="max-width:160px;max-height:100px;border-radius:6px;margin-bottom:4px;display:block;border:1px solid rgba(255,255,255,.1)">';
+  html+='<div class="ow-bubble">'+escHtml(content)+'</div>';
+  el.innerHTML=html;
   msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
   return el;
 }

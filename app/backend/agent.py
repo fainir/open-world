@@ -198,6 +198,7 @@ def run_agent(
     db: Session,
     current_version_path: Optional[str] = None,
     parent_version_id: Optional[str] = None,
+    image_data: Optional[dict] = None,
 ) -> dict:
     """Run the Claude agent to modify the game code.
 
@@ -225,7 +226,7 @@ def run_agent(
             history.append({"role": msg.role, "content": content})
 
     # Build the current message
-    current_msg = f"""Here is the current game code:
+    current_text = f"""Here is the current game code:
 
 <current_game_code>
 {game_code}
@@ -235,7 +236,23 @@ User request: {user_message}
 
 Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and <suggestions> tags."""
 
-    messages = history + [{"role": "user", "content": current_msg}]
+    # Build content — multimodal if image is attached
+    if image_data:
+        current_content = [
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": image_data["media_type"],
+                    "data": image_data["data"],
+                },
+            },
+            {"type": "text", "text": current_text},
+        ]
+    else:
+        current_content = current_text
+
+    messages = history + [{"role": "user", "content": current_content}]
 
     # Call Claude API
     client = anthropic.Anthropic(api_key=api_key)
