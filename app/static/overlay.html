@@ -163,12 +163,6 @@
 #ow-new-version .ow-nv-dismiss{background:none;border:none;color:#666;cursor:pointer;font-size:16px;padding:0 4px}
 #ow-new-version .ow-nv-dismiss:hover{color:#fff}
 
-/* Version indicator */
-#ow-ver-indicator{position:fixed;top:12px;right:80px;z-index:9999;background:rgba(10,10,18,.85);
-  border:1px solid rgba(60,60,90,.4);border-radius:8px;padding:6px 12px;font-size:12px;
-  color:#818cf8;font-family:'Inter',sans-serif;display:none;pointer-events:all;
-  cursor:pointer;transition:background .15s}
-#ow-ver-indicator:hover{background:rgba(99,102,241,.15)}
 
 @media(max-width:600px){
   #ow-panel{width:100vw;max-width:100vw}
@@ -179,7 +173,6 @@
 
 <div id="ow-overlay-root">
   <button id="ow-fab" title="Open Chat"><span class="ow-fab-icon">&#9830;</span> Chat</button>
-  <div id="ow-ver-indicator"></div>
   <div id="ow-panel">
     <div class="ow-header">
       <span class="ow-logo">&#9830; Studio</span>
@@ -298,7 +291,7 @@ const SK={
 const $=id=>document.getElementById(id);
 const fab=$('ow-fab'),panel=$('ow-panel'),msgs=$('ow-messages'),input=$('ow-input'),
   sendBtn=$('ow-send'),statusEl=$('ow-status'),suggArea=$('ow-suggestions'),suggList=$('ow-sugg-list'),
-  apiKeyInput=$('ow-api-key'),verIndicator=$('ow-ver-indicator');
+  apiKeyInput=$('ow-api-key');
 
 // ── State ──
 let sessionId=localStorage.getItem(SK.SESSION);
@@ -601,13 +594,6 @@ function updateAuthUI(){
   else btn.textContent='Sign In';
 }
 
-// ── Version indicator ──
-function updateVerIndicator(){
-  if(!currentVersionId||window.location.pathname==='/'){verIndicator.style.display='none';return}
-  verIndicator.style.display='block';
-  verIndicator.textContent='Viewing version';
-  verIndicator.onclick=showVersionsModal;
-}
 
 // ── Chat history persistence ──
 function saveChatHistory(){
@@ -666,7 +652,7 @@ if(savedKey)apiKeyInput.value=savedKey;
 
 restoreChatHistory();
 updateAuthUI();
-updateVerIndicator();
+
 
 // Open panel by default, or restore previous state
 if(localStorage.getItem(SK.PANEL)==='false')closePanel();
