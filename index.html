@@ -10,7 +10,7 @@
 <script>
 // Force reload if user has outdated cached version
 (function(){
-  var BUILD='20260222g';
+  var BUILD='20260222h';
   var stored=localStorage.getItem('ow_build');
   if(stored && stored!==BUILD){localStorage.setItem('ow_build',BUILD);location.reload(true);}
   else localStorage.setItem('ow_build',BUILD);
@@ -278,7 +278,7 @@ function getH(x,z){
   let fnh=0;if(z>2000){const d=clamp((z-2000)/600,0,1.2);fnh=fbm(x*0.004+3,z*0.004+3,4)*28*d+Math.sin(x*.006)*10*d}
   return lerp(mt+bc+ds+nh+sk+lg+rv+fnh+fbm(x*0.007,z*0.007,3)*3,0,cityB);
 }
-const tG=new THREE.PlaneGeometry(10000,10000,120,120);tG.rotateX(-Math.PI/2);
+const tG=new THREE.PlaneGeometry(10000,10000,220,220);tG.rotateX(-Math.PI/2);
 const tP=tG.attributes.position,tC=new Float32Array(tP.count*3);
 for(let i=0;i<tP.count;i++){const x=tP.getX(i),z=tP.getZ(i),h=getH(x,z);tP.setY(i,h);
   let r,g,b;if(h>110){r=0.95;g=0.96;b=1}else if(h>70){const t=(h-70)/40;r=lerp(.48,.95,t);g=lerp(.44,.96,t);b=lerp(.4,1,t)}
