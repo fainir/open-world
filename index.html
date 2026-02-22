@@ -10,7 +10,7 @@
 <script>
 // Force reload if user has outdated cached version
 (function(){
-  var BUILD='20260222e';
+  var BUILD='20260222f';
   var stored=localStorage.getItem('ow_build');
   if(stored && stored!==BUILD){localStorage.setItem('ow_build',BUILD);location.reload(true);}
   else localStorage.setItem('ow_build',BUILD);
@@ -8912,8 +8912,9 @@ function update(dt){
     // Recalculate ground after movement
     const wgH=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
     if(!climbing){
-      onGround=P.y<=wgH+.15&&V.y<=0;
-      if(onGround){P.y=wgH;V.y=0}
+      // Always snap up if below ground (prevents underground on steep terrain)
+      if(P.y<wgH){P.y=wgH;if(V.y<0)V.y=0;onGround=true}
+      else{onGround=P.y<=wgH+.15&&V.y<=0;if(onGround){P.y=wgH;V.y=0}}
     }
     if(spaceJust&&onGround){V.y=JFORCE;onGround=false;climbing=false;climbBldg=null;spaceJust=false}
     if(spaceJust&&climbing){V.y=JFORCE*.6;climbing=false;climbBldg=null;onGround=false;spaceJust=false}
@@ -8947,7 +8948,8 @@ function update(dt){
       emit(charG.localToWorld(new THREE.Vector3(0,.5,-.3)),new THREE.Vector3(0,-1,0))}
     if(V.length()>160)V.setLength(160);
     P.add(V.clone().multiplyScalar(dt));
-    if(P.y<gH+.5){P.y=gH+.5;if(V.y<-5){isFlying=false;V.set(0,0,0);showTip('Crash!')}else{V.y=0;isFlying=false}}
+    const _flyGH=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
+    if(P.y<_flyGH+.5){P.y=_flyGH+.5;if(V.y<-5){isFlying=false;V.set(0,0,0);showTip('Crash!')}else{V.y=0;isFlying=false}}
     // Landing on rooftops: if descending onto a building, land on its roof
     const bl=colBldg(P.x,P.z);
     if(bl&&P.y<=bl.h+1.5&&V.y<=0){P.y=bl.h;V.set(0,0,0);isFlying=false;onGround=true;showTip('Rooftop landing!')}
@@ -9004,7 +9006,8 @@ function update(dt){
       if(pt==='snow'&&!isOnSnow(P.x,P.z)){v.speed*=.95;if(v.speed<1)showTip('Need snow!')}
       // Jump with space
       if(spaceJust){V.y=JFORCE*.8;onGround=false;spaceJust=false}
-      if(!onGround){V.y-=GRAV*dt;P.y+=V.y*dt;if(P.y<=gh){P.y=gh;V.y=0;onGround=true}}
+      if(P.y<gh){P.y=gh;V.y=0;onGround=true}// snap up if below ground
+      else if(!onGround){V.y-=GRAV*dt;P.y+=V.y*dt;if(P.y<=gh){P.y=gh;V.y=0;onGround=true}}
       else{P.y=lerp(P.y,gh,.25);V.y=0;if(P.y<gh+.2)onGround=true}
       checkRT();
     } else if(pt==='water'){
