@@ -10,7 +10,7 @@
 <script>
 // Force reload if user has outdated cached version
 (function(){
-  var BUILD='20260222f';
+  var BUILD='20260222g';
   var stored=localStorage.getItem('ow_build');
   if(stored && stored!==BUILD){localStorage.setItem('ow_build',BUILD);location.reload(true);}
   else localStorage.setItem('ow_build',BUILD);
@@ -324,7 +324,7 @@ function _gridInsert(b){
 }
 function _addBldg(b){bldgs.push(b);_gridInsert(b);return b}
 function colBldg(x,z,p=.4){const near=_grid[_ck(x,z)];if(!near)return null;for(const b of near)if(x+p>b.minX&&x-p<b.maxX&&z+p>b.minZ&&z-p<b.maxZ)return b;return null}
-function colBldgY(x,z,py,p=.4){const near=_grid[_ck(x,z)];if(!near)return null;for(const b of near)if(x+p>b.minX&&x-p<b.maxX&&z+p>b.minZ&&z-p<b.maxZ&&py<b.h-.3)return b;return null}
+function colBldgY(x,z,py,p=.4){const near=_grid[_ck(x,z)];if(!near)return null;for(const b of near)if(x+p>b.minX&&x-p<b.maxX&&z+p>b.minZ&&z-p<b.maxZ&&py<b.h-1.5)return b;return null}
 function isOnWater(x){return x>CH+50}
 function isOnSnow(x,z){return getH(x,z)>25&&x<-CH+100}
 
@@ -863,8 +863,10 @@ function mkTramp(tx,tz,sc=1){
 
 // Ramp/trampoline physical height at world position
 function getBldgRoofH(px,pz,py){
-  for(const b of bldgs)if(px>b.minX&&px<b.maxX&&pz>b.minZ&&pz<b.maxZ&&py>b.h*.5)return b.h;
-  return-Infinity}
+  const near=_grid[_ck(px,pz)];if(!near)return-Infinity;
+  let best=-Infinity;
+  for(const b of near)if(px>b.minX&&px<b.maxX&&pz>b.minZ&&pz<b.maxZ&&py>=b.h-2&&b.h>best)best=b.h;
+  return best}
 function getSurfaceH(px,pz){
   let h=-Infinity;
   // Building rooftops — player can stand on them after climbing
@@ -8886,17 +8888,17 @@ function update(dt){
     if(mv.lengthSq()>0){mv.normalize().multiplyScalar(spd*dt);
       let nx=P.x+mv.x,nz=P.z+mv.z;
       const bx=colBldgY(nx,P.z,P.y),bz=colBldgY(P.x,nz,P.y);
-      if(bx&&P.y<bx.h-.2)wallHit=bx;
-      else if(!bx)P.x=nx;
-      if(bz&&P.y<bz.h-.2)wallHit=wallHit||bz;
-      else if(!bz)P.z=nz;
+      if(bx)wallHit=bx;
+      else P.x=nx;
+      if(bz)wallHit=wallHit||bz;
+      else P.z=nz;
       walkBob+=dt*10}
     // Climbing: if pressing forward into a wall and player is below building top
-    if(wallHit&&movingFwd&&P.y<wallHit.h-.2){
+    if(wallHit&&movingFwd&&P.y<wallHit.h-1.5){
       if(!climbing){climbing=true;climbBldg=wallHit}
       const climbSpd=keys['ShiftLeft']||keys['ShiftRight']?12:8;
       V.y=0;P.y+=climbSpd*dt;onGround=false;
-      if(P.y>=wallHit.h-.2){
+      if(P.y>=wallHit.h-1.5){
         // Reached the top — vault onto roof
         P.y=wallHit.h;
         // Push player slightly onto the roof so they don't fall off the edge
