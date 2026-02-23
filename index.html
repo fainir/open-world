@@ -31,7 +31,11 @@ canvas{display:block}
 #overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);padding:3px 8px;border-radius:4px}
 #overlay .controls .ctrl-key .cl{color:rgba(255,255,255,0.5)}
 #hud{position:fixed;z-index:5;pointer-events:none;display:none}
-#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(255,255,255,0.3);display:none;font-family:monospace}
+#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;display:none;pointer-events:none;z-index:6}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.85);border-radius:1px}
+#crosshair::before{width:2px;height:24px;left:11px;top:0}
+#crosshair::after{width:24px;height:2px;top:11px;left:0}
+#crosshair .dot{position:absolute;width:4px;height:4px;background:rgba(255,80,80,0.9);border-radius:50%;top:10px;left:10px}
 #score{position:fixed;top:25px;right:30px;font-size:1.4em;color:#ffdd00;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(255,200,0,0.5)}
 #combo{position:fixed;top:55px;right:30px;font-size:0.9em;color:#ff8800;font-family:'Courier New',monospace;opacity:0}
 #trick-display{position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);font-size:2.8em;font-weight:bold;color:#ffee00;text-shadow:0 0 30px rgba(255,200,0,0.8),0 0 60px rgba(255,100,0,0.4);opacity:0;transition:opacity 0.2s;font-family:'Courier New',monospace;pointer-events:none;white-space:nowrap}
@@ -138,7 +142,7 @@ canvas{display:block}
 </div>
 </div>
 <div id="hud">
-<div id="crosshair">+</div>
+<div id="crosshair"><div class="dot"></div></div>
 <div id="score"></div>
 <div id="combo"></div>
 <div id="trick-display"></div>
@@ -9406,7 +9410,11 @@ function update(dt){
     cam.position.y+=(Math.random()-.5)*intensity*.4;
     cam.position.z+=(Math.random()-.5)*intensity*.3;
   }
-  const look=new THREE.Vector3(P.x-Math.sin(yaw)*3,P.y+1.2+(isFlying?Math.sin(pitch)*3:0),P.z-Math.cos(yaw)*3);
+  const lookDist=6;
+  const look=new THREE.Vector3(
+    P.x-Math.sin(yaw)*Math.cos(pitch)*lookDist,
+    P.y+1.2+Math.sin(pitch)*lookDist,
+    P.z-Math.cos(yaw)*Math.cos(pitch)*lookDist);
   cam.lookAt(look);
 
   // Sky + shadow follow camera
@@ -9422,10 +9430,14 @@ function update(dt){
     const w=WEAPONS[currentWeapon];
       fireCooldown=1/w.fireRate;
       const gunPos=new THREE.Vector3().copy(P).add(new THREE.Vector3(0,1.2,0));
+      // 3rd-person aim: raycast from camera through crosshair (screen center) to find where the player is aiming
+      const _aimDir=new THREE.Vector3().subVectors(look,cam.position).normalize();
+      const _aimTarget=cam.position.clone().add(_aimDir.clone().multiplyScalar(500));
+      const _baseAimDir=new THREE.Vector3().subVectors(_aimTarget,gunPos).normalize();
       if(w.type==='hitscan'){
         const pellets=w.pellets||1;
         for(let p=0;p<pellets;p++){
-          const dir=flyFwd().clone();
+          const dir=_baseAimDir.clone();
           dir.x+=(Math.random()-.5)*w.spread;dir.y+=(Math.random()-.5)*w.spread;dir.z+=(Math.random()-.5)*w.spread;
           dir.normalize();
           const end=gunPos.clone().add(dir.multiplyScalar(w.range));
@@ -9508,11 +9520,11 @@ function update(dt){
         // Muzzle flash burst
         muzzleFlash.intensity=8;muzzleFlash.color.setHex(0xff8800);setTimeout(()=>muzzleFlash.intensity=0,50);
         for(let i=0;i<8;i++){
-          const mp=gunPos.clone().add(flyFwd().multiplyScalar(.5+Math.random()*.5));
-          emit(mp,flyFwd().clone().multiplyScalar(5+Math.random()*5).add(new THREE.Vector3((Math.random()-.5)*3,(Math.random()-.5)*3,(Math.random()-.5)*3)));
+          const mp=gunPos.clone().add(_baseAimDir.clone().multiplyScalar(.5+Math.random()*.5));
+          emit(mp,_baseAimDir.clone().multiplyScalar(5+Math.random()*5).add(new THREE.Vector3((Math.random()-.5)*3,(Math.random()-.5)*3,(Math.random()-.5)*3)));
         }
       } else if(w.type==='projectile'){
-        const dir=flyFwd().clone();
+        const dir=_baseAimDir.clone();
         const rG=new THREE.Group();
         const isNuke=!!w.isNuke;
         if(isNuke){
@@ -9539,7 +9551,7 @@ function update(dt){
         // Tool effects
         if(w.toolType==='grapple'){
           // Pull player toward aim point
-          const dir2=flyFwd().clone();
+          const dir2=_baseAimDir.clone();
           const hitPt=gunPos.clone().add(dir2.multiplyScalar(w.range));
           // Draw grapple line
           const gLen=gunPos.distanceTo(hitPt);
@@ -9549,7 +9561,7 @@ function update(dt){
           gLine.position.copy(gMid);gLine.lookAt(hitPt);gLine.rotateX(Math.PI/2);
           scene.add(gLine);bulletTrails.push({mesh:gLine,life:0.3});
           // Pull player
-          const pullDir=flyFwd().clone().multiplyScalar(60);
+          const pullDir=_baseAimDir.clone().multiplyScalar(60);
           V.add(pullDir);V.y+=15;
           showTip('Grapple!');
         } else if(w.toolType==='jetboost'){
@@ -9565,7 +9577,7 @@ function update(dt){
           // Toggle flashlight
           if(!window._flashlight){
             window._flashlight=new THREE.SpotLight(0xffffcc,3,80,Math.PI/6,.3);
-            window._flashlight.position.copy(gunPos);window._flashlight.target.position.copy(gunPos.clone().add(flyFwd().multiplyScalar(10)));
+            window._flashlight.position.copy(gunPos);window._flashlight.target.position.copy(gunPos.clone().add(_baseAimDir.clone().multiplyScalar(10)));
             scene.add(window._flashlight);scene.add(window._flashlight.target);
             showTip('Flashlight ON');
           } else {scene.remove(window._flashlight);scene.remove(window._flashlight.target);window._flashlight=null;showTip('Flashlight OFF')}
@@ -9835,7 +9847,7 @@ function update(dt){
   if(window._riverMat)window._riverMat.uniforms.time.value=clock.elapsedTime;
 
   // ═══ HUD ═══
-  document.getElementById('crosshair').style.display='none';
+  document.getElementById('crosshair').style.display=locked?'block':'none';
   document.getElementById('score').textContent=score>0?`${score} PTS`:'';
   const cEl=document.getElementById('combo');
   if(comboCount>1){cEl.textContent=`COMBO x${comboCount}`;cEl.style.opacity='1'}else cEl.style.opacity='0';
@@ -9854,7 +9866,8 @@ function update(dt){
   // Gun model scale based on weapon
   // Update flashlight position if active
   if(window._flashlight){const gp=new THREE.Vector3().copy(P).add(new THREE.Vector3(0,1.2,0));
-    window._flashlight.position.copy(gp);window._flashlight.target.position.copy(gp.clone().add(flyFwd().multiplyScalar(10)))}
+    const _flDir=new THREE.Vector3().subVectors(look,cam.position).normalize();
+    window._flashlight.position.copy(gp);window._flashlight.target.position.copy(gp.clone().add(_flDir.multiplyScalar(10)))}
   const gunScales={pistol:1,shotgun:1.4,rifle:1.6,rocket:1.8,minigun:1.5,sniper:1.8,flamethrower:1.6,grenade:1.5,
     grapple:1.2,jetboost:1.3,binoculars:.8,flashlight:.7,paintgun:1.1};
   gunG.scale.setScalar(gunScales[currentWeapon]||1);
