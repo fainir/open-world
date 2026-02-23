@@ -280,7 +280,7 @@ const NPC_TYPES={
 };
 const NPC_COLORS=[0x2244aa,0xaa2222,0x22aa44,0xaa8822,0x6622aa,0x228888,0x884422,0xdd6644,0x4466aa,0x335533,0xcc4488,0x6688bb,0x996633,0x448844,0x774411];
 const npcs=[];
-const MAX_NPCS=20;
+const MAX_NPCS=40;
 const kU=()=>keys['KeyW']||keys['ArrowUp'],kD=()=>keys['KeyS']||keys['ArrowDown'];
 const kL=()=>keys['KeyA']||keys['ArrowLeft'],kR=()=>keys['KeyD']||keys['ArrowRight'];
 const clock=new THREE.Clock();
@@ -997,6 +997,7 @@ const VDEFS={
   hoverboard:{pt:'wearable',ms:38,ac:22,tn:3.5,sz:[.8,.15,.3],tricks:[{n:'Heelflip',d:.6,ax:'z',ag:Math.PI*2},flipB,flipF,spin]},
   canoe:{pt:'water',ms:18,ac:10,tn:2.5,sz:[3,.5,.8],tricks:[{n:'Paddle Spin',d:1,ax:'y',ag:Math.PI*2},flipB,roll,spin]},
   snowmobile:{pt:'snow',ms:65,ac:30,tn:2.5,sz:[2.5,.8,1],tricks:[{n:'Snow Jump',d:1,ax:'x',ag:-.5},flipB,roll,spin]},
+  submarine:{pt:'water',ms:35,ac:18,tn:1.8,sz:[4,1.5,1.5],tricks:[{n:'Dive',d:1,ax:'x',ag:.4},flipB,roll,spin]},
 };
 // Parkour tricks
 const parkourTricks=[{n:'Front Flip',d:.7,ax:'x',ag:Math.PI*2},{n:'Backflip',d:.8,ax:'x',ag:-Math.PI*2},{n:'Spin',d:.6,ax:'y',ag:Math.PI*2},{n:'Wall Run',d:.9,ax:'x',ag:Math.PI}];
@@ -1205,12 +1206,23 @@ function mkSnowmobile(){const g=new THREE.Group();
   const track=box(1.2,.15,.6,0x222222);track.position.set(-.4,.1,0);g.add(track);
   return g}
 
+function mkSubmarine(){const g=new THREE.Group();
+  const hull=new THREE.Mesh(new THREE.CylinderGeometry(.7,.5,5,8),new THREE.MeshStandardMaterial({color:0x2a2a35,metalness:.7,roughness:.3}));
+  hull.rotation.z=Math.PI/2;g.add(hull);
+  const tower=new THREE.Mesh(new THREE.BoxGeometry(.6,1.2,.5),new THREE.MeshStandardMaterial({color:0x333340,metalness:.6,roughness:.3}));
+  tower.position.set(.3,1,0);g.add(tower);
+  const peri=cyl(.04,.04,.7,0x888888);peri.position.set(.3,1.9,0);g.add(peri);
+  const prop=new THREE.Mesh(new THREE.BoxGeometry(.05,1,.25),new THREE.MeshStandardMaterial({color:0x666666,metalness:.8}));
+  prop.position.set(-2.7,0,0);g.add(prop);
+  const rudder=new THREE.Mesh(new THREE.BoxGeometry(.04,.6,.5),new THREE.MeshStandardMaterial({color:0x333340}));
+  rudder.position.set(-2.5,.4,0);g.add(rudder);
+  return g}
 const VFACTORY={car:mkCar,motorcycle:mkMotorcycle,bike:mkBike,skateboard:mkSkateboard,
   rollerblades:mkRollerblades,pogo:mkPogo,horse:mkHorse,airplane:mkAirplane,
   helicopter:mkHelicopter,boat:mkBoat,jetski:mkJetski,yacht:mkYacht,surfboard:mkSurfboard,
   waterski:mkWaterski,ski:mkSki,snowboard:mkSnowboard,wingsuit:mkWingsuit,
   atv:mkATV,scooter:mkScooter,gokart:mkGokart,paraglider:mkParaglider,
-  hoverboard:mkHoverboard,canoe:mkCanoe,snowmobile:mkSnowmobile};
+  hoverboard:mkHoverboard,canoe:mkCanoe,snowmobile:mkSnowmobile,submarine:mkSubmarine};
 
 // ══════════════ NPC MESH & AI ══════════════
 function mkNPCMesh(colorIdx,armed){
@@ -1271,11 +1283,27 @@ function spawnNPC(type,x,z,ry){
     vM=VFACTORY[cfg.veh]();vM.position.set(x,h,z);vM.rotation.y=(ry||0)+Math.PI/2;scene.add(vM)}
   const npc={type,mesh,vehMesh:vM,x,y:h,z,ry:ry||0,speed:cfg.speed,
     targetX:x,targetZ:z,state:'wander',stateTimer:2+Math.random()*4,
-    walkBob:Math.random()*Math.PI*2,colorIdx:ci};
+    walkBob:Math.random()*Math.PI*2,colorIdx:ci,hp:80,dead:false,deadTimer:0};
   pickNewTarget(npc);npcs.push(npc)}
 
 function updateNPCs(dt){
+  // Remove dead NPCs after delay, or NPCs too far
+  for(let i=npcs.length-1;i>=0;i--){
+    const n=npcs[i];
+    if(n.dead){n.deadTimer+=dt;if(n.deadTimer>5){scene.remove(n.mesh);if(n.vehMesh)scene.remove(n.vehMesh);npcs.splice(i,1)}}
+    else{const d2=(n.x-P.x)**2+(n.z-P.z)**2;if(d2>350*350){scene.remove(n.mesh);if(n.vehMesh)scene.remove(n.vehMesh);npcs.splice(i,1)}}
+  }
+  // Dynamic spawn near player
+  if(npcs.length<MAX_NPCS&&Math.random()<dt*0.8){
+    const a=Math.random()*Math.PI*2,r=60+Math.random()*100;
+    const sx=P.x+Math.cos(a)*r,sz=P.z+Math.sin(a)*r;
+    if(!colBldg(sx,sz,1)&&!isOnWater(sx)){
+      const types=['pedestrian','pedestrian','jogger','guard','pedestrian'];
+      spawnNPC(types[Math.floor(Math.random()*types.length)],sx,sz,Math.random()*Math.PI*2);
+    }
+  }
   for(const npc of npcs){
+    if(npc.dead)continue;
     const camD=Math.sqrt((npc.x-P.x)**2+(npc.z-P.z)**2);
     if(camD>200)continue;
     npc.stateTimer-=dt;
@@ -1346,6 +1374,7 @@ spawnV('boat',CH+250,100,0);spawnV('boat',CH+300,-150,0.5);
 spawnV('jetski',CH+200,0,0);spawnV('jetski',CH+220,-200,0.3);
 spawnV('yacht',CH+400,0,Math.PI/4);
 spawnV('waterski',CH+180,150,0);
+spawnV('submarine',CH+350,300,0);spawnV('submarine',CH+500,-200,Math.PI/3);
 // Mountain
 spawnV('ski',-CH-80,50,Math.PI);spawnV('ski',-CH-100,-100,Math.PI);
 spawnV('snowboard',-CH-90,0,Math.PI);spawnV('snowboard',-CH-120,150,Math.PI);
@@ -5456,6 +5485,72 @@ for(let i=0;i<15;i++){const a=srand()*Math.PI*2;const r=20+srand()*200;
   const x=Math.cos(a)*r,z=850+Math.sin(a)*r;
   spawnNPC('festivalGoer',x,z,srand()*Math.PI*2)}
 
+// ══════════════ SHARKS ══════════════
+const sharks=[];const MAX_SHARKS=8;
+function mkSharkMesh(){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.SphereGeometry(1,6,4),new THREE.MeshStandardMaterial({color:0x445566,roughness:.6}));
+  body.scale.set(2,.4,.5);g.add(body);
+  const fin=new THREE.Mesh(new THREE.ConeGeometry(.25,.9,4),new THREE.MeshStandardMaterial({color:0x334455}));
+  fin.position.set(0,.6,0);g.add(fin);
+  const tail=new THREE.Mesh(new THREE.ConeGeometry(.3,.8,4),new THREE.MeshStandardMaterial({color:0x3a4a5a}));
+  tail.position.set(-2.2,.15,0);tail.rotation.z=Math.PI/6;g.add(tail);
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(.8,5,3),new THREE.MeshStandardMaterial({color:0x99aabb,roughness:.7}));
+  belly.scale.set(1.5,.2,.4);belly.position.set(0,-.25,0);g.add(belly);
+  return g}
+function spawnShark(){
+  if(sharks.length>=MAX_SHARKS)return;
+  const x=CH+150+Math.random()*700,z=(Math.random()-.5)*1400;
+  const mesh=mkSharkMesh();mesh.position.set(x,-.5,z);scene.add(mesh);
+  sharks.push({mesh,x,z,y:-.5,ry:Math.random()*Math.PI*2,speed:4+Math.random()*4,hp:60,dead:false,
+    cx:x,cz:z,cr:25+Math.random()*40,ca:Math.random()*Math.PI*2,deadTimer:0})}
+for(let i=0;i<MAX_SHARKS;i++)spawnShark();
+
+// ══════════════ FLOATING ALIENS (UFOs) ══════════════
+const aliens=[];const MAX_ALIENS=10;
+function mkAlienMesh(){
+  const g=new THREE.Group();
+  const disc=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,.25,8),new THREE.MeshStandardMaterial({color:0x556677,metalness:.8,roughness:.2}));
+  g.add(disc);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(.55,6,4,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x88ffaa,emissive:0x44ff66,emissiveIntensity:.4,transparent:true,opacity:.7}));
+  dome.position.y=.15;g.add(dome);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(1.3,.08,4,8),new THREE.MeshStandardMaterial({color:0x44ffaa,emissive:0x22ff88,emissiveIntensity:.6}));
+  rim.rotation.x=Math.PI/2;g.add(rim);
+  return g}
+function spawnAlien(){
+  if(aliens.length>=MAX_ALIENS)return;
+  const x=(Math.random()-.5)*2400,z=(Math.random()-.5)*2400;
+  const y=35+Math.random()*50;
+  const mesh=mkAlienMesh();mesh.position.set(x,y,z);scene.add(mesh);
+  aliens.push({mesh,x,z,y,baseY:y,ry:Math.random()*Math.PI*2,speed:2+Math.random()*4,hp:40,dead:false,
+    bobPhase:Math.random()*Math.PI*2,driftA:Math.random()*Math.PI*2,deadTimer:0})}
+for(let i=0;i<MAX_ALIENS;i++)spawnAlien();
+
+// ══════════════ ZIPLINE (Mountains → Beach) ══════════════
+const zipline={startX:-1200,startZ:100,endX:CH+60,endZ:100,startY:0,endY:0,riding:false,t:0,speed:0};
+(function buildZipline(){
+  zipline.startY=getH(zipline.startX,zipline.startZ)+8;
+  zipline.endY=Math.max(getH(zipline.endX,zipline.endZ),0)+3;
+  const sx=zipline.startX,sz=zipline.startZ,sy=zipline.startY;
+  const ex=zipline.endX,ez=zipline.endZ,ey=zipline.endY;
+  const dx=ex-sx,dy=ey-sy,dz=ez-sz;
+  const len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+  const mid=new THREE.Vector3((sx+ex)/2,(sy+ey)/2,(sz+ez)/2);
+  const cable=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,len,4),new THREE.MeshStandardMaterial({color:0x555555,metalness:.9,roughness:.2}));
+  cable.position.copy(mid);cable.lookAt(new THREE.Vector3(ex,ey,ez));cable.rotateX(Math.PI/2);scene.add(cable);
+  // Start tower (mountain)
+  const tH1=8;const t1=new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,tH1,6),new THREE.MeshStandardMaterial({color:0x664422,roughness:.7}));
+  t1.position.set(sx,sy-tH1/2,sz);scene.add(t1);
+  const arm1=new THREE.Mesh(new THREE.BoxGeometry(2,.15,.15),new THREE.MeshStandardMaterial({color:0x664422}));
+  arm1.position.set(sx,sy,sz);scene.add(arm1);
+  // End tower (beach)
+  const tH2=3;const t2=new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,tH2,6),new THREE.MeshStandardMaterial({color:0x664422,roughness:.7}));
+  t2.position.set(ex,ey-tH2/2,ez);scene.add(t2);
+  // Sign at start
+  const sign=new THREE.Mesh(new THREE.BoxGeometry(1.2,.6,.05),new THREE.MeshStandardMaterial({color:0xffcc00,emissive:0xffaa00,emissiveIntensity:.3}));
+  sign.position.set(sx+1,sy-2,sz);scene.add(sign);
+})();
+
 // ══════════════ CHARACTER ══════════════
 const charG=new THREE.Group();
 const suM=new THREE.MeshStandardMaterial({color:0xe8e0d4,roughness:.5});
@@ -9340,6 +9435,43 @@ function update(dt){
               }
             }
           }
+          // ─── Hitscan damage to NPCs ───
+          for(const npc of npcs){if(npc.dead)continue;
+            const toN=new THREE.Vector3().subVectors(npc.mesh.position,gunPos);
+            const pj=toN.dot(dir)/dir.length();
+            if(pj>0&&pj<w.range){
+              const cl=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj));
+              if(cl.distanceTo(npc.mesh.position)<1.5){
+                npc.hp-=w.dmg;
+                for(let e=0;e<4;e++)emit(npc.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random()*2,(Math.random()-.5)*2)),new THREE.Vector3((Math.random()-.5)*8,Math.random()*8,(Math.random()-.5)*8));
+                if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=100;comboCount++;comboTimer=2}
+              }}}
+          // ─── Hitscan damage to sharks ───
+          for(const sh of sharks){if(sh.dead)continue;
+            const toS=new THREE.Vector3().subVectors(sh.mesh.position,gunPos);
+            const pj2=toS.dot(dir)/dir.length();
+            if(pj2>0&&pj2<w.range){
+              const cl2=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj2));
+              if(cl2.distanceTo(sh.mesh.position)<2.5){
+                sh.hp-=w.dmg;
+                for(let e=0;e<3;e++)emit(sh.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random(),(Math.random()-.5)*2)),new THREE.Vector3((Math.random()-.5)*6,Math.random()*4,(Math.random()-.5)*6));
+                if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2}
+              }}}
+          // ─── Hitscan damage to aliens ───
+          for(const al of aliens){if(al.dead)continue;
+            const toA=new THREE.Vector3().subVectors(al.mesh.position,gunPos);
+            const pj3=toA.dot(dir)/dir.length();
+            if(pj3>0&&pj3<w.range){
+              const cl3=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj3));
+              if(cl3.distanceTo(al.mesh.position)<2){
+                al.hp-=w.dmg;
+                for(let e=0;e<5;e++)emit(al.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random()*2,(Math.random()-.5)*2)),new THREE.Vector3((Math.random()-.5)*10,Math.random()*8,(Math.random()-.5)*10));
+                if(al.hp<=0){al.dead=true;al.mesh.visible=false;score+=250;comboCount++;comboTimer=2;
+                  // Alien explosion effect
+                  const aLight=new THREE.PointLight(0x44ff88,8,20);aLight.position.copy(al.mesh.position);scene.add(aLight);
+                  setTimeout(()=>{scene.remove(aLight);aLight.dispose()},300);
+                }
+              }}}
           // Weapon-specific trail colors
           const tDir=end.clone().sub(gunPos);const tLen=tDir.length();
           const tMid=gunPos.clone().add(tDir.clone().multiplyScalar(.5));
@@ -9511,7 +9643,11 @@ function update(dt){
         }
       }
       // Blast radius damage to NPCs
-      if(p.isNuke){for(const npc of npcs){if(npc.dead)continue;const nd=ePos.distanceTo(npc.mesh.position);if(nd<p.blastR){npc.hp-=p.dmg;if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=200;comboCount++;comboTimer=2}}}}
+      for(const npc of npcs){if(npc.dead)continue;const nd=ePos.distanceTo(npc.mesh.position);if(nd<p.blastR){npc.hp-=p.dmg;if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=200;comboCount++;comboTimer=2}}}
+      // Blast radius damage to sharks
+      for(const sh of sharks){if(sh.dead)continue;const sd=ePos.distanceTo(sh.mesh.position);if(sd<p.blastR){sh.hp-=p.dmg;if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2}}}
+      // Blast radius damage to aliens
+      for(const al of aliens){if(al.dead)continue;const ad=ePos.distanceTo(al.mesh.position);if(ad<p.blastR){al.hp-=p.dmg;if(al.hp<=0){al.dead=true;al.mesh.visible=false;score+=250;comboCount++;comboTimer=2}}}
       p.mesh.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose();if(c.isLight)c.dispose()});scene.remove(p.mesh);projectiles.splice(i,1);
     }
   }
@@ -9555,6 +9691,55 @@ function update(dt){
 
   // ═══ NPCs & FESTIVAL ═══
   updateNPCs(dt);
+
+  // ═══ SHARKS ═══
+  for(let i=sharks.length-1;i>=0;i--){
+    const sh=sharks[i];
+    if(sh.dead){sh.deadTimer+=dt;sh.mesh.position.y-=dt*.3;if(sh.deadTimer>5){scene.remove(sh.mesh);sh.mesh.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose()});sharks.splice(i,1)};continue}
+    const dx=P.x-sh.x,dz=P.z-sh.z;if(dx*dx+dz*dz>500*500){scene.remove(sh.mesh);sh.mesh.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose()});sharks.splice(i,1);continue}
+    // Patrol in circles
+    sh.ca+=dt*sh.speed*.03;
+    sh.x=sh.cx+Math.cos(sh.ca)*sh.cr;sh.z=sh.cz+Math.sin(sh.ca)*sh.cr;
+    sh.mesh.position.set(sh.x,-.3+Math.sin(clock.elapsedTime*2+i)*.15,sh.z);
+    sh.mesh.rotation.y=sh.ca+Math.PI/2;
+  }
+  if(sharks.length<MAX_SHARKS&&Math.random()<dt*.3){spawnShark()}
+
+  // ═══ ALIENS ═══
+  for(let i=aliens.length-1;i>=0;i--){
+    const al=aliens[i];
+    if(al.dead){al.deadTimer+=dt;if(al.deadTimer>4){scene.remove(al.mesh);al.mesh.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose()});aliens.splice(i,1)};continue}
+    const dx=P.x-al.x,dz=P.z-al.z;if(dx*dx+dz*dz>600*600){scene.remove(al.mesh);al.mesh.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose()});aliens.splice(i,1);continue}
+    // Float and drift
+    al.bobPhase+=dt*1.5;al.driftA+=dt*.2;
+    al.x+=Math.cos(al.driftA)*al.speed*dt;al.z+=Math.sin(al.driftA)*al.speed*dt;
+    al.y=al.baseY+Math.sin(al.bobPhase)*3;
+    al.mesh.position.set(al.x,al.y,al.z);
+    al.mesh.rotation.y+=dt*.5;
+  }
+  if(aliens.length<MAX_ALIENS&&Math.random()<dt*.2){spawnAlien()}
+
+  // ═══ ZIPLINE RIDE ═══
+  if(zipline.riding){
+    zipline.t+=dt*zipline.speed;
+    if(zipline.t>=1||keys['Space']){
+      zipline.riding=false;zipline.t=0;showTip('Zipline complete!');
+    } else {
+      const lx=zipline.startX+(zipline.endX-zipline.startX)*zipline.t;
+      const lz=zipline.startZ+(zipline.endZ-zipline.startZ)*zipline.t;
+      const ly=zipline.startY+(zipline.endY-zipline.startY)*zipline.t+Math.sin(zipline.t*Math.PI)*5;
+      P.set(lx,ly,lz);V.set(0,0,0);
+    }
+  } else if(!currentVeh&&keys['KeyE']){
+    const dsx=P.x-zipline.startX,dsz=P.z-zipline.startZ,dsy=P.y-(zipline.startY-2);
+    if(dsx*dsx+dsz*dsz+dsy*dsy<64){
+      zipline.riding=true;zipline.t=0;
+      const totalDist=Math.sqrt((zipline.endX-zipline.startX)**2+(zipline.endY-zipline.startY)**2+(zipline.endZ-zipline.startZ)**2);
+      zipline.speed=45/totalDist;
+      keys['KeyE']=false;showTip('Zipline! Jump to dismount');
+    }
+  }
+
   if(festivalData){
     const fDist=Math.abs(P.x)+Math.abs(P.z-850);
     if(festivalGroup)festivalGroup.visible=fDist<400;
