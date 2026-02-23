@@ -99,6 +99,13 @@ canvas{display:block}
 #btn-boost{right:84px;bottom:0;width:54px;height:54px;font-size:0.55em;background:rgba(255,160,0,0.35);border-color:rgba(255,180,50,0.35)}
 #btn-vehicle{right:84px;bottom:66px;width:48px;height:48px;font-size:0.55em;background:rgba(60,200,100,0.3);border-color:rgba(80,220,120,0.3)}
 #btn-enter{right:5px;bottom:152px;width:48px;height:48px;font-size:0.55em;background:rgba(60,200,100,0.3);border-color:rgba(80,220,120,0.3)}
+#mobile-left-btns{position:fixed;bottom:150px;left:18px;z-index:8;pointer-events:all;display:flex;flex-direction:column;gap:8px}
+.ml-btn{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);color:#fff;font-family:'Courier New',monospace;font-weight:bold;font-size:0.5em;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:0.03em;pointer-events:all;transition:filter 0.1s,transform 0.1s}
+.ml-btn.active{filter:brightness(1.5);transform:scale(0.92)}
+#btn-trick{background:rgba(255,220,0,0.3);border-color:rgba(255,230,50,0.35)}
+#btn-fight{background:rgba(200,50,200,0.3);border-color:rgba(220,80,220,0.35)}
+#btn-fs{position:fixed;top:10px;right:10px;z-index:8;width:36px;height:36px;border-radius:6px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:1.1em;display:none;align-items:center;justify-content:center;pointer-events:all;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.mobile.playing #btn-fs{display:flex}
 #mobile-top-btns{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:8;pointer-events:all;display:none;gap:8px}
 .mobile.playing #mobile-top-btns{display:flex}
 .mt-btn{background:linear-gradient(135deg,rgba(30,60,120,0.7),rgba(20,40,80,0.85));border:1px solid rgba(100,180,255,0.25);color:#fff;font-family:'Courier New',monospace;font-size:0.65em;padding:7px 14px;border-radius:6px;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;letter-spacing:0.1em;text-transform:uppercase}
@@ -179,11 +186,16 @@ canvas{display:block}
 <div id="btn-vehicle" class="m-btn">F</div>
 <div id="btn-enter" class="m-btn">E</div>
 </div>
+<div id="mobile-left-btns">
+<div id="btn-trick" class="ml-btn">TRICK</div>
+<div id="btn-fight" class="ml-btn">FIGHT</div>
+</div>
 </div>
 <div id="mobile-top-btns">
 <div id="mt-veh" class="mt-btn">VEHICLES</div>
 <div id="mt-wpn" class="mt-btn wpn">WEAPONS</div>
 </div>
+<div id="btn-fs">&#x26F6;</div>
 <div id="rotate-msg"><div class="rot-icon">📱</div><div>Rotate your device to landscape</div></div>
 <canvas id="game"></canvas>
 
@@ -8676,7 +8688,11 @@ function startGame(){
   boostFuel=100;
   currentWeapon='pistol';
   if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
-  if(isMobile)try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
+  if(isMobile){
+    try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
+    const de=document.documentElement;
+    try{(de.requestFullscreen||de.webkitRequestFullscreen||de.msRequestFullscreen).call(de).catch(()=>{})}catch(e){}
+  }
 }
 function stopGame(){
   overlay.style.display='flex';
@@ -9888,6 +9904,27 @@ if(isMobile){
   mBtn('mt-wpn',
     ()=>{if(wpnMenuOpen)closeWpnMenu();else if(!menuOpen)openWpnMenu()},null
   );
+
+  // ── Trick & Fight buttons (cycle through moves) ──
+  let trickIdx=0,fightIdx=0;
+  mBtn('btn-trick',
+    ()=>{tryTrick(trickIdx);trickIdx=(trickIdx+1)%4},null
+  );
+  mBtn('btn-fight',
+    ()=>{tryFight(fightIdx);fightIdx=(fightIdx+1)%4},null
+  );
+
+  // ── Fullscreen toggle ──
+  const fsBtn=document.getElementById('btn-fs');
+  fsBtn.addEventListener('touchstart',e=>{
+    e.preventDefault();e.stopPropagation();
+    const de=document.documentElement;
+    if(document.fullscreenElement||document.webkitFullscreenElement){
+      (document.exitFullscreen||document.webkitExitFullscreen).call(document).catch(()=>{});
+    }else{
+      (de.requestFullscreen||de.webkitRequestFullscreen||de.msRequestFullscreen).call(de).catch(()=>{});
+    }
+  },{passive:false});
 
   // Mobile overlay: tap anywhere to start
   overlay.addEventListener('touchstart',e=>{e.preventDefault();startGame()},{passive:false});
