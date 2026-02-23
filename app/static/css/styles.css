@@ -832,3 +832,30 @@ body.fullscreen #game-panel { width: 100vw; height: 100vh; }
   #chat-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
   :root { --chat-width: 100%; }
 }
+
+/* ══════════ MOBILE TOUCH DEVICES ══════════ */
+@media (pointer: coarse) and (max-width: 1024px) {
+  /* Portrait: hide chat, game fullscreen */
+  @media (orientation: portrait) {
+    #header { display: none; }
+    #chat-panel { display: none; }
+    #game-panel { width: 100vw; height: 100vh; flex: none; }
+    #version-indicator { display: none; }
+  }
+  /* Landscape: chat takes ~25% on the right */
+  @media (orientation: landscape) {
+    #header { height: 38px; padding: 0 8px; }
+    #header .header-btn { padding: 4px 8px; font-size: 11px; }
+    .logo { font-size: 13px; }
+    #main { flex-direction: row; }
+    #game-panel { flex: 3; height: auto; }
+    #chat-panel { width: 25vw; min-width: 200px; max-width: 280px; flex: none; border-left: 1px solid var(--border); border-top: none; }
+    :root { --chat-width: 25vw; }
+    #version-indicator { padding: 3px 8px; }
+    .vi-label { font-size: 10px; }
+    .vi-hint { font-size: 10px; }
+    #api-key-bar { padding: 8px 10px; }
+    #chat-messages { font-size: 12px; }
+    #chat-input-area textarea { font-size: 12px; }
+  }
+}
