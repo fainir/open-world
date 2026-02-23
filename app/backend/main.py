@@ -7,9 +7,9 @@ from typing import Optional
 
 import rjsmin
 
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -35,6 +35,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── Redirect www → bare domain ──
+@app.middleware("http")
+async def redirect_www(request: Request, call_next):
+    host = request.headers.get("host", "")
+    if host.startswith("www."):
+        bare = host[4:]
+        url = request.url.replace(scheme="https").replace(netloc=bare)
+        return RedirectResponse(url=str(url), status_code=301)
+    return await call_next(request)
 
 
 # ── Startup ──
