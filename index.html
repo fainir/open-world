@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -81,6 +81,33 @@ canvas{display:block}
 #wpn-close:hover{opacity:1}
 #weapon-hud{position:fixed;bottom:55px;right:30px;font-size:0.85em;color:#ff8844;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(255,100,0,0.4);display:none;text-align:right}
 #weapon-hud .wpn-ammo{font-size:1.4em;color:#ffaa44}
+/* ══════════════ MOBILE CONTROLS ══════════════ */
+.mobile #bottom-bar{display:none!important}
+.mobile #overlay .controls{display:none}
+.mobile #overlay .click{font-size:1em}
+#mobile-controls{display:none;position:fixed;inset:0;z-index:7;pointer-events:none}
+.mobile.playing #mobile-controls{display:block}
+#mobile-cam-area{position:fixed;top:0;left:0;right:0;bottom:0;z-index:7;pointer-events:all}
+#mobile-joystick{position:fixed;bottom:15px;left:15px;width:120px;height:120px;z-index:8;pointer-events:all}
+#joy-base{width:100%;height:100%;border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);position:relative}
+#joy-thumb{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.25);border:2px solid rgba(255,255,255,0.35);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+#mobile-btns{position:fixed;bottom:12px;right:12px;width:165px;height:200px;z-index:8;pointer-events:none}
+.m-btn{pointer-events:all;position:absolute;border-radius:50%;border:2px solid rgba(255,255,255,0.25);color:#fff;font-family:'Courier New',monospace;font-weight:bold;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:0.05em;transition:filter 0.1s,transform 0.1s}
+.m-btn.active{filter:brightness(1.5);transform:scale(0.92)}
+#btn-shoot{right:0;bottom:0;width:72px;height:72px;font-size:0.7em;background:rgba(255,50,50,0.45);border-color:rgba(255,100,100,0.4)}
+#btn-jump{right:5px;bottom:84px;width:58px;height:58px;font-size:0.6em;background:rgba(50,100,255,0.35);border-color:rgba(100,160,255,0.35)}
+#btn-boost{right:84px;bottom:0;width:54px;height:54px;font-size:0.55em;background:rgba(255,160,0,0.35);border-color:rgba(255,180,50,0.35)}
+#btn-vehicle{right:84px;bottom:66px;width:48px;height:48px;font-size:0.55em;background:rgba(60,200,100,0.3);border-color:rgba(80,220,120,0.3)}
+#btn-enter{right:5px;bottom:152px;width:48px;height:48px;font-size:0.55em;background:rgba(60,200,100,0.3);border-color:rgba(80,220,120,0.3)}
+#mobile-top-btns{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:8;pointer-events:all;display:none;gap:8px}
+.mobile.playing #mobile-top-btns{display:flex}
+.mt-btn{background:linear-gradient(135deg,rgba(30,60,120,0.7),rgba(20,40,80,0.85));border:1px solid rgba(100,180,255,0.25);color:#fff;font-family:'Courier New',monospace;font-size:0.65em;padding:7px 14px;border-radius:6px;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;letter-spacing:0.1em;text-transform:uppercase}
+.mt-btn.wpn{background:linear-gradient(135deg,rgba(120,30,30,0.7),rgba(80,20,20,0.85));border-color:rgba(255,100,100,0.25)}
+.mt-btn:active{filter:brightness(1.3)}
+#rotate-msg{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.95);color:#fff;font-family:'Courier New',monospace;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:0.9em;text-align:center}
+#rotate-msg .rot-icon{font-size:3em;animation:rot-phone 1.5s ease-in-out infinite}
+@keyframes rot-phone{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
+@media screen and (orientation:portrait){.mobile #rotate-msg{display:flex!important}}
 </style>
 </head>
 <body>
@@ -142,6 +169,22 @@ canvas{display:block}
 <div class="subtitle">Use arrows &amp; enter to select</div>
 <div id="veh-categories"></div>
 </div>
+<div id="mobile-controls">
+<div id="mobile-cam-area"></div>
+<div id="mobile-joystick"><div id="joy-base"><div id="joy-thumb"></div></div></div>
+<div id="mobile-btns">
+<div id="btn-shoot" class="m-btn">FIRE</div>
+<div id="btn-jump" class="m-btn">JUMP</div>
+<div id="btn-boost" class="m-btn">RUN</div>
+<div id="btn-vehicle" class="m-btn">F</div>
+<div id="btn-enter" class="m-btn">E</div>
+</div>
+</div>
+<div id="mobile-top-btns">
+<div id="mt-veh" class="mt-btn">VEHICLES</div>
+<div id="mt-wpn" class="mt-btn wpn">WEAPONS</div>
+</div>
+<div id="rotate-msg"><div class="rot-icon">📱</div><div>Rotate your device to landscape</div></div>
 <canvas id="game"></canvas>
 
 <script>
@@ -8614,12 +8657,16 @@ document.addEventListener('mousemove',e=>{
 
 const overlay=document.getElementById('overlay'),hud=document.getElementById('hud');
 
+const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;
+if(isMobile)document.body.classList.add('mobile');
+
 function startGame(){
   overlay.style.display='none';
   hud.style.display='block';
-  document.getElementById('bottom-bar').style.display='flex';
+  if(!isMobile)document.getElementById('bottom-bar').style.display='flex';
   document.getElementById('weapon-hud').style.display='block';
   locked=true;
+  if(isMobile)document.body.classList.add('playing');
   // Start from mountains, flying toward city
   P.set(-CH-60,getH(-CH-60,0)+100,0);
   yaw=Math.PI; pitch=-0.1;
@@ -8628,7 +8675,8 @@ function startGame(){
   V.set(ff.x*60,8,ff.z*60);
   boostFuel=100;
   currentWeapon='pistol';
-  try{canvas.requestPointerLock()}catch(e){}
+  if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
+  if(isMobile)try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
 }
 function stopGame(){
   overlay.style.display='flex';
@@ -8636,6 +8684,7 @@ function stopGame(){
   document.getElementById('bottom-bar').style.display='none';
   document.getElementById('weapon-hud').style.display='none';
   locked=false;shooting=false;
+  if(isMobile)document.body.classList.remove('playing');
 }
 
 overlay.addEventListener('click',startGame);
@@ -9608,7 +9657,7 @@ function closeVehMenu(){
   if(!menuOpen)return;
   menuOpen=false;
   vehMenu.classList.remove('open');
-  try{canvas.requestPointerLock()}catch(e){}
+  if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
 }
 
 vehBtn.addEventListener('click',e=>{e.stopPropagation();if(menuOpen)closeVehMenu();else openVehMenu()});
@@ -9689,7 +9738,7 @@ function closeWpnMenu(){
   if(!wpnMenuOpen)return;
   wpnMenuOpen=false;
   wpnMenu.classList.remove('open');
-  try{canvas.requestPointerLock()}catch(e){}
+  if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
 }
 wpnBtn.addEventListener('click',e=>{e.stopPropagation();if(wpnMenuOpen)closeWpnMenu();else openWpnMenu()});
 document.getElementById('wpn-close').addEventListener('click',closeWpnMenu);
@@ -9719,7 +9768,130 @@ function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();
 animate();
 
 window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
-setTimeout(()=>{if(locked)showTip('Flying from the mountains! Click to shoot, B=weapons, V=vehicles')},1500);
+setTimeout(()=>{if(locked)showTip(isMobile?'Flying from the mountains! Tap FIRE to shoot':'Flying from the mountains! Click to shoot, B=weapons, V=vehicles')},1500);
+
+// ══════════════ MOBILE TOUCH CONTROLS ══════════════
+if(isMobile){
+  const joyBase=document.getElementById('joy-base');
+  const joyThumb=document.getElementById('joy-thumb');
+  const camArea=document.getElementById('mobile-cam-area');
+  let joyTouchId=null,camTouchId=null;
+  let joyCX=0,joyCY=0,camLastX=0,camLastY=0;
+  const JOY_R=45;
+
+  // Prevent all default touch on canvas/body to stop scrolling/zooming
+  canvas.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+  canvas.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+  document.body.addEventListener('touchmove',e=>{if(locked)e.preventDefault()},{passive:false});
+
+  // ── Joystick ──
+  joyBase.addEventListener('touchstart',e=>{
+    e.preventDefault();e.stopPropagation();
+    const t=e.changedTouches[0];
+    joyTouchId=t.identifier;
+    const r=joyBase.getBoundingClientRect();
+    joyCX=r.left+r.width/2;joyCY=r.top+r.height/2;
+    joyUpdate(t.clientX,t.clientY);
+  },{passive:false});
+
+  function joyUpdate(tx,ty){
+    let dx=tx-joyCX,dy=ty-joyCY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>JOY_R){dx=dx/dist*JOY_R;dy=dy/dist*JOY_R}
+    joyThumb.style.left=(joyBase.offsetWidth/2+dx)+'px';
+    joyThumb.style.top=(joyBase.offsetHeight/2+dy)+'px';
+    joyThumb.style.transform='translate(-50%,-50%)';
+    const dz=15;
+    keys['KeyW']=dy<-dz;keys['ArrowUp']=dy<-dz;
+    keys['KeyS']=dy>dz;keys['ArrowDown']=dy>dz;
+    keys['KeyA']=dx<-dz;keys['ArrowLeft']=dx<-dz;
+    keys['KeyD']=dx>dz;keys['ArrowRight']=dx>dz;
+  }
+  function joyReset(){
+    joyThumb.style.left='50%';joyThumb.style.top='50%';
+    joyThumb.style.transform='translate(-50%,-50%)';
+    keys['KeyW']=false;keys['KeyS']=false;keys['KeyA']=false;keys['KeyD']=false;
+    keys['ArrowUp']=false;keys['ArrowDown']=false;keys['ArrowLeft']=false;keys['ArrowRight']=false;
+  }
+
+  // ── Camera look ──
+  camArea.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    if(camTouchId!==null)return;
+    const t=e.changedTouches[0];
+    camTouchId=t.identifier;
+    camLastX=t.clientX;camLastY=t.clientY;
+  },{passive:false});
+
+  // ── Global move/end handlers ──
+  document.addEventListener('touchmove',e=>{
+    for(let i=0;i<e.changedTouches.length;i++){
+      const t=e.changedTouches[i];
+      if(t.identifier===joyTouchId){e.preventDefault();joyUpdate(t.clientX,t.clientY)}
+      if(t.identifier===camTouchId&&locked){
+        e.preventDefault();
+        const dx=t.clientX-camLastX,dy=t.clientY-camLastY;
+        yaw-=dx*0.004;pitch=clamp(pitch-dy*0.004,-Math.PI/2.5,Math.PI/2.5);
+        camLastX=t.clientX;camLastY=t.clientY;
+      }
+    }
+  },{passive:false});
+  document.addEventListener('touchend',e=>{
+    for(let i=0;i<e.changedTouches.length;i++){
+      const t=e.changedTouches[i];
+      if(t.identifier===joyTouchId){joyTouchId=null;joyReset()}
+      if(t.identifier===camTouchId){camTouchId=null}
+    }
+  });
+  document.addEventListener('touchcancel',e=>{
+    for(let i=0;i<e.changedTouches.length;i++){
+      const t=e.changedTouches[i];
+      if(t.identifier===joyTouchId){joyTouchId=null;joyReset()}
+      if(t.identifier===camTouchId){camTouchId=null}
+    }
+  });
+
+  // ── Action buttons ──
+  function mBtn(id,onDown,onUp){
+    const el=document.getElementById(id);
+    el.addEventListener('touchstart',e=>{
+      e.preventDefault();e.stopPropagation();
+      el.classList.add('active');onDown();
+    },{passive:false});
+    el.addEventListener('touchend',e=>{
+      e.preventDefault();e.stopPropagation();
+      el.classList.remove('active');if(onUp)onUp();
+    },{passive:false});
+    el.addEventListener('touchcancel',()=>{el.classList.remove('active');if(onUp)onUp()});
+  }
+  mBtn('btn-shoot',
+    ()=>{shooting=true;keys['mouse0']=true},
+    ()=>{shooting=false;keys['mouse0']=false}
+  );
+  mBtn('btn-jump',
+    ()=>{spaceJust=true;keys['Space']=true;keys._sp=true},
+    ()=>{keys['Space']=false;keys._sp=false}
+  );
+  mBtn('btn-boost',
+    ()=>{keys['ShiftLeft']=true;keys['ShiftRight']=true},
+    ()=>{keys['ShiftLeft']=false;keys['ShiftRight']=false}
+  );
+  mBtn('btn-vehicle',
+    ()=>{fJust=true},null
+  );
+  mBtn('btn-enter',
+    ()=>{zoneManager.eJust=true;keys['KeyE']=true;setTimeout(()=>keys['KeyE']=false,200)},null
+  );
+  mBtn('mt-veh',
+    ()=>{if(menuOpen)closeVehMenu();else if(!wpnMenuOpen)openVehMenu()},null
+  );
+  mBtn('mt-wpn',
+    ()=>{if(wpnMenuOpen)closeWpnMenu();else if(!menuOpen)openWpnMenu()},null
+  );
+
+  // Mobile overlay: tap anywhere to start
+  overlay.addEventListener('touchstart',e=>{e.preventDefault();startGame()},{passive:false});
+}
 </script>
 </body>
 </html>
