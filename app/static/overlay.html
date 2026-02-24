@@ -171,6 +171,19 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
   #ow-game-container.ow-pushed{width:0;overflow:hidden}
   #ow-fab{top:8px;right:8px;width:34px;height:34px}
 }
+
+#ow-rotate-msg{display:none;position:fixed;inset:0;z-index:99999;background:#000;color:#fff;
+  font-family:'Inter',-apple-system,sans-serif;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;text-align:center;padding:20px}
+#ow-rotate-msg .ow-rot-icon{font-size:3.5em;animation:ow-rot 1.5s ease-in-out infinite}
+#ow-rotate-msg .ow-rot-title{font-size:1.2em;font-weight:600}
+#ow-rotate-msg .ow-rot-sub{font-size:.85em;color:#888}
+@keyframes ow-rot{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
+
+@media screen and (max-width:768px) and (orientation:portrait){
+  #ow-rotate-msg{display:flex!important}
+  #ow-panel,#ow-fab,#ow-game-container{display:none!important}
+}
 </style>
 
 <div id="ow-overlay-root">
@@ -289,6 +302,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
     <button class="ow-nv-dismiss" id="ow-nv-dismiss">&times;</button>
   </div>
   <div id="ow-toast"></div>
+  <div id="ow-rotate-msg"><div class="ow-rot-icon">📱</div><div class="ow-rot-title">Rotate to Landscape</div><div class="ow-rot-sub">This game is best played in landscape mode</div></div>
 </div>
 
 <script id="ow-overlay-script">
@@ -743,8 +757,9 @@ if(savedKey){apiKeyInput.value=savedKey;apikeyModalInput.value=savedKey}
 restoreChatHistory();
 updateAuthUI();
 
-// Always open panel on load
-openPanel();
+// Open panel on load (skip on mobile portrait — rotate screen shown instead)
+const _isMobilePortrait=window.matchMedia('(max-width:768px) and (orientation:portrait)').matches;
+if(!_isMobilePortrait)openPanel();
 
 })();
 </script>
