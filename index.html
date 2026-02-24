@@ -20,9 +20,6 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif}
-@media screen and (orientation:portrait){
-body.mobile{transform:rotate(90deg);transform-origin:top left;position:fixed;top:0;left:100vw;width:100vh;height:100vw;overflow:hidden}
-}
 canvas{display:block}
 #overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;cursor:pointer;background:linear-gradient(180deg,rgba(5,10,30,.25) 0%,rgba(5,10,30,.15) 40%,rgba(5,10,30,.4) 100%)}
 #overlay h1{font-size:3.5em;letter-spacing:0.35em;margin-bottom:0.15em;color:#fff;text-shadow:0 0 40px rgba(0,0,0,.8),0 0 80px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.9)}
@@ -8782,13 +8779,35 @@ const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;
 if(isMobile){
   document.body.classList.add('mobile');
   document.querySelector('#overlay .click').textContent='Tap to play';
-  // When CSS-rotated in portrait, swap width/height for renderer
+  // Force landscape: CSS-rotate body when phone is portrait, swap innerWidth/Height for renderer
   const _origIW=Object.getOwnPropertyDescriptor(Window.prototype,'innerWidth')||Object.getOwnPropertyDescriptor(window,'innerWidth');
   const _origIH=Object.getOwnPropertyDescriptor(Window.prototype,'innerHeight')||Object.getOwnPropertyDescriptor(window,'innerHeight');
-  function _isPortrait(){return window.matchMedia('(orientation:portrait)').matches}
-  Object.defineProperty(window,'innerWidth',{get(){const w=_origIW.get.call(this);const h=_origIH.get.call(this);return _isPortrait()?Math.max(w,h):w},configurable:true});
-  Object.defineProperty(window,'innerHeight',{get(){const w=_origIW.get.call(this);const h=_origIH.get.call(this);return _isPortrait()?Math.min(w,h):h},configurable:true});
-  window.matchMedia('(orientation:portrait)').addEventListener('change',()=>window.dispatchEvent(new Event('resize')));
+  function _isPortrait(){const w=_origIW.get.call(window),h=_origIH.get.call(window);return h>w}
+  Object.defineProperty(window,'innerWidth',{get(){const w=_origIW.get.call(this),h=_origIH.get.call(this);return _isPortrait()?h:w},configurable:true});
+  Object.defineProperty(window,'innerHeight',{get(){const w=_origIW.get.call(this),h=_origIH.get.call(this);return _isPortrait()?w:h},configurable:true});
+  function _applyRotation(){
+    const p=_isPortrait();
+    const b=document.body;
+    if(p){
+      const vw=_origIW.get.call(window),vh=_origIH.get.call(window);
+      b.style.transform='rotate(90deg)';
+      b.style.transformOrigin='top left';
+      b.style.position='fixed';
+      b.style.top='0';
+      b.style.left=vh+'px';
+      b.style.width=vh+'px';
+      b.style.height=vw+'px';
+      b.style.overflow='hidden';
+    }else{
+      b.style.transform='';b.style.transformOrigin='';b.style.position='';
+      b.style.top='';b.style.left='';b.style.width='';b.style.height='';
+      b.style.overflow='hidden';
+    }
+    window.dispatchEvent(new Event('resize'));
+  }
+  _applyRotation();
+  window.addEventListener('orientationchange',()=>setTimeout(_applyRotation,100));
+  window.matchMedia('(orientation:portrait)').addEventListener('change',()=>setTimeout(_applyRotation,50));
 }
 
 function startGame(){
