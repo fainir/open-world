@@ -104,8 +104,7 @@ canvas{display:block}
 #btn-shoot{right:0;bottom:0;width:72px;height:72px;font-size:0.7em;background:rgba(255,50,50,0.45);border-color:rgba(255,100,100,0.4)}
 #btn-jump{right:5px;bottom:84px;width:58px;height:58px;font-size:0.6em;background:rgba(50,100,255,0.35);border-color:rgba(100,160,255,0.35)}
 #btn-boost{right:84px;bottom:0;width:54px;height:54px;font-size:0.55em;background:rgba(255,160,0,0.35);border-color:rgba(255,180,50,0.35)}
-#btn-vehicle{right:84px;bottom:66px;width:48px;height:48px;font-size:0.55em;background:rgba(60,200,100,0.3);border-color:rgba(80,220,120,0.3)}
-#btn-enter{right:5px;bottom:152px;width:48px;height:48px;font-size:0.55em;background:rgba(60,200,100,0.3);border-color:rgba(80,220,120,0.3)}
+#btn-enter{right:84px;bottom:66px;width:48px;height:48px;font-size:0.55em;background:rgba(60,200,100,0.3);border-color:rgba(80,220,120,0.3)}
 #mobile-center-btns{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:8;pointer-events:all;display:none;gap:6px}
 .mobile.playing #mobile-center-btns{display:flex}
 .mc-btn{pointer-events:all;border-radius:8px;border:1px solid rgba(255,255,255,0.2);color:#fff;font-family:'Courier New',monospace;font-weight:bold;font-size:0.5em;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:0.03em;transition:filter 0.1s,transform 0.1s;padding:6px 10px;gap:2px;line-height:1}
@@ -131,8 +130,7 @@ canvas{display:block}
 <span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
 <span class="ctrl-key"><kbd>Mouse</kbd><span class="cl">Look</span></span>
 <span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
-<span class="ctrl-key"><kbd>E</kbd><span class="cl">Enter</span></span>
-<span class="ctrl-key"><kbd>F</kbd><span class="cl">Vehicle</span></span>
+<span class="ctrl-key"><kbd>E</kbd><span class="cl">Enter / Vehicle</span></span>
 <span class="ctrl-key"><kbd>V</kbd><span class="cl">Vehicle Menu</span></span>
 <span class="ctrl-key"><kbd>B</kbd><span class="cl">Weapons</span></span>
 <span class="ctrl-key"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span class="cl">Tricks</span></span>
@@ -158,8 +156,7 @@ canvas{display:block}
 <span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
 <span class="ctrl-key"><kbd>Mouse</kbd><span class="cl">Look</span></span>
 <span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
-<span class="ctrl-key"><kbd>E</kbd><span class="cl">Enter</span></span>
-<span class="ctrl-key"><kbd>F</kbd><span class="cl">Vehicle</span></span>
+<span class="ctrl-key"><kbd>E</kbd><span class="cl">Enter / Vehicle</span></span>
 <span class="ctrl-key"><kbd>V</kbd><span class="cl">Vehicles</span></span>
 <span class="ctrl-key"><kbd>B</kbd><span class="cl">Weapons</span></span>
 <span class="ctrl-key"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span class="cl">Tricks</span></span>
@@ -183,15 +180,14 @@ canvas{display:block}
 <div id="mobile-cam-area"></div>
 <div id="mobile-joystick"><div id="joy-base"><div id="joy-thumb"></div></div></div>
 <div id="mobile-btns">
-<div id="btn-shoot" class="m-btn">🔥FIRE</div>
+<div id="btn-shoot" class="m-btn">🎯SHOOT</div>
 <div id="btn-jump" class="m-btn">⬆JUMP</div>
-<div id="btn-boost" class="m-btn">💨RUN</div>
-<div id="btn-vehicle" class="m-btn">🚗</div>
-<div id="btn-enter" class="m-btn">🚪</div>
+<div id="btn-boost" class="m-btn">🚀BOOST</div>
+<div id="btn-enter" class="m-btn">🚪ENTER</div>
 </div>
 </div>
 <div id="mobile-center-btns">
-<div id="btn-trick" class="mc-btn"><span class="mc-ico">🛹</span>TRICK</div>
+<div id="btn-trick" class="mc-btn"><span class="mc-ico">🤸</span>FLIP</div>
 <div id="btn-fight" class="mc-btn"><span class="mc-ico">👊</span>FIGHT</div>
 <div id="btn-veh-m" class="mc-btn"><span class="mc-ico">🚗</span>VEHICLE</div>
 <div id="btn-wpn-m" class="mc-btn"><span class="mc-ico">🔫</span>WEAPON</div>
@@ -8755,14 +8751,14 @@ function updateZoneMarkers(){
 // ══════════════ INPUT ══════════════
 document.addEventListener('keydown',e=>{keys[e.code]=true;
   if(e.code==='Space'&&!keys._sp){keys._sp=true;spaceJust=true}
-  if(e.code==='KeyF'&&!keys._fp){keys._fp=true;fJust=true}
+  if((e.code==='KeyF'||e.code==='KeyE')&&!keys._fp){keys._fp=true;fJust=true}
   if(e.code==='Digit1')tryTrick(0);if(e.code==='Digit2')tryTrick(1);
   if(e.code==='Digit3')tryTrick(2);if(e.code==='Digit4')tryTrick(3);
   if(e.code==='Digit5')tryFight(0);if(e.code==='Digit6')tryFight(1);
   if(e.code==='Digit7')tryFight(2);if(e.code==='Digit8')tryFight(3);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });
-document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')keys._sp=false;if(e.code==='KeyF')keys._fp=false});
+document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')keys._sp=false;if(e.code==='KeyF'||e.code==='KeyE')keys._fp=false});
 document.addEventListener('mousedown',e=>{if(e.button===0&&locked&&!menuOpen&&!wpnMenuOpen){shooting=true;keys['mouse0']=true}});
 document.addEventListener('mouseup',e=>{if(e.button===0){shooting=false;keys['mouse0']=false}});
 document.addEventListener('mousemove',e=>{
@@ -9066,7 +9062,7 @@ function update(dt){
   if(!currentVeh&&mode==='walk'){
     const nv=nearestVehicle();
     const vp=document.getElementById('vehicle-prompt');
-    if(nv){vp.textContent=`Press F - ${nv.type.charAt(0).toUpperCase()+nv.type.slice(1)}`;vp.style.opacity='1'}
+    if(nv){vp.textContent=`Press E - ${nv.type.charAt(0).toUpperCase()+nv.type.slice(1)}`;vp.style.opacity='1'}
     else vp.style.opacity='0';
   } else document.getElementById('vehicle-prompt').style.opacity='0';
 
@@ -10261,11 +10257,8 @@ if(isMobile){
     ()=>{keys['ShiftLeft']=true;keys['ShiftRight']=true},
     ()=>{keys['ShiftLeft']=false;keys['ShiftRight']=false}
   );
-  mBtn('btn-vehicle',
-    ()=>{fJust=true},null
-  );
   mBtn('btn-enter',
-    ()=>{zoneManager.eJust=true;keys['KeyE']=true;setTimeout(()=>keys['KeyE']=false,200)},null
+    ()=>{fJust=true;zoneManager.eJust=true;keys['KeyE']=true;setTimeout(()=>keys['KeyE']=false,200)},null
   );
   mBtn('btn-veh-m',
     ()=>{if(menuOpen)closeVehMenu();else if(!wpnMenuOpen)openVehMenu()},null
