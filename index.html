@@ -8781,7 +8781,7 @@ document.addEventListener('mousemove',e=>{
 const overlay=document.getElementById('overlay'),hud=document.getElementById('hud');
 
 const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;
-if(isMobile)document.body.classList.add('mobile');
+if(isMobile){document.body.classList.add('mobile');document.querySelector('#overlay .click').textContent='Tap to play'}
 
 function startGame(){
   overlay.style.display='none';
