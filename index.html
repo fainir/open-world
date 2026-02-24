@@ -8816,10 +8816,14 @@ function stopGame(){
 
 overlay.addEventListener('click',startGame);
 document.addEventListener('keydown',()=>{if(overlay.style.display!=='none')startGame()},{once:true});
-canvas.addEventListener('click',()=>{if(!locked)startGame();});
+canvas.addEventListener('click',()=>{
+  if(!locked){startGame();return}
+  // Re-lock pointer if game is running but lock was lost
+  if(!isMobile&&document.pointerLockElement!==canvas){try{canvas.requestPointerLock()}catch(e){}}
+});
 document.addEventListener('pointerlockchange',()=>{
   const pl=document.pointerLockElement===canvas;
-  if(!pl&&locked){/* pointer lock lost - keep game running, click canvas to re-lock */}
+  if(!pl&&locked&&!isMobile){/* pointer lock lost — click game to re-lock */}
 });
 document.addEventListener('keydown',e=>{if(e.code==='Escape'&&locked)stopGame()});
 
