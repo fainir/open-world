@@ -761,28 +761,7 @@ if(savedKey){apiKeyInput.value=savedKey;apikeyModalInput.value=savedKey}
 restoreChatHistory();
 updateAuthUI();
 
-// Force landscape on mobile — enter fullscreen + lock orientation on first tap
-if('ontouchstart' in window&&navigator.maxTouchPoints>0){
-  const _goLandscape=()=>{
-    const de=document.documentElement;
-    const goFS=de.requestFullscreen||de.webkitRequestFullscreen;
-    if(goFS){
-      goFS.call(de).then(()=>{
-        try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
-      }).catch(()=>{
-        try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
-      });
-    }else{
-      try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
-    }
-  };
-  document.addEventListener('touchstart',_goLandscape,{once:true});
-  document.addEventListener('click',_goLandscape,{once:true});
-  // Re-lock landscape whenever entering fullscreen
-  document.addEventListener('fullscreenchange',()=>{
-    if(document.fullscreenElement){try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}}
-  });
-}
+// Landscape is forced via CSS rotation in index.html — no orientation lock needed
 
 // Auto-open panel only on desktop — mobile users see the game home screen first
 if(!('ontouchstart' in window&&navigator.maxTouchPoints>0)){openPanel()}
