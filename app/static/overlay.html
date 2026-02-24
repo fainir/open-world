@@ -9,12 +9,15 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
 #ow-game-container{width:100vw;height:100vh;overflow:hidden;position:relative;cursor:none}
 #ow-game-container.ow-pushed{width:calc(100vw - 300px);transform:translateZ(0)}
 
-#ow-fab{position:fixed;top:12px;right:12px;z-index:9999;width:38px;height:38px;border-radius:10px;
+#ow-fab,#ow-fs-btn{position:fixed;top:12px;z-index:9999;width:38px;height:38px;border-radius:10px;
   background:rgba(20,24,32,.75);border:1px solid rgba(255,255,255,.12);cursor:pointer;color:#ccd0d8;
   display:flex;align-items:center;justify-content:center;
   transition:background .15s;pointer-events:all;padding:0}
-#ow-fab:hover{background:rgba(30,34,44,.9);color:#fff}
-#ow-fab svg{width:18px;height:18px}
+#ow-fab{right:12px}
+#ow-fs-btn{right:58px}
+#ow-fab:hover,#ow-fs-btn:hover{background:rgba(30,34,44,.9);color:#fff}
+#ow-fab svg,#ow-fs-btn svg{width:18px;height:18px}
+:fullscreen #ow-fs-btn,:-webkit-full-screen #ow-fs-btn{display:none!important}
 
 #ow-panel{position:fixed;top:0;right:0;bottom:0;width:300px;max-width:90vw;z-index:9998;
   background:rgba(12,15,22,.97);border-left:1px solid rgba(80,90,110,.3);
@@ -170,6 +173,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
   #ow-panel{width:100vw;max-width:100vw}
   #ow-game-container.ow-pushed{width:0;overflow:hidden}
   #ow-fab{top:8px;right:8px;width:34px;height:34px}
+  #ow-fs-btn{top:8px;right:50px;width:34px;height:34px}
 }
 
 #ow-rotate-msg{display:none;position:fixed;inset:0;z-index:99999;background:#000;color:#fff;
@@ -187,6 +191,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
 </style>
 
 <div id="ow-overlay-root">
+  <button id="ow-fs-btn" title="Fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
   <button id="ow-fab" title="Edit this game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
   <div id="ow-panel">
     <div class="ow-header">
@@ -406,6 +411,14 @@ function closePanel(){
 
 fab.onclick=()=>panelOpen?closePanel():openPanel();
 $('ow-panel-close').onclick=closePanel;
+
+// ── Fullscreen toggle ──
+$('ow-fs-btn').onclick=()=>{
+  const de=document.documentElement;
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    try{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}
+  }
+};
 
 // ── Keyboard handling ──
 document.addEventListener('keydown',(e)=>{
