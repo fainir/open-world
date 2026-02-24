@@ -133,32 +133,39 @@ Players enter zones by pressing E while near a glowing circle on the ground at t
 - The `radius` field in the zone definition controls the E-key proximity range (typically 8-10)
 
 ### Desktop & Mobile Support
-The game runs on BOTH desktop and mobile. The gameplay is the same — same world, same vehicles, weapons, tricks, physics. The difference is only in how the player controls it:
+The game runs on BOTH desktop and mobile. The gameplay is the same — same world, same vehicles, weapons, tricks, physics. The difference is only in how the player controls it. ALL changes MUST work on BOTH platforms.
 
 **Desktop controls:**
 - WASD/Arrows to move, Mouse to look around (pointer lock), Click to shoot
-- Keyboard shortcuts: Space=jump/fly, Shift=boost, F=vehicle, V=vehicle menu, B=weapon menu, E=enter zones, 1-4=tricks, 5-8=fight moves
+- Keyboard shortcuts: Space=jump/fly, Shift=boost, E=enter zones AND mount/dismount vehicles (unified key), V=vehicle menu, B=weapon menu, 1-4=tricks, 5-8=fight moves
+- F key also works for vehicles (backward compatibility) but E is the primary key for both entering zones and vehicles
 - Bottom bar shows keyboard shortcut labels (`#controls-bar` inside `#bottom-bar`)
+- Weapon HUD (`#weapon-hud`) shows current weapon name and ammo at bottom-right
 
 **Mobile controls (touch):**
 - Mobile is detected via `isMobile` variable (`'ontouchstart' in window && navigator.maxTouchPoints > 0`)
 - `body` gets class `mobile`, and `playing` class when in-game
+- Landscape is forced: CSS rotation is applied via JS when phone is in portrait (body rotated 90deg, innerWidth/Height swapped)
 - Virtual joystick (bottom-left, `#mobile-joystick`) — sets WASD keys based on thumb position
 - Camera look — touch-drag anywhere on screen (`#mobile-cam-area`) modifies `yaw`/`pitch` directly (no pointer lock)
-- Action buttons (bottom-right, `#mobile-btns`): FIRE, JUMP, RUN (boost), F (vehicle), E (enter zone)
-- TRICK and FIGHT buttons (left side, `#mobile-left-btns`) — cycle through trick/fight moves
-- Menu buttons (top center, `#mobile-top-btns`): VEHICLES, WEAPONS
-- Fullscreen button (top-right, `#btn-fs`)
+- Right-side action buttons (bottom-right, `#mobile-btns`): 🎯SHOOT, ⬆JUMP, 🚀BOOST, 🚪ENTER (unified — handles zones + vehicles)
+- Center action bar (bottom-center, `#mobile-center-btns`): 🤸FLIP (tricks), 👊FIGHT, 🚗VEHICLE (menu), 🔫WEAPON (menu)
+- Fullscreen button is provided by the studio overlay at top-left (`#ow-fs-btn`)
+- Edit game button is provided by the studio overlay at top-right (`#ow-fab`)
 - Desktop bottom bar (`#bottom-bar`, `#controls-bar`) is hidden on mobile
+- Weapon HUD (`#weapon-hud`) is hidden on mobile via `.mobile #weapon-hud{display:none!important}`
 - Pointer lock is skipped on mobile — all `requestPointerLock()` calls are wrapped in `if(!isMobile)`
-- Landscape orientation is enforced: portrait shows a "Rotate to landscape" message (`#rotate-msg`)
 - Menus (`#veh-menu`, `#wpn-menu`) support touch scrolling via `touch-action: pan-y`
 
 **When modifying controls or UI:**
-- If you add a new keyboard action, also consider adding a mobile button or mapping it to an existing touch control
+- ALL UI and gameplay changes MUST work on both desktop and mobile
+- If you add a new keyboard action, also add a mobile button or map it to an existing touch control
+- If you add a new mobile button, also add a keyboard shortcut for desktop
 - Never remove or break the `isMobile` checks or mobile touch event handlers
 - The `keys` object is shared — mobile buttons set the same key states (e.g., `keys['KeyW']`, `keys['mouse0']`) so the game logic works identically
 - Don't add new `requestPointerLock()` calls without wrapping in `if(!isMobile)`
+- Don't add elements with `position:fixed` using `100vw`/`100vh` — use `100%` instead (required for mobile portrait CSS rotation)
+- Don't show desktop-only UI elements on mobile (use `.mobile` class to hide them)
 
 ### Core Structure
 - **CSS**: UI overlay styles (HUD, menus, controls, mobile touch buttons)
