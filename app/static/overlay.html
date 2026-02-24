@@ -761,9 +761,15 @@ if(savedKey){apiKeyInput.value=savedKey;apikeyModalInput.value=savedKey}
 restoreChatHistory();
 updateAuthUI();
 
-// Force landscape on mobile
+// Force landscape on mobile — lock on first user interaction (browsers require a gesture)
 if('ontouchstart' in window&&navigator.maxTouchPoints>0){
-  try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
+  const _lockLandscape=()=>{
+    try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
+    document.removeEventListener('touchstart',_lockLandscape);
+    document.removeEventListener('click',_lockLandscape);
+  };
+  document.addEventListener('touchstart',_lockLandscape,{once:true});
+  document.addEventListener('click',_lockLandscape,{once:true});
 }
 
 // Always open panel on load
