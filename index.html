@@ -9434,11 +9434,13 @@ function update(dt){
   const _aimFwd=flyFwd();
   let ideal,look;
   if(aimMode){
-    // Shooting camera: follows pitch, looks in aim direction
+    // Shooting camera: over-right-shoulder so crosshair is clear
+    const _rightX=Math.cos(yaw),_rightZ=-Math.sin(yaw);
+    const _shoulderOff=1.2;
     ideal=new THREE.Vector3(
-      P.x+Math.sin(yaw)*Math.cos(pitch)*camD,
+      P.x+Math.sin(yaw)*Math.cos(pitch)*camD+_rightX*_shoulderOff,
       P.y+camH-Math.sin(pitch)*camD*0.5,
-      P.z+Math.cos(yaw)*Math.cos(pitch)*camD);
+      P.z+Math.cos(yaw)*Math.cos(pitch)*camD+_rightZ*_shoulderOff);
   } else {
     // Normal camera: behind player, smooth follow
     ideal=new THREE.Vector3(
