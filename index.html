@@ -8804,6 +8804,10 @@ if(isMobile){
       b.style.top='';b.style.left='';b.style.width='';b.style.height='';
       b.style.overflow='hidden';
     }
+    // Directly resize renderer + camera (resize listener may not exist yet)
+    const w=innerWidth,h=innerHeight;
+    if(typeof R!=='undefined'){R.setSize(w,h)}
+    if(typeof cam!=='undefined'){cam.aspect=w/h;cam.updateProjectionMatrix()}
     window.dispatchEvent(new Event('resize'));
   }
   _applyRotation();
