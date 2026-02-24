@@ -9248,7 +9248,7 @@ function update(dt){
     jetWing.visible=isFlying;gunG.visible=!isFlying;
     if(isFlying){
       // Prone superman pose: rotate entire charG to lay flat, pitch follows look direction
-      const flyQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
+      const flyQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
       const pitchQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2+pitch);
       flyQ.multiply(pitchQ);
       charG.quaternion.copy(flyQ);
@@ -9262,7 +9262,7 @@ function update(dt){
     else if(climbing){
       // Climbing animation: arms reaching up alternating, legs pumping
       const ct=performance.now()*.006;
-      charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
+      charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
       lA.position.set(-.35,1,0);rA.position.set(.35,1,0);
       lA.rotation.set(-2.5+Math.sin(ct)*.4,0,.2);rA.rotation.set(-2.5-Math.sin(ct)*.4,0,-.2);
       lL.position.set(-.13,.35,0);rL.position.set(.13,.35,0);
@@ -9277,7 +9277,7 @@ function update(dt){
       const ct=parkourTricks.find(t=>t.n===trickName);
       const fm=ct?null:fightMoves.find(t=>t.n===trickName);
       const prog=trickTimer/trickDur;
-      const cBaseQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
+      const cBaseQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
       if(ct){
         // Parkour trick: rotate whole body
         const cTQ=new THREE.Quaternion();
@@ -9348,13 +9348,13 @@ function update(dt){
           bdM.rotation.z=.2*legSwing;
         }
       }
-    } else if(!isFlying){charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw)}
+    } else if(!isFlying){charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI)}
   } else if(currentVeh&&charG.visible){
     // Rider visible on ride-on vehicles - follows vehicle rotation including tricks
     const ri=rideOnVeh[currentVeh.type];
     const ro=ri?ri.y:0;
     // Character base rotation (no PI/2 offset unlike vehicle mesh)
-    const charBaseQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
+    const charBaseQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
     if(trickActive){
       const prog=trickTimer/trickDur;
       const ct=currentVeh.def.tricks.find(t=>t.n===trickName);
