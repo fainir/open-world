@@ -8800,9 +8800,9 @@ function startGame(){
   currentWeapon='pistol';
   if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
   if(isMobile){
-    try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
     const de=document.documentElement;
-    try{(de.requestFullscreen||de.webkitRequestFullscreen||de.msRequestFullscreen).call(de).catch(()=>{})}catch(e){}
+    const goFS=de.requestFullscreen||de.webkitRequestFullscreen||de.msRequestFullscreen;
+    if(goFS){try{goFS.call(de).then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}}).catch(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}})}catch(e){}}
   }
 }
 function stopGame(){
