@@ -8976,7 +8976,7 @@ function dismountVehicle(){
 function fwd(){return new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw))}
 function rgt(){const f=fwd();return new THREE.Vector3(f.z,0,-f.x)}
 function flyFwd(){return new THREE.Vector3(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)).normalize()}
-let walkBob=0,engineOn=false;
+let walkBob=0,engineOn=false,aimMode=false,aimTimer=0;
 
 // ══════════════ GAME UPDATE ══════════════
 function update(dt){
@@ -9396,16 +9396,27 @@ function update(dt){
   let camD=3.5,camH=1.8;
   if(isFlying){camD=lerp(6,14,clamp(V.length()/100,0,1));camH=2}
   if(cv){camD=cv.def.pt==='air'?12:cv.type==='yacht'?14:6;camH=cv.def.pt==='air'?3:cv.type==='yacht'?5:2}
-  // Camera sits behind and above the player, offset by pitch
+  // Aim mode timer — enter on fire, exit after 10s idle
+  if(aimTimer>0){aimTimer-=dt;if(aimTimer<=0)aimMode=false}
   const _aimFwd=flyFwd();
-  const ideal=new THREE.Vector3(
-    P.x+Math.sin(yaw)*Math.cos(pitch)*camD,
-    P.y+camH-Math.sin(pitch)*camD*0.5,
-    P.z+Math.cos(yaw)*Math.cos(pitch)*camD);
+  let ideal,look;
+  if(aimMode){
+    // Shooting camera: follows pitch, looks in aim direction
+    ideal=new THREE.Vector3(
+      P.x+Math.sin(yaw)*Math.cos(pitch)*camD,
+      P.y+camH-Math.sin(pitch)*camD*0.5,
+      P.z+Math.cos(yaw)*Math.cos(pitch)*camD);
+  } else {
+    // Normal camera: behind player, smooth follow
+    ideal=new THREE.Vector3(
+      P.x+Math.sin(yaw)*camD,
+      P.y+camH+(isFlying?-Math.sin(pitch)*camD*.3:0),
+      P.z+Math.cos(yaw)*camD);
+  }
   // Clamp camera target above terrain at camera position
   const _camFloor=Math.max(getH(ideal.x,ideal.z),getSurfaceH(ideal.x,ideal.z))+1.0;
   if(ideal.y<_camFloor)ideal.y=_camFloor;
-  cam.position.lerp(ideal,1-Math.pow(.005,dt));
+  cam.position.lerp(ideal,1-Math.pow(.01,dt));
   // Clamp final cam position after lerp so it never dips underground
   const _camFloor2=Math.max(getH(cam.position.x,cam.position.z),getSurfaceH(cam.position.x,cam.position.z))+0.5;
   if(cam.position.y<_camFloor2)cam.position.y=_camFloor2;
@@ -9417,8 +9428,13 @@ function update(dt){
     cam.position.y+=(Math.random()-.5)*intensity*.4;
     cam.position.z+=(Math.random()-.5)*intensity*.3;
   }
-  // Camera looks exactly in the aim direction (flyFwd) from its position
-  const look=cam.position.clone().add(_aimFwd.clone().multiplyScalar(50));
+  if(aimMode){
+    // Shooting mode: camera looks in exact aim direction
+    look=cam.position.clone().add(_aimFwd.clone().multiplyScalar(50));
+  } else {
+    // Normal mode: camera looks at point ahead of player
+    look=new THREE.Vector3(P.x-Math.sin(yaw)*3,P.y+1.2+(isFlying?Math.sin(pitch)*3:0),P.z-Math.cos(yaw)*3);
+  }
   cam.lookAt(look);
 
   // Sky + shadow follow camera
@@ -9431,6 +9447,7 @@ function update(dt){
   // ═══ WEAPONS ═══
   if(fireCooldown>0)fireCooldown-=dt;
   if(shooting&&fireCooldown<=0&&locked){
+    aimMode=true;aimTimer=10;
     const w=WEAPONS[currentWeapon];
       fireCooldown=1/w.fireRate;
       const gunPos=new THREE.Vector3().copy(P).add(new THREE.Vector3(0,1.5,0));
@@ -9849,7 +9866,7 @@ function update(dt){
   if(window._riverMat)window._riverMat.uniforms.time.value=clock.elapsedTime;
 
   // ═══ HUD ═══
-  document.getElementById('crosshair').style.display=locked?'block':'none';
+  document.getElementById('crosshair').style.display=(locked&&aimMode)?'block':'none';
   document.getElementById('score').textContent=score>0?`${score} PTS`:'';
   const cEl=document.getElementById('combo');
   if(comboCount>1){cEl.textContent=`COMBO x${comboCount}`;cEl.style.opacity='1'}else cEl.style.opacity='0';
