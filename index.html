@@ -9447,7 +9447,7 @@ function update(dt){
   // ═══ WEAPONS ═══
   if(fireCooldown>0)fireCooldown-=dt;
   if(shooting&&fireCooldown<=0&&locked){
-    aimMode=true;aimTimer=10;
+    aimMode=true;aimTimer=2;
     const w=WEAPONS[currentWeapon];
       fireCooldown=1/w.fireRate;
       const gunPos=new THREE.Vector3().copy(P).add(new THREE.Vector3(0,1.5,0));
