@@ -784,8 +784,8 @@ if('ontouchstart' in window&&navigator.maxTouchPoints>0){
   });
 }
 
-// Always open panel on load
-openPanel();
+// Auto-open panel only on desktop — mobile users see the game home screen first
+if(!('ontouchstart' in window&&navigator.maxTouchPoints>0)){openPanel()}
 
 })();
 </script>
