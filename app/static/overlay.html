@@ -400,17 +400,27 @@ function closePanel(){
   window.dispatchEvent(new Event('resize'));
 }
 
-fab.onclick=()=>panelOpen?closePanel():openPanel();
+fab.addEventListener('touchstart',(e)=>{e.stopPropagation()},{passive:false});
+fab.onclick=(e)=>{e.stopPropagation();panelOpen?closePanel():openPanel()};
 $('ow-panel-close').onclick=closePanel;
 
 // ── Fullscreen toggle ──
-$('ow-fs-btn').onclick=(e)=>{
+const fsBtn=$('ow-fs-btn');
+fsBtn.onclick=(e)=>{e.stopPropagation();e.preventDefault()};
+fsBtn.addEventListener('touchstart',(e)=>{
+  e.stopPropagation();e.preventDefault();
+  const de=document.documentElement;
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    try{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}
+  }
+},{passive:false});
+fsBtn.addEventListener('click',(e)=>{
   e.stopPropagation();
   const de=document.documentElement;
   if(!document.fullscreenElement&&!document.webkitFullscreenElement){
     try{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}
   }
-};
+});
 
 // ── Keyboard handling ──
 document.addEventListener('keydown',(e)=>{
