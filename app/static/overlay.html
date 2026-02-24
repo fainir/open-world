@@ -404,7 +404,8 @@ fab.onclick=()=>panelOpen?closePanel():openPanel();
 $('ow-panel-close').onclick=closePanel;
 
 // ── Fullscreen toggle ──
-$('ow-fs-btn').onclick=()=>{
+$('ow-fs-btn').onclick=(e)=>{
+  e.stopPropagation();
   const de=document.documentElement;
   if(!document.fullscreenElement&&!document.webkitFullscreenElement){
     try{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}
