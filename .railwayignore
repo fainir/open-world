@@ -1,0 +1,7 @@
+video/
+*.mp4
+*.mov
+*.avi
+node_modules/
+.git/
+app/venv/
