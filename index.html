@@ -117,6 +117,11 @@ canvas{display:block}
 #btn-wpn-m{background:rgba(120,30,30,0.5);border-color:rgba(255,100,100,0.25)}
 #btn-fs{display:none!important}
 :fullscreen #btn-fs,:-webkit-full-screen #btn-fs{display:none!important}
+#btn-pause{position:fixed;top:12px;right:12px;width:40px;height:40px;z-index:9;pointer-events:all;border-radius:50%;border:2px solid rgba(255,255,255,0.25);background:rgba(0,0,0,0.4);color:#fff;font-size:1.2em;display:none;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.mobile.playing #btn-pause{display:flex}
+#pause-screen{position:fixed;inset:0;z-index:11;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#pause-screen h2{font-size:2.5em;color:#fff;font-family:'Courier New',monospace;letter-spacing:0.15em;margin-bottom:0.3em;text-shadow:0 0 20px rgba(100,180,255,0.5)}
+#pause-screen .pause-sub{font-size:1em;color:rgba(255,255,255,0.6);font-family:'Courier New',monospace}
 </style>
 </head>
 <body>
@@ -137,6 +142,8 @@ canvas{display:block}
 <span class="ctrl-key"><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd><kbd>8</kbd><span class="cl">Fight</span></span>
 </div>
 </div>
+<div id="pause-screen"><h2>PAUSED</h2><div class="pause-sub">Tap or press ESC to resume</div></div>
+<div id="btn-pause">⏸</div>
 <div id="hud">
 <div id="crosshair"><div class="dot"></div><div class="lh"></div><div class="rh"></div><div class="tv"></div><div class="bv"></div></div>
 <div id="score"></div>
@@ -231,7 +238,7 @@ const box=(w,h,d,c)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshS
 const cyl=(rt,rb,h,c,s=8)=>new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s),new THREE.MeshStandardMaterial({color:c,roughness:0.6}));
 
 // ══════════════ CONSTANTS ══════════════
-const CS=1500,CH=750,BK=42,ST=12,GRAV=26,WSPD=22,JFORCE=14;
+const CS=1500,CH=750,BK=42,ST=12,GRAV=26,WALK_SPD=8,RUN_SPD=22,JFORCE=14;
 
 // ══════════════ STATE ══════════════
 const keys={};let yaw=Math.PI,pitch=0,locked=false,boostFuel=100,score=0,comboCount=0,comboTimer=0;
@@ -5529,29 +5536,65 @@ function spawnAlien(){
     bobPhase:Math.random()*Math.PI*2,driftA:Math.random()*Math.PI*2,deadTimer:0})}
 for(let i=0;i<5;i++)spawnAlien();
 
-// ══════════════ ZIPLINE (Mountains → Beach) ══════════════
-const zipline={startX:-1200,startZ:100,endX:CH+60,endZ:100,startY:0,endY:0,riding:false,t:0,speed:0};
-(function buildZipline(){
-  zipline.startY=getH(zipline.startX,zipline.startZ)+8;
-  zipline.endY=Math.max(getH(zipline.endX,zipline.endZ),0)+3;
-  const sx=zipline.startX,sz=zipline.startZ,sy=zipline.startY;
-  const ex=zipline.endX,ez=zipline.endZ,ey=zipline.endY;
-  const dx=ex-sx,dy=ey-sy,dz=ez-sz;
-  const len=Math.sqrt(dx*dx+dy*dy+dz*dz);
-  const mid=new THREE.Vector3((sx+ex)/2,(sy+ey)/2,(sz+ez)/2);
-  const cable=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,len,4),new THREE.MeshStandardMaterial({color:0x555555,metalness:.9,roughness:.2}));
-  cable.position.copy(mid);cable.lookAt(new THREE.Vector3(ex,ey,ez));cable.rotateX(Math.PI/2);scene.add(cable);
-  // Start tower (mountain)
-  const tH1=8;const t1=new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,tH1,6),new THREE.MeshStandardMaterial({color:0x664422,roughness:.7}));
-  t1.position.set(sx,sy-tH1/2,sz);scene.add(t1);
-  const arm1=new THREE.Mesh(new THREE.BoxGeometry(2,.15,.15),new THREE.MeshStandardMaterial({color:0x664422}));
-  arm1.position.set(sx,sy,sz);scene.add(arm1);
-  // End tower (beach)
-  const tH2=3;const t2=new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,tH2,6),new THREE.MeshStandardMaterial({color:0x664422,roughness:.7}));
-  t2.position.set(ex,ey-tH2/2,ez);scene.add(t2);
-  // Sign at start
-  const sign=new THREE.Mesh(new THREE.BoxGeometry(1.2,.6,.05),new THREE.MeshStandardMaterial({color:0xffcc00,emissive:0xffaa00,emissiveIntensity:.3}));
-  sign.position.set(sx+1,sy-2,sz);scene.add(sign);
+// ══════════════ ZIPLINE NETWORK ══════════════
+// Transit system connecting all destinations — ride any direction with E, jump off with SPACE
+const _ZIP_ROUTES=[
+  // [name, startX, startZ, endX, endZ, color, endTowerH or null]
+  // ── City Hub ──
+  ['City → Beach',       50,  50,   810, 100,  0x44aaff, 1],   // splashes into water!
+  ['City → Snow',       -50,   0,  -700,   0,  0x88ccff, null],
+  ['City → Park',        30, 100,   190, 780,  0x66ff66, null],
+  // ── Beach Hub ──
+  ['Beach → Hot Springs',860, 150,  2550,2750,  0xff8844, null],
+  ['Beach → Amalfi',     860,  50,  3550,-2550, 0xffaa00, null],
+  ['Beach → Cruise',     870,  60,  3950,  50,  0xeeeeff, null],
+  // ── Snow Hub ──
+  ['Snow → Safari',     -800, -50, -2150,-2550, 0xcc8844, null],
+  ['Snow → Dubai',      -800,  50, -3550, 2750, 0xffdd00, null],
+  // ── Park Hub ──
+  ['Park → Extreme',     180, 850,  -180, 1250, 0xff4444, null],
+  // ── Safari Hub ──
+  ['Safari → Vegas',   -2250,-2650,-1850,-3150,  0xff44ff, null],
+  ['Safari → Machu P.',-2250,-2600,-2550,-3150,  0x88ff88, null],
+  // ── Vegas ──
+  ['Vegas → Jungle',   -1850,-3250,-3750,-1450,  0x00ff88, null],
+  // ── Cross-connections ──
+  ['Jungle → Dubai',   -3750,-1350,-3550, 2750,  0xffff44, null],
+  ['Hot Sp. → Dubai',   2550, 2850,-3550, 2850,  0xff6600, null],
+  ['Amalfi → Cruise',   3550,-2550, 3950, -50,   0xdd88ff, null],
+  ['Extreme → Safari',  -250, 1350,-2100,-2500,  0x8888ff, null],
+];
+const ziplines=[];
+let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
+(function buildZiplines(){
+  const TH=25; // default tower height above terrain
+  const poleMat=new THREE.MeshStandardMaterial({color:0x888888,metalness:.7,roughness:.3});
+  for(const [name,sx,sz,ex,ez,col,endTH] of _ZIP_ROUTES){
+    const shG=Math.max(getH(sx,sz),0), ehG=Math.max(getH(ex,ez),0);
+    const sy=shG+TH;
+    const ey=endTH!=null?ehG+endTH:ehG+TH;
+    const cMat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3,metalness:.8,roughness:.2});
+    // Cable
+    const dx=ex-sx,dy=ey-sy,dz=ez-sz,len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+    const cable=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,len,4),cMat);
+    cable.position.set((sx+ex)/2,(sy+ey)/2,(sz+ez)/2);
+    cable.lookAt(ex,ey,ez);cable.rotateX(Math.PI/2);scene.add(cable);
+    // Start tower + platform
+    const stH=sy-shG;
+    const t1=new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,stH,6),poleMat);
+    t1.position.set(sx,shG+stH/2,sz);scene.add(t1);
+    const p1=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,.35,8),
+      new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.15}));
+    p1.position.set(sx,sy,sz);scene.add(p1);
+    // End tower + platform
+    const etH=ey-ehG;
+    if(etH>1){const t2=new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,etH,6),poleMat);
+      t2.position.set(ex,ehG+etH/2,ez);scene.add(t2);}
+    const p2=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,.35,8),
+      new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.15}));
+    p2.position.set(ex,ey,ez);scene.add(p2);
+    ziplines.push({name,sx,sz,sy,ex,ez,ey,col});
+  }
 })();
 
 // ══════════════ CHARACTER ══════════════
@@ -8809,6 +8852,8 @@ if(isMobile){
 }
 
 function startGame(){
+  if(gameStarted){resumeGame();return}
+  gameStarted=true;
   overlay.style.display='none';
   hud.style.display='block';
   if(!isMobile)document.getElementById('bottom-bar').style.display='flex';
@@ -8830,19 +8875,28 @@ function startGame(){
     if(goFS){try{goFS.call(de).catch(()=>{})}catch(e){}}
   }
 }
-function stopGame(){
-  overlay.style.display='flex';
-  hud.style.display='none';
-  document.getElementById('bottom-bar').style.display='none';
-  document.getElementById('weapon-hud').style.display='none';
-  locked=false;shooting=false;
-  if(isMobile)document.body.classList.remove('playing');
+let gamePaused=false,gameStarted=false;
+function pauseGame(){
+  if(!locked||gamePaused)return;
+  gamePaused=true;shooting=false;
+  document.getElementById('pause-screen').style.display='flex';
+  if(!isMobile)document.exitPointerLock&&document.exitPointerLock();
+}
+function resumeGame(){
+  if(!gamePaused)return;
+  gamePaused=false;
+  document.getElementById('pause-screen').style.display='none';
+  if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
+}
+function togglePause(){
+  if(gamePaused)resumeGame();else pauseGame();
 }
 
 overlay.addEventListener('click',startGame);
-document.addEventListener('keydown',()=>{if(overlay.style.display!=='none')startGame()},{once:true});
+document.addEventListener('keydown',()=>{if(overlay.style.display!=='none'&&!gameStarted)startGame()},{once:true});
 canvas.addEventListener('click',()=>{
   if(!locked){startGame();return}
+  if(gamePaused)return;
   // Re-lock pointer if game is running but lock was lost
   if(!isMobile&&document.pointerLockElement!==canvas){try{canvas.requestPointerLock()}catch(e){}}
 });
@@ -8850,7 +8904,12 @@ document.addEventListener('pointerlockchange',()=>{
   const pl=document.pointerLockElement===canvas;
   if(!pl&&locked&&!isMobile){/* pointer lock lost — click game to re-lock */}
 });
-document.addEventListener('keydown',e=>{if(e.code==='Escape'&&locked)stopGame()});
+document.addEventListener('keydown',e=>{if(e.code==='Escape'&&locked&&!menuOpen&&!wpnMenuOpen)togglePause()});
+// Pause screen — click/tap to resume
+document.getElementById('pause-screen').addEventListener('click',resumeGame);
+document.getElementById('pause-screen').addEventListener('touchstart',e=>{e.preventDefault();resumeGame()},{passive:false});
+// Mobile pause button
+document.getElementById('btn-pause').addEventListener('touchstart',e=>{e.stopPropagation();e.preventDefault();togglePause()},{passive:false});
 
 let tipTO;function showTip(m){const e=document.getElementById('tip');e.textContent=m;e.style.opacity='1';clearTimeout(tipTO);tipTO=setTimeout(()=>e.style.opacity='0',4000)}
 
@@ -8962,6 +9021,14 @@ function tryFight(idx){
 }
 
 // ══════════════ VEHICLE MOUNT/DISMOUNT ══════════════
+// Glow rings for interactable objects (vehicles + zones)
+const _glowRings=[];const _GLOW_POOL=8;
+const _glowMat=new THREE.MeshBasicMaterial({color:0x44ff66,transparent:true,opacity:0.5,side:THREE.DoubleSide});
+const _glowGeo=new THREE.RingGeometry(1.2,1.8,24);_glowGeo.rotateX(-Math.PI/2);
+for(let i=0;i<_GLOW_POOL;i++){
+  const m=new THREE.Mesh(_glowGeo,_glowMat.clone());m.visible=false;m.renderOrder=999;scene.add(m);
+  _glowRings.push(m);
+}
 function nearestVehicle(){
   let best=null,bd=8;
   for(const v of vehicles){if(v.occupied)continue;
@@ -9005,7 +9072,7 @@ function dismountVehicle(){
 function fwd(){return new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw))}
 function rgt(){const f=fwd();return new THREE.Vector3(f.z,0,-f.x)}
 function flyFwd(){return new THREE.Vector3(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)).normalize()}
-let walkBob=0,engineOn=false,aimMode=false,aimTimer=0;
+let walkBob=0,engineOn=false,aimMode=false,aimTimer=0,aimBlend=0,camBlend=0;
 
 // ══════════════ GAME UPDATE ══════════════
 function update(dt){
@@ -9058,13 +9125,55 @@ function update(dt){
   }
   fJust=false;
 
-  // Vehicle prompt
+  // Vehicle prompt + glow rings for interactables
+  let _gi=0; // glow ring index
   if(!currentVeh&&mode==='walk'){
     const nv=nearestVehicle();
     const vp=document.getElementById('vehicle-prompt');
     if(nv){vp.textContent=`Press E - ${nv.type.charAt(0).toUpperCase()+nv.type.slice(1)}`;vp.style.opacity='1'}
     else vp.style.opacity='0';
+    // Glow nearby vehicles
+    for(const v of vehicles){if(v.occupied||_gi>=_GLOW_POOL)continue;
+      const dx=P.x-v.mesh.position.x,dz=P.z-v.mesh.position.z,d2=dx*dx+dz*dz;
+      if(d2<400){// within 20 units
+        const r=_glowRings[_gi++];r.visible=true;
+        r.position.set(v.mesh.position.x,v.mesh.position.y+0.15,v.mesh.position.z);
+        const pulse=0.35+Math.sin(clock.elapsedTime*3+v.mesh.position.x)*.15;
+        r.material.opacity=pulse*(1-Math.sqrt(d2)/20);r.material.color.setHex(0x44ff66);
+      }
+    }
+    // Glow nearby zone entries
+    for(const z of zoneManager.zones){if(_gi>=_GLOW_POOL)break;
+      const dx=P.x-z.position[0],dz=P.z-z.position[2],d2=dx*dx+dz*dz;
+      if(d2<900){// within 30 units
+        const r=_glowRings[_gi++];r.visible=true;
+        const zh=getH(z.position[0],z.position[2]);
+        r.position.set(z.position[0],zh+0.15,z.position[2]);
+        const pulse=0.4+Math.sin(clock.elapsedTime*2.5+z.position[0])*.2;
+        r.material.opacity=pulse*(1-Math.sqrt(d2)/30);r.material.color.setHex(0xffaa22);
+        r.scale.setScalar(z.radius?z.radius/1.5:1.5);
+      }
+    }
+    // Glow nearby zipline stations
+    for(const zl of ziplines){if(_gi>=_GLOW_POOL)break;
+      const ds=Math.sqrt((P.x-zl.sx)**2+(P.z-zl.sz)**2);
+      if(ds<25&&Math.abs(P.y-zl.sy)<30){
+        const r=_glowRings[_gi++];r.visible=true;
+        r.position.set(zl.sx,zl.sy+0.2,zl.sz);
+        const pulse=0.4+Math.sin(clock.elapsedTime*3)*.2;
+        r.material.opacity=pulse;r.material.color.setHex(zl.col);r.scale.setScalar(1.2);
+      }
+      const de=Math.sqrt((P.x-zl.ex)**2+(P.z-zl.ez)**2);
+      if(de<25&&Math.abs(P.y-zl.ey)<30&&_gi<_GLOW_POOL){
+        const r=_glowRings[_gi++];r.visible=true;
+        r.position.set(zl.ex,zl.ey+0.2,zl.ez);
+        const pulse=0.4+Math.sin(clock.elapsedTime*3)*.2;
+        r.material.opacity=pulse;r.material.color.setHex(zl.col);r.scale.setScalar(1.2);
+      }
+    }
   } else document.getElementById('vehicle-prompt').style.opacity='0';
+  // Hide unused glow rings
+  for(;_gi<_GLOW_POOL;_gi++)_glowRings[_gi].visible=false;
 
   // Ramp/trampoline launch check (triggers at top edge of ramp)
   const checkRT=()=>{
@@ -9085,7 +9194,8 @@ function update(dt){
     // Left/Right turn the camera
     if(kL())yaw+=2.5*dt;
     if(kR())yaw-=2.5*dt;
-    const spd=keys['ShiftLeft']||keys['ShiftRight']?WSPD*1.6:WSPD;
+    const isRunning=keys['ShiftLeft']||keys['ShiftRight'];
+    const spd=isRunning?RUN_SPD:WALK_SPD;
     const mv=new THREE.Vector3();
     if(kU())mv.add(fwd());if(kD())mv.sub(fwd());
     // Wall climbing detection (colBldgY = height-aware: allows walking on rooftops)
@@ -9097,7 +9207,7 @@ function update(dt){
       else P.x=nx;
       if(bz)wallHit=wallHit||bz;
       else P.z=nz;
-      walkBob+=dt*10}
+      walkBob+=dt*(isRunning?12:5)}
     // Climbing: if pressing forward into a wall and player is below building top
     if(wallHit&&movingFwd&&P.y<wallHit.h-1.5){
       if(!climbing){climbing=true;climbBldg=wallHit}
@@ -9288,6 +9398,15 @@ function update(dt){
       lL.position.set(-.13,.35,0);lL.rotation.x=0;  // legs straight
       rL.position.set(.13,.35,0);rL.rotation.x=0;
     }
+    else if(zipRiding>=0){
+      // Zipline hanging pose: arms up gripping cable, legs dangle
+      charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
+      lA.position.set(-.2,1.3,0);rA.position.set(.2,1.3,0);
+      lA.rotation.set(-2.9,0,0.12);rA.rotation.set(-2.9,0,-0.12);
+      const _zSw=Math.sin(clock.elapsedTime*1.8)*.12;
+      lL.position.set(-.13,.35,0);rL.position.set(.13,.35,0);
+      lL.rotation.set(_zSw,0,-.05);rL.rotation.set(-_zSw,0,.05);
+      bdM.rotation.set(0,0,0)}
     else if(climbing){
       // Climbing animation: arms reaching up alternating, legs pumping
       const ct=performance.now()*.006;
@@ -9422,28 +9541,33 @@ function update(dt){
 
   // ═══ CAMERA ═══
   const cv=currentVeh;
-  let camD=3.5,camH=1.8;
+  // Walk/run camera blend: 0=walk (close), 1=run (far)
+  const _runTarget=(mode==='walk'&&!isFlying&&!cv&&(keys['ShiftLeft']||keys['ShiftRight']))?1:0;
+  camBlend+=(_runTarget-camBlend)*Math.min(4*dt,1);
+  const _walkD=2.2,_walkH=1.4,_runD=3.5,_runH=1.8;
+  let camD=lerp(_walkD,_runD,camBlend),camH=lerp(_walkH,_runH,camBlend);
   if(isFlying){camD=lerp(6,14,clamp(V.length()/100,0,1));camH=2}
   if(cv){camD=cv.def.pt==='air'?12:cv.type==='yacht'?14:6;camH=cv.def.pt==='air'?3:cv.type==='yacht'?5:2}
-  // Aim mode timer — enter on fire, exit after 10s idle
+  // Aim mode timer — enter on fire, exit after 2s idle
   if(aimTimer>0){aimTimer-=dt;if(aimTimer<=0)aimMode=false}
+  // Smooth blend: aimBlend lerps toward 1 (aim) or 0 (normal)
+  const _aimTarget=aimMode?1:0;
+  const _aimSpeed=aimMode?8:4; // enter faster, exit slower
+  aimBlend+= (_aimTarget-aimBlend)*Math.min(_aimSpeed*dt,1);
+  if(Math.abs(aimBlend-_aimTarget)<0.001)aimBlend=_aimTarget;
   const _aimFwd=flyFwd();
-  let ideal,look;
-  if(aimMode){
-    // Shooting camera: over-right-shoulder so crosshair is clear
-    const _rightX=Math.cos(yaw),_rightZ=-Math.sin(yaw);
-    const _shoulderOff=1.2;
-    ideal=new THREE.Vector3(
-      P.x+Math.sin(yaw)*Math.cos(pitch)*camD+_rightX*_shoulderOff,
-      P.y+camH-Math.sin(pitch)*camD*0.5,
-      P.z+Math.cos(yaw)*Math.cos(pitch)*camD+_rightZ*_shoulderOff);
-  } else {
-    // Normal camera: behind player, smooth follow
-    ideal=new THREE.Vector3(
-      P.x+Math.sin(yaw)*camD,
-      P.y+camH+(isFlying?-Math.sin(pitch)*camD*.3:0),
-      P.z+Math.cos(yaw)*camD);
-  }
+  // Compute both camera positions and blend between them
+  const _rightX=Math.cos(yaw),_rightZ=-Math.sin(yaw);
+  const _shoulderOff=1.2*aimBlend;
+  const _normalIdeal=new THREE.Vector3(
+    P.x+Math.sin(yaw)*camD,
+    P.y+camH+(isFlying?-Math.sin(pitch)*camD*.3:0),
+    P.z+Math.cos(yaw)*camD);
+  const _aimIdeal=new THREE.Vector3(
+    P.x+Math.sin(yaw)*Math.cos(pitch)*camD+_rightX*1.2,
+    P.y+camH-Math.sin(pitch)*camD*0.5,
+    P.z+Math.cos(yaw)*Math.cos(pitch)*camD+_rightZ*1.2);
+  let ideal=_normalIdeal.clone().lerp(_aimIdeal,aimBlend);
   // Clamp camera target above terrain at camera position
   const _camFloor=Math.max(getH(ideal.x,ideal.z),getSurfaceH(ideal.x,ideal.z))+1.0;
   if(ideal.y<_camFloor)ideal.y=_camFloor;
@@ -9459,13 +9583,10 @@ function update(dt){
     cam.position.y+=(Math.random()-.5)*intensity*.4;
     cam.position.z+=(Math.random()-.5)*intensity*.3;
   }
-  if(aimMode){
-    // Shooting mode: camera looks in exact aim direction
-    look=cam.position.clone().add(_aimFwd.clone().multiplyScalar(50));
-  } else {
-    // Normal mode: camera looks at point ahead of player
-    look=new THREE.Vector3(P.x-Math.sin(yaw)*3,P.y+1.2+(isFlying?Math.sin(pitch)*3:0),P.z-Math.cos(yaw)*3);
-  }
+  // Blend look target between normal and aim modes
+  const _normalLook=new THREE.Vector3(P.x-Math.sin(yaw)*3,P.y+1.2+(isFlying?Math.sin(pitch)*3:0),P.z-Math.cos(yaw)*3);
+  const _aimLook=cam.position.clone().add(_aimFwd.clone().multiplyScalar(50));
+  look=_normalLook.clone().lerp(_aimLook,aimBlend);
   cam.lookAt(look);
 
   // Sky + shadow follow camera
@@ -9799,24 +9920,44 @@ function update(dt){
     }
   }
 
-  // ═══ ZIPLINE RIDE ═══
-  if(zipline.riding){
-    zipline.t+=dt*zipline.speed;
-    if(zipline.t>=1||keys['Space']){
-      zipline.riding=false;zipline.t=0;showTip('Zipline complete!');
+  // ═══ ZIPLINE NETWORK RIDE ═══
+  if(zipRiding>=0){
+    const zl=ziplines[zipRiding];
+    const _zipBoost=(keys['ShiftLeft']||keys['ShiftRight'])?3:1;
+    zipT+=dt*zipSpeed*zipDir*_zipBoost;
+    if(zipT>=1||zipT<=0||keys['Space']){
+      zipRiding=-1;showTip('Zipline complete!');
     } else {
-      const lx=zipline.startX+(zipline.endX-zipline.startX)*zipline.t;
-      const lz=zipline.startZ+(zipline.endZ-zipline.startZ)*zipline.t;
-      const ly=zipline.startY+(zipline.endY-zipline.startY)*zipline.t+Math.sin(zipline.t*Math.PI)*5;
-      P.set(lx,ly,lz);V.set(0,0,0);
+      const cx=zl.sx+(zl.ex-zl.sx)*zipT;
+      const cz=zl.sz+(zl.ez-zl.sz)*zipT;
+      const cy=zl.sy+(zl.ey-zl.sy)*zipT; // cable height
+      // Character hangs below cable — hands at cable, body 1.5 below
+      const floorY=Math.max(getH(cx,cz),getSurfaceH(cx,cz));
+      P.set(cx,Math.max(cy-1.5,floorY),cz);V.set(0,0,0);
+      // Face travel direction
+      const _dx=zipDir>0?(zl.ex-zl.sx):(zl.sx-zl.ex);
+      const _dz=zipDir>0?(zl.ez-zl.sz):(zl.sz-zl.ez);
+      yaw=Math.atan2(-_dx,-_dz);
     }
   } else if(!currentVeh&&keys['KeyE']){
-    const dsx=P.x-zipline.startX,dsz=P.z-zipline.startZ,dsy=P.y-(zipline.startY-2);
-    if(dsx*dsx+dsz*dsz+dsy*dsy<64){
-      zipline.riding=true;zipline.t=0;
-      const totalDist=Math.sqrt((zipline.endX-zipline.startX)**2+(zipline.endY-zipline.startY)**2+(zipline.endZ-zipline.startZ)**2);
-      zipline.speed=45/totalDist;
-      keys['KeyE']=false;showTip('Zipline! Jump to dismount');
+    for(let i=0;i<ziplines.length;i++){
+      const zl=ziplines[i];
+      // Check start station
+      const dsx=P.x-zl.sx,dsz=P.z-zl.sz;
+      if(dsx*dsx+dsz*dsz<120&&Math.abs(P.y-zl.sy)<30){
+        zipRiding=i;zipT=0.001;zipDir=1;
+        zipSpeed=160/Math.sqrt((zl.ex-zl.sx)**2+(zl.ey-zl.sy)**2+(zl.ez-zl.sz)**2);
+        keys['KeyE']=false;showTip('\u{1F6A1} '+zl.name+' \u2014 SPACE to jump off');break;
+      }
+      // Check end station (ride in reverse)
+      const dex=P.x-zl.ex,dez=P.z-zl.ez;
+      if(dex*dex+dez*dez<120&&Math.abs(P.y-zl.ey)<30){
+        zipRiding=i;zipT=0.999;zipDir=-1;
+        zipSpeed=160/Math.sqrt((zl.ex-zl.sx)**2+(zl.ey-zl.sy)**2+(zl.ez-zl.sz)**2);
+        keys['KeyE']=false;
+        const pts=zl.name.split(' → ');
+        showTip('\u{1F6A1} '+pts[1]+' → '+pts[0]+' \u2014 SPACE to jump off');break;
+      }
     }
   }
 
@@ -9897,7 +10038,9 @@ function update(dt){
   if(window._riverMat)window._riverMat.uniforms.time.value=clock.elapsedTime;
 
   // ═══ HUD ═══
-  document.getElementById('crosshair').style.display=(locked&&aimMode)?'block':'none';
+  const _chEl=document.getElementById('crosshair');
+  _chEl.style.display=(locked&&aimBlend>0.01)?'block':'none';
+  _chEl.style.opacity=aimBlend;
   document.getElementById('score').textContent=score>0?`${score} PTS`:'';
   const cEl=document.getElementById('combo');
   if(comboCount>1){cEl.textContent=`COMBO x${comboCount}`;cEl.style.opacity='1'}else cEl.style.opacity='0';
@@ -10136,7 +10279,7 @@ function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();
     const r=420,h=220,cx=0,cz=0;
     cam.position.set(cx+Math.cos(introTime)*r,h+Math.sin(introTime*.3)*30,cz+Math.sin(introTime)*r);
     cam.lookAt(cx,40,cz);
-  }else if(!menuOpen&&!wpnMenuOpen)update(dt);
+  }else if(!menuOpen&&!wpnMenuOpen&&!gamePaused)update(dt);
   // Screen shake (nuke etc)
   if(window._shakeIntensity>0){
     cam.position.x+=(Math.random()-.5)*window._shakeIntensity;

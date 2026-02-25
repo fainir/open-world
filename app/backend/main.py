@@ -488,9 +488,8 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # ── Overlay injection ──
 
-@functools.lru_cache(maxsize=1)
 def _load_overlay_html() -> str:
-    """Load the overlay HTML/CSS/JS once and cache it."""
+    """Load the overlay HTML/CSS/JS (fresh on every request so deploys take effect)."""
     overlay_path = os.path.join(STATIC_DIR, "overlay.html")
     with open(overlay_path, "r", encoding="utf-8") as f:
         return f.read()
@@ -532,7 +531,10 @@ def serve_home():
         raise HTTPException(status_code=404, detail="Base game not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return HTMLResponse(_inject_overlay(_obfuscate_html(game_html)))
+    return HTMLResponse(
+        _inject_overlay(_obfuscate_html(game_html)),
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"},
+    )
 
 
 @app.get("/v/{version_id}")
@@ -543,7 +545,10 @@ def serve_version_with_overlay(version_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Version not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return HTMLResponse(_inject_overlay(_obfuscate_html(game_html)))
+    return HTMLResponse(
+        _inject_overlay(_obfuscate_html(game_html)),
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"},
+    )
 
 
 @app.get("/admin")
