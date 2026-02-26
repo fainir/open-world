@@ -5540,27 +5540,30 @@ for(let i=0;i<5;i++)spawnAlien();
 // Transit system connecting all destinations — ride any direction with E, jump off with SPACE
 const _ZIP_ROUTES=[
   // [name, startX, startZ, endX, endZ, color, endTowerH or null]
-  // ── City Hub ──
+  // ── City Hub (central 3-way) ──
   ['City → Beach',       50,  50,   810, 100,  0x44aaff, 1],   // splashes into water!
   ['City → Snow',       -50,   0,  -700,   0,  0x88ccff, null],
   ['City → Park',        30, 100,   190, 780,  0x66ff66, null],
-  // ── Beach Hub ──
+  // ── Beach Hub (east coast) ──
   ['Beach → Hot Springs',860, 150,  2550,2750,  0xff8844, null],
   ['Beach → Amalfi',     860,  50,  3550,-2550, 0xffaa00, null],
   ['Beach → Cruise',     870,  60,  3950,  50,  0xeeeeff, null],
-  // ── Snow Hub ──
+  // ── Snow Hub (west side) ──
   ['Snow → Safari',     -800, -50, -2150,-2550, 0xcc8844, null],
   ['Snow → Dubai',      -800,  50, -3550, 2750, 0xffdd00, null],
-  // ── Park Hub ──
+  // ── Park / North ──
   ['Park → Extreme',     180, 850,  -180, 1250, 0xff4444, null],
-  // ── Safari Hub ──
+  ['Extreme → Hot Sp.',  -180,1350,  2550,2750,  0xff9966, null],  // north shortcut east
+  // ── Safari Hub (southwest) ──
   ['Safari → Vegas',   -2250,-2650,-1850,-3150,  0xff44ff, null],
   ['Safari → Machu P.',-2250,-2600,-2550,-3150,  0x88ff88, null],
-  // ── Vegas ──
+  // ── Vegas / South ──
   ['Vegas → Jungle',   -1850,-3250,-3750,-1450,  0x00ff88, null],
+  ['Machu P. → Jungle',-2550,-3150,-3750,-1450,  0x44ddaa, null],  // removes dead-end
   // ── Cross-connections ──
   ['Jungle → Dubai',   -3750,-1350,-3550, 2750,  0xffff44, null],
-  ['Hot Sp. → Dubai',   2550, 2850,-3550, 2850,  0xff6600, null],
+  ['Dubai → Extreme',  -3550, 2750, -180, 1350,  0xaaff44, null],  // NW to central north
+  ['Cruise → Hot Sp.',  3950,  50,  2550, 2750,  0xffccaa, null],  // east coast connector
   ['Amalfi → Cruise',   3550,-2550, 3950, -50,   0xdd88ff, null],
   ['Extreme → Safari',  -250, 1350,-2100,-2500,  0x8888ff, null],
 ];
@@ -5568,17 +5571,31 @@ const ziplines=[];
 let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
 (function buildZiplines(){
   const TH=35; // default tower height above terrain
+  const CLEAR=22; // min clearance above terrain for cables
+  const NSAMP=28; // terrain samples along each cable
   const poleMat=new THREE.MeshStandardMaterial({color:0x888888,metalness:.7,roughness:.3});
   for(const [name,sx,sz,ex,ez,col,endTH] of _ZIP_ROUTES){
     const shG=Math.max(getH(sx,sz),getSurfaceH(sx,sz),0), ehG=Math.max(getH(ex,ez),getSurfaceH(ex,ez),0);
     const sy=shG+TH;
     const ey=endTH!=null?ehG+endTH:ehG+TH;
     const cMat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3,metalness:.8,roughness:.2});
-    // Cable
-    const dx=ex-sx,dy=ey-sy,dz=ez-sz,len=Math.sqrt(dx*dx+dy*dy+dz*dz);
-    const cable=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,len,4),cMat);
-    cable.position.set((sx+ex)/2,(sy+ey)/2,(sz+ez)/2);
-    cable.lookAt(ex,ey,ez);cable.rotateX(Math.PI/2);scene.add(cable);
+    // Build curved path that clears terrain
+    const cPts=[new THREE.Vector3(sx,sy,sz)];
+    for(let s=1;s<NSAMP;s++){
+      const t=s/NSAMP;
+      const px=sx+(ex-sx)*t, pz=sz+(ez-sz)*t;
+      const lineY=sy+(ey-sy)*t;
+      const terrH=Math.max(getH(px,pz),0);
+      // Within city, add extra clearance for buildings
+      const inCity=(Math.abs(px)<CH&&Math.abs(pz)<CH);
+      const minY=terrH+(inCity?CLEAR+20:CLEAR);
+      cPts.push(new THREE.Vector3(px,Math.max(lineY,minY),pz));
+    }
+    cPts.push(new THREE.Vector3(ex,ey,ez));
+    const curve=new THREE.CatmullRomCurve3(cPts);
+    // Cable using TubeGeometry — follows curved path over terrain
+    const cable=new THREE.Mesh(new THREE.TubeGeometry(curve,48,.06,4,false),cMat);
+    scene.add(cable);
     // Start tower + platform
     const stH=sy-shG;
     const t1=new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,stH,6),poleMat);
@@ -5593,7 +5610,7 @@ let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
     const p2=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,.35,8),
       new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.15}));
     p2.position.set(ex,ey,ez);scene.add(p2);
-    ziplines.push({name,sx,sz,sy,ex,ez,ey,col});
+    ziplines.push({name,sx,sz,sy,ex,ez,ey,col,curve});
   }
 })();
 
@@ -9928,16 +9945,14 @@ function update(dt){
     if(zipT>=1||zipT<=0||keys['Space']){
       zipRiding=-1;showTip('Zipline complete!');
     } else {
-      const cx=zl.sx+(zl.ex-zl.sx)*zipT;
-      const cz=zl.sz+(zl.ez-zl.sz)*zipT;
-      const cy=zl.sy+(zl.ey-zl.sy)*zipT; // cable height
-      // Character hangs below cable — hands at cable, body 1.5 below
-      const floorY=Math.max(getH(cx,cz),getSurfaceH(cx,cz));
-      P.set(cx,Math.max(cy-1.5,floorY),cz);V.set(0,0,0);
-      // Face travel direction
-      const _dx=zipDir>0?(zl.ex-zl.sx):(zl.sx-zl.ex);
-      const _dz=zipDir>0?(zl.ez-zl.sz):(zl.sz-zl.ez);
-      yaw=Math.atan2(-_dx,-_dz);
+      // Follow curved cable path (arcs over terrain)
+      const cp=zl.curve.getPoint(zipT);
+      const floorY=Math.max(getH(cp.x,cp.z),getSurfaceH(cp.x,cp.z));
+      P.set(cp.x,Math.max(cp.y-1.5,floorY),cp.z);V.set(0,0,0);
+      // Face travel direction using curve tangent
+      const tang=zl.curve.getTangent(zipT);
+      if(zipDir<0)tang.negate();
+      yaw=Math.atan2(-tang.x,-tang.z);
     }
   } else if(!currentVeh&&keys['KeyE']){
     for(let i=0;i<ziplines.length;i++){
@@ -9946,14 +9961,14 @@ function update(dt){
       const dsx=P.x-zl.sx,dsz=P.z-zl.sz;
       if(dsx*dsx+dsz*dsz<150&&P.y<=zl.sy+5&&P.y>=zl.sy-50){
         zipRiding=i;zipT=0.001;zipDir=1;
-        zipSpeed=160/Math.sqrt((zl.ex-zl.sx)**2+(zl.ey-zl.sy)**2+(zl.ez-zl.sz)**2);
+        zipSpeed=160/zl.curve.getLength();
         keys['KeyE']=false;showTip('\u{1F6A1} '+zl.name+' \u2014 SPACE to jump off');break;
       }
       // Check end station (ride in reverse)
       const dex=P.x-zl.ex,dez=P.z-zl.ez;
       if(dex*dex+dez*dez<150&&P.y<=zl.ey+5&&P.y>=zl.ey-50){
         zipRiding=i;zipT=0.999;zipDir=-1;
-        zipSpeed=160/Math.sqrt((zl.ex-zl.sx)**2+(zl.ey-zl.sy)**2+(zl.ez-zl.sz)**2);
+        zipSpeed=160/zl.curve.getLength();
         keys['KeyE']=false;
         const pts=zl.name.split(' → ');
         showTip('\u{1F6A1} '+pts[1]+' → '+pts[0]+' \u2014 SPACE to jump off');break;
