@@ -55,8 +55,10 @@ canvas{display:block}
 .ctrl-key kbd{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:4px;padding:2px 7px;font-family:'Courier New',monospace;font-size:0.95em;min-width:18px;text-align:center;color:#fff;text-shadow:0 0 4px rgba(255,255,255,0.3)}
 .ctrl-key .cl{color:rgba(255,255,255,0.7);font-size:0.9em}
 .ctrl-key .ci{font-size:1.1em;margin-right:1px}
-#vehicle-prompt{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);font-size:1.3em;font-weight:bold;color:#fff;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
-#tip{position:fixed;bottom:160px;left:50%;transform:translateX(-50%);font-size:1.25em;font-weight:bold;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
+#vehicle-prompt{position:fixed;bottom:55px;left:50%;transform:translateX(-50%);font-size:1.3em;font-weight:bold;color:#fff;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
+#tip{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);font-size:1.25em;font-weight:bold;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
+.mobile #vehicle-prompt,.mobile #tip{bottom:30px!important}
+.mobile #zone-prompt{bottom:30px!important}
 #veh-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(0,8,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(100,180,255,0.2);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 #veh-menu.open{display:flex}
 #veh-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#88ccff,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -97,7 +99,7 @@ canvas{display:block}
 #mobile-joystick{position:fixed;bottom:15px;left:15px;width:120px;height:120px;z-index:8;pointer-events:all}
 #joy-base{width:100%;height:100%;border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);position:relative}
 #joy-thumb{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.25);border:2px solid rgba(255,255,255,0.35);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-#mobile-btns{position:fixed;bottom:12px;right:12px;width:165px;height:200px;z-index:8;pointer-events:none}
+#mobile-btns{position:fixed;bottom:12px;right:12px;width:165px;height:260px;z-index:8;pointer-events:none}
 .m-btn{pointer-events:all;position:absolute;border-radius:50%;border:2px solid rgba(255,255,255,0.25);color:#fff;font-family:'Courier New',monospace;font-weight:bold;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:0.05em;transition:filter 0.1s,transform 0.1s}
 .m-btn.active{filter:brightness(1.5);transform:scale(0.92)}
 #btn-shoot{right:0;bottom:0;width:72px;height:72px;font-size:0.7em;background:rgba(255,50,50,0.45);border-color:rgba(255,100,100,0.4)}
@@ -109,8 +111,8 @@ canvas{display:block}
 .mc-btn{pointer-events:all;border-radius:8px;border:1px solid rgba(255,255,255,0.2);color:#fff;font-family:'Courier New',monospace;font-weight:bold;font-size:0.5em;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:0.03em;transition:filter 0.1s,transform 0.1s;padding:6px 10px;gap:2px;line-height:1}
 .mc-btn.active{filter:brightness(1.5);transform:scale(0.92)}
 .mc-btn .mc-ico{font-size:1.6em;line-height:1}
-#btn-trick{background:rgba(255,220,0,0.25);border-color:rgba(255,230,50,0.3)}
-#btn-fight{background:rgba(200,50,200,0.25);border-color:rgba(220,80,220,0.3)}
+#btn-trick{right:5px;bottom:155px;width:50px;height:50px;font-size:0.55em;background:rgba(255,220,0,0.35);border-color:rgba(255,230,50,0.35)}
+#btn-fight{right:84px;bottom:130px;width:48px;height:48px;font-size:0.55em;background:rgba(200,50,200,0.35);border-color:rgba(220,80,220,0.35)}
 #btn-veh-m{background:rgba(30,60,120,0.5);border-color:rgba(100,180,255,0.25)}
 #btn-wpn-m{background:rgba(120,30,30,0.5);border-color:rgba(255,100,100,0.25)}
 #btn-fs{display:none!important}
@@ -189,11 +191,11 @@ canvas{display:block}
 <div id="btn-jump" class="m-btn">⬆JUMP</div>
 <div id="btn-boost" class="m-btn">🚀BOOST</div>
 <div id="btn-enter" class="m-btn">🚪ENTER</div>
+<div id="btn-trick" class="m-btn">🤸FLIP</div>
+<div id="btn-fight" class="m-btn">👊FIGHT</div>
 </div>
 </div>
 <div id="mobile-center-btns">
-<div id="btn-trick" class="mc-btn"><span class="mc-ico">🤸</span>FLIP</div>
-<div id="btn-fight" class="mc-btn"><span class="mc-ico">👊</span>FIGHT</div>
 <div id="btn-veh-m" class="mc-btn"><span class="mc-ico">🚗</span>VEHICLE</div>
 <div id="btn-wpn-m" class="mc-btn"><span class="mc-ico">🔫</span>WEAPON</div>
 </div>
@@ -251,7 +253,7 @@ const weaponAmmo={pistol:Infinity,shotgun:Infinity,rifle:Infinity,rocket:Infinit
   sniper:Infinity,flamethrower:Infinity,grenade:Infinity,
   grapple:Infinity,jetboost:Infinity,binoculars:Infinity,flashlight:Infinity,paintgun:Infinity};
 const WEAPONS={
-  minigun:{name:'Minigun',icon:'\u{26A1}',maxAmmo:Infinity,fireRate:18,dmg:8,type:'hitscan',range:180,spread:.055,sound:'brrt'},
+  minigun:{name:'Minigun',icon:'\u{26A1}',maxAmmo:Infinity,fireRate:18,dmg:8,type:'hitscan',range:180,spread:.03,sound:'brrt'},
   pistol:{name:'Pistol',icon:'\u{1F52B}',maxAmmo:Infinity,fireRate:3.5,dmg:25,type:'hitscan',range:250,spread:.015,sound:'bang'},
   shotgun:{name:'Shotgun',icon:'\u{1F4A5}',maxAmmo:Infinity,fireRate:1.2,dmg:12,type:'hitscan',range:60,spread:.09,pellets:8,sound:'boom'},
   rifle:{name:'Rifle',icon:'\u{1F3AF}',maxAmmo:Infinity,fireRate:6,dmg:35,type:'hitscan',range:500,spread:.005,sound:'crack'},
@@ -967,6 +969,18 @@ mkTramp(50,-200,1.1);mkTramp(-50,200,1.1);mkTramp(300,200,1.4);mkTramp(-300,-200
 mkTramp(CH+40,-50,1);mkTramp(CH+60,200,1.2);mkTramp(CH+30,50,1.3);mkTramp(CH+70,-200,1.1);mkTramp(CH+100,0,1.5);mkTramp(CH+50,300,1.2);
 // Mountain trampolines
 mkTramp(-CH-50,0,1);mkTramp(-CH-80,150,1.1);mkTramp(-CH-30,-100,1.2);mkTramp(-CH-120,200,1.3);mkTramp(-CH-60,-200,1.1);mkTramp(-CH-100,-50,1.4);
+// Trampolines near world destinations
+mkTramp(-2150,-2560,1.2);mkTramp(-2240,-2640,1.1);mkTramp(-2200,-2500,1.3);// Safari
+mkTramp(1150,3360,1.1);mkTramp(1250,3440,1.2);mkTramp(1100,3400,1);// Santorini
+mkTramp(-1760,-3200,1.2);mkTramp(-1840,-3140,1.1);mkTramp(-1800,-3260,1.3);// Vegas
+mkTramp(3940,40,1.1);mkTramp(3960,-60,1.2);mkTramp(3900,0,1.3);// Cruise Ship
+mkTramp(3560,-2560,1.1);mkTramp(3640,-2640,1.2);mkTramp(3600,-2500,1);// Amalfi
+mkTramp(-2560,-3160,1.1);mkTramp(-2640,-3240,1.2);mkTramp(-2600,-3100,1.3);// Machu Picchu
+mkTramp(2560,2760,1.1);mkTramp(2640,2840,1.2);mkTramp(2600,2700,1);// Hot Springs
+mkTramp(-3560,2760,1.2);mkTramp(-3640,2840,1.1);mkTramp(-3600,2700,1.3);// Dubai
+mkTramp(-3760,-1360,1.1);mkTramp(-3840,-1440,1.2);mkTramp(-3700,-1400,1.3);// Jungle
+mkTramp(-660,40,1.2);mkTramp(-740,-40,1.1);mkTramp(-700,100,1.3);// Snow
+mkTramp(150,750,1.1);mkTramp(250,850,1.2);mkTramp(200,700,1);// Park
 
 // ══════════════ VEHICLE DEFINITIONS ══════════════
 // Every vehicle: [Signature, Backflip, Barrel Roll, 360 Spin]
@@ -5763,7 +5777,7 @@ const gameAPI={
 class ZoneUI{
   constructor(){
     this.prompt=document.createElement('div');this.prompt.id='zone-prompt';
-    this.prompt.style.cssText='position:fixed;bottom:160px;left:50%;transform:translateX(-50%);font-size:1.3em;font-weight:bold;color:#fff;font-family:"Courier New",monospace;opacity:0;transition:opacity 0.3s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8);z-index:6;pointer-events:none';
+    this.prompt.style.cssText='position:fixed;bottom:55px;left:50%;transform:translateX(-50%);font-size:1.3em;font-weight:bold;color:#fff;font-family:"Courier New",monospace;opacity:0;transition:opacity 0.3s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8);z-index:6;pointer-events:none';
     document.body.appendChild(this.prompt);
     this.overlay=document.createElement('div');this.overlay.id='zone-fade';
     this.overlay.style.cssText='position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:15;transition:opacity 0.4s';
@@ -8934,7 +8948,7 @@ function startGame(){
   V.set(ff.x*60,8,ff.z*60);
   boostFuel=100;
   currentWeapon='minigun';
-  aimMode=true;aimBlend=1;aimTimer=5;
+  aimMode=false;aimBlend=0;aimTimer=0;
   if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
   if(isMobile){
     const de=document.documentElement;
@@ -9123,7 +9137,7 @@ function mountVehicle(v){
   yaw=v.mesh.rotation.y-Math.PI/2;
   const riderInfo=rideOnVeh[v.type];
   charG.visible=!!riderInfo;
-  showTip(`Riding ${v.type.toUpperCase()}! Press 1-4 for tricks, F to exit`);
+  showTip(`${v.type.toUpperCase()} — F to exit`);
 }
 
 function dismountVehicle(){
@@ -9132,7 +9146,6 @@ function dismountVehicle(){
   charG.visible=true;
   P.set(currentVeh.mesh.position.x+2,currentVeh.mesh.position.y+1,currentVeh.mesh.position.z);
   V.set(0,0,0);currentVeh=null;mode='walk';isFlying=false;
-  showTip('Back on foot!');
 }
 
 // ══════════════ HELPERS ══════════════
@@ -9186,7 +9199,7 @@ function update(dt){
   // F to mount/dismount or exit wingsuit
   if(fJust){
     fJust=false;
-    if(isFlying&&!currentVeh){isFlying=false;V.y=Math.min(V.y,0);showTip('Wingsuit off!')}
+    if(isFlying&&!currentVeh){isFlying=false;V.y=Math.min(V.y,0)}
     else if(currentVeh)dismountVehicle();
     else{const nv=nearestVehicle();if(nv)mountVehicle(nv)}
   }
@@ -9268,9 +9281,9 @@ function update(dt){
         const lz=dx*sinR+dz*cosR;
         if(lz<=-2.5*r.sc){
           const spd=currentVeh?Math.abs(currentVeh.speed):V.length();
-          if(spd>3&&V.y<=1){V.y=Math.max(V.y,r.launch*(spd/30));onGround=false;showTip('RAMP!');}}}}
+          if(spd>3&&V.y<=1){V.y=Math.max(V.y,r.launch*(spd/30));onGround=false;}}}}
     for(const t of trampolines){const dx=P.x-t.x,dz=P.z-t.z;if(Math.sqrt(dx*dx+dz*dz)<t.r&&P.y<t.baseH+1*t.sc){
-      V.y=t.bounce;onGround=false;showTip('BOUNCE!');}}
+      V.y=t.bounce;onGround=false;}}
   };
 
   // ═══ WALKING ═══
@@ -9305,8 +9318,7 @@ function update(dt){
         const toCenter=new THREE.Vector3(cx-P.x,0,cz-P.z);
         if(toCenter.length()>0.1)toCenter.normalize().multiplyScalar(1.2);
         P.x+=toCenter.x;P.z+=toCenter.z;
-        V.y=0;onGround=true;climbing=false;climbBldg=null;
-        showTip('Climbed up!')}
+        V.y=0;onGround=true;climbing=false;climbBldg=null}
     }else{
       if(climbing&&!wallHit){climbing=false;climbBldg=null}
     }
@@ -9320,7 +9332,7 @@ function update(dt){
     if(spaceJust&&onGround){V.y=JFORCE;onGround=false;climbing=false;climbBldg=null;spaceJust=false}
     if(spaceJust&&climbing){V.y=JFORCE*.6;climbing=false;climbBldg=null;onGround=false;spaceJust=false}
     if(spaceJust&&!onGround&&!climbing&&P.y>wgH+1){isFlying=true;const s=Math.max(25,V.length());
-      V.set(fwd().x*s,Math.max(V.y,2),fwd().z*s);showTip('Wingsuit! UP/DOWN=pitch LEFT/RIGHT=turn SHIFT=boost SPACE=rise');spaceJust=false}
+      V.set(fwd().x*s,Math.max(V.y,2),fwd().z*s);showTip('Wingsuit! SHIFT=boost SPACE=rise');spaceJust=false}
     spaceJust=false;
     if(!onGround&&!climbing){V.y-=GRAV*dt;P.y+=V.y*dt}
     if(P.y<wgH){P.y=wgH;V.y=0;onGround=true;climbing=false;climbBldg=null}
@@ -9353,7 +9365,7 @@ function update(dt){
     if(P.y<_flyGH+.5){P.y=_flyGH+.5;if(V.y<-5){isFlying=false;V.set(0,0,0);showTip('Crash!')}else{V.y=0;isFlying=false}}
     // Landing on rooftops: if descending onto a building, land on its roof
     const bl=colBldg(P.x,P.z);
-    if(bl&&P.y<=bl.h+1.5&&V.y<=0){P.y=bl.h;V.set(0,0,0);isFlying=false;onGround=true;showTip('Rooftop landing!')}
+    if(bl&&P.y<=bl.h+1.5&&V.y<=0){P.y=bl.h;V.set(0,0,0);isFlying=false;onGround=true}
     else if(bl&&P.y<bl.h+2){P.y=bl.h+2;V.y=Math.max(V.y,2)}
     mode='walk';
   }
@@ -9827,7 +9839,6 @@ function update(dt){
           // Pull player
           const pullDir=_baseAimDir.clone().multiplyScalar(60);
           V.add(pullDir);V.y+=15;
-          showTip('Grapple!');
         } else if(w.toolType==='jetboost'){
           // Boost the player upward and forward
           V.y+=8;const fd=fwd();V.x+=fd.x*12;V.z+=fd.z*12;
@@ -9836,15 +9847,13 @@ function update(dt){
         } else if(w.toolType==='zoom'){
           // Toggle zoom
           cam.fov=cam.fov<50?70:25;cam.updateProjectionMatrix();
-          showTip(cam.fov<50?'Zoomed in':'Normal view');
         } else if(w.toolType==='light'){
           // Toggle flashlight
           if(!window._flashlight){
             window._flashlight=new THREE.SpotLight(0xffffcc,3,80,Math.PI/6,.3);
             window._flashlight.position.copy(gunPos);window._flashlight.target.position.copy(gunPos.clone().add(_baseAimDir.clone().multiplyScalar(10)));
             scene.add(window._flashlight);scene.add(window._flashlight.target);
-            showTip('Flashlight ON');
-          } else {scene.remove(window._flashlight);scene.remove(window._flashlight.target);window._flashlight=null;showTip('Flashlight OFF')}
+          } else {scene.remove(window._flashlight);scene.remove(window._flashlight.target);window._flashlight=null}
         }
       }
   }
@@ -10019,7 +10028,7 @@ function update(dt){
     const _zipBoost=(keys['ShiftLeft']||keys['ShiftRight'])?3:1;
     zipT+=dt*zipSpeed*zipDir*_zipBoost;
     if(zipT>=1||zipT<=0||keys['Space']){
-      zipRiding=-1;showTip('Zipline complete!');
+      zipRiding=-1;
     } else {
       // Follow curved cable path (arcs over terrain)
       const cp=zl.curve.getPoint(zipT);
@@ -10215,7 +10224,7 @@ function spawnAndMount(type){
     const spd=Math.max(30,V.length());
     V.set(fwd().x*spd,5,fwd().z*spd);
     boostFuel=100;
-    showTip('Wingsuit! UP/DOWN=pitch LEFT/RIGHT=turn SHIFT=boost SPACE=rise, LEFT/RIGHT=turn');
+    showTip('Wingsuit! SHIFT=boost SPACE=rise');
     try{canvas.requestPointerLock()}catch(e){}
     return;
   }
@@ -10321,7 +10330,7 @@ function buildWpnMenu(){
     item.className='wpn-item'+(id===currentWeapon?' active':'')+(idx===wpnSelIdx?' selected':'');
     const statsStr=w.type==='tool'?w.toolType.toUpperCase():`DMG:${w.dmg} | ROF:${w.fireRate}/s`;
     item.innerHTML=`<span class="wpn-icon">${w.icon}</span><div class="wpn-info"><div class="wpn-name">${w.name}</div><div class="wpn-stats">${statsStr}</div></div>`;
-    item.addEventListener('click',()=>{currentWeapon=id;closeWpnMenu();showTip(w.name+' equipped!')});
+    item.addEventListener('click',()=>{currentWeapon=id;closeWpnMenu()});
     item.addEventListener('mouseenter',()=>{wpnSelIdx=ci;highlightWpn()});
     wpnList.appendChild(item);wpnFlatList.push({el:item,id});idx++;
   }
@@ -10353,7 +10362,7 @@ document.addEventListener('keydown',e=>{
     else if(e.code==='ArrowUp'||e.code==='KeyW'){e.preventDefault();wpnSelIdx=Math.max(wpnSelIdx-1,0);highlightWpn()}
     else if(e.code==='ArrowRight'||e.code==='KeyD'){e.preventDefault();wpnSelIdx=Math.min(wpnSelIdx+3,wpnFlatList.length-1);highlightWpn()}
     else if(e.code==='ArrowLeft'||e.code==='KeyA'){e.preventDefault();wpnSelIdx=Math.max(wpnSelIdx-3,0);highlightWpn()}
-    else if(e.code==='Enter'||e.code==='Space'){e.preventDefault();if(wpnFlatList[wpnSelIdx]){currentWeapon=wpnFlatList[wpnSelIdx].id;closeWpnMenu();showTip(WEAPONS[currentWeapon].name+' equipped!')}}
+    else if(e.code==='Enter'||e.code==='Space'){e.preventDefault();if(wpnFlatList[wpnSelIdx]){currentWeapon=wpnFlatList[wpnSelIdx].id;closeWpnMenu()}}
   }
 });
 
