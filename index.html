@@ -2793,6 +2793,8 @@ let extremeParkGroup;
   // Deck platforms on both lips
   const deckL=box(40,1,5,0x664422);deckL.position.set(hpX,baseH+15,hpZ-15);scene.add(deckL);
   const deckR=box(40,1,5,0x664422);deckR.position.set(hpX,baseH+15,hpZ+15);scene.add(deckR);
+  _addBldg({minX:hpX-20,maxX:hpX+20,minZ:hpZ-17,maxZ:hpZ-13,h:baseH+15});
+  _addBldg({minX:hpX-20,maxX:hpX+20,minZ:hpZ+13,maxZ:hpZ+17,h:baseH+15});
   // Rails
   const railGeos=[];const _railGeo=new THREE.CylinderGeometry(.1,.1,40,4);
   railGeos.push(geoAt(_railGeo,hpX,baseH+16,hpZ-17.5,0,0,Math.PI/2));
@@ -2806,14 +2808,17 @@ let extremeParkGroup;
   // Ramp 1: 10m
   const r1=box(12,.5,16,0x999999);r1.position.set(mrX,baseH+5,mrZ);r1.rotation.x=.45;scene.add(r1);
   const r1back=box(12,10,.5,0x777777);r1back.position.set(mrX,baseH+5,mrZ+8);scene.add(r1back);
+  _addBldg({minX:mrX-6,maxX:mrX+6,minZ:mrZ+7,maxZ:mrZ+9,h:baseH+10});
   mkRamp(mrX,mrZ-6,0,1.5);
   // Ramp 2: 20m
   const r2=box(12,.5,16,0x999999);r2.position.set(mrX,baseH+10,mrZ-35);r2.rotation.x=.5;scene.add(r2);
   const r2back=box(12,20,.5,0x777777);r2back.position.set(mrX,baseH+10,mrZ-27);scene.add(r2back);
+  _addBldg({minX:mrX-6,maxX:mrX+6,minZ:mrZ-28,maxZ:mrZ-26,h:baseH+20});
   mkRamp(mrX,mrZ-41,0,2);
   // Ramp 3: 30m
   const r3=box(12,.5,20,0xaaaaaa);r3.position.set(mrX,baseH+15,mrZ-70);r3.rotation.x=.55;scene.add(r3);
   const r3back=box(12,30,.5,0x777777);r3back.position.set(mrX,baseH+15,mrZ-60);scene.add(r3back);
+  _addBldg({minX:mrX-6,maxX:mrX+6,minZ:mrZ-61,maxZ:mrZ-59,h:baseH+30});
   mkRamp(mrX,mrZ-78,0,2.5);
   // Ladder rungs (merged)
   const ladGeos=[];const _ladRung=new THREE.BoxGeometry(.3,8,.15);
@@ -2909,7 +2914,8 @@ let extremeParkGroup;
   for(let i=0;i<8;i++)pkGeos.push(geoAt(_pkBox,pkX+i*5,baseH+1+i*1.2,pkZ,0,0,0));
   // Walls to climb over
   const _pkWall=new THREE.BoxGeometry(4,6,.5);
-  for(let i=0;i<4;i++)pkGeos.push(geoAt(_pkWall,pkX+i*10,baseH+3,pkZ-10,0,0,0));
+  for(let i=0;i<4;i++){pkGeos.push(geoAt(_pkWall,pkX+i*10,baseH+3,pkZ-10,0,0,0));
+    _addBldg({minX:pkX+i*10-2,maxX:pkX+i*10+2,minZ:pkZ-10.5,maxZ:pkZ-9.5,h:baseH+6})}
   // Monkey bars
   const _pkBar=new THREE.CylinderGeometry(.08,.08,12,4);
   pkGeos.push(geoAt(_pkBar,pkX+20,baseH+5,pkZ-5,0,0,Math.PI/2));
@@ -4952,6 +4958,7 @@ let safariGroup;
     obsGeos.push(geoAt(_obsLeg,cx+60+ox,baseH+4,cz+oz,0,0,0));
   scene.add(new THREE.Mesh(mergeGeometries(obsGeos),new THREE.MeshStandardMaterial({color:0x554422})));
   const obsRail=box(10,1,.2,0x664422);obsRail.position.set(cx+60,baseH+9,cz-5);scene.add(obsRail);
+  _addBldg({minX:cx+55,maxX:cx+65,minZ:cz-5,maxZ:cz+5,h:baseH+9});
   // Watering hole
   const waterHole=new THREE.Mesh(new THREE.CircleGeometry(18,16),new THREE.MeshStandardMaterial({color:0x5588aa,transparent:true,opacity:.6}));
   waterHole.rotation.x=-Math.PI/2;waterHole.position.set(cx-80,baseH+.06,cz+60);scene.add(waterHole);
@@ -5008,6 +5015,7 @@ let santoriniGroup;
   seedR(9403);
   // Cliff base
   const cliff=box(200,25,80,0xd4c4a0);cliff.position.set(cx,baseH+12,cz);scene.add(cliff);
+  _addBldg({minX:cx-100,maxX:cx+100,minZ:cz-40,maxZ:cz+40,h:baseH+25});
   // White houses on cliff top (cascading)
   const hGeos=[],rGeos=[],dGeos=[];
   const _h=new THREE.BoxGeometry(5,4,5);const _r=new THREE.BoxGeometry(5.5,.4,5.5);const _dome=new THREE.SphereGeometry(2,8,6,0,Math.PI*2,0,Math.PI/2);
@@ -5018,6 +5026,7 @@ let santoriniGroup;
     rGeos.push(geoAt(_r,hx,hy+4.2,hz,0,0,0))}
   scene.add(new THREE.Mesh(mergeGeometries(hGeos),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.6})));
   scene.add(new THREE.Mesh(mergeGeometries(rGeos),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.7})));
+  _addBldg({minX:cx-80,maxX:cx+80,minZ:cz-30,maxZ:cz+30,h:baseH+29});
   // Blue domed churches (iconic Santorini)
   for(let i=0;i<4;i++){
     const dx=cx-60+i*40,dz=cz-10;
@@ -5222,6 +5231,7 @@ let hotSpringsGroup;
   const chGeos=[];const _ch=new THREE.BoxGeometry(4,3,4);
   for(let i=0;i<4;i++)chGeos.push(geoAt(_ch,cx+80+i*6-9,baseH+1.5,cz-12,0,0,0));
   scene.add(new THREE.Mesh(mergeGeometries(chGeos),new THREE.MeshStandardMaterial({color:0x664433})));
+  _addBldg({minX:cx+69,maxX:cx+91,minZ:cz-14,maxZ:cz-10,h:baseH+3});
   // Rocks scattered
   const hrkGeos=[];const _hrk=new THREE.DodecahedronGeometry(1,0);
   for(let i=0;i<30;i++){const rx=cx-120+srand()*240,rz=cz-120+srand()*240;
@@ -5255,6 +5265,7 @@ let cruiseGroup;
   const dock=box(120,.5,30,0x888888);dock.position.set(cx-20,baseH+.5,cz);scene.add(dock);
   // MASSIVE cruise ship
   const hull=box(30,12,120,0xeeeeee);hull.position.set(cx+40,baseH+4,cz);scene.add(hull);
+  _addBldg({minX:cx+25,maxX:cx+55,minZ:cz-60,maxZ:cz+60,h:baseH+10});
   // Ship hull bottom (darker)
   const hullBot=box(28,5,118,0x222244);hullBot.position.set(cx+40,baseH-1,cz);scene.add(hullBot);
   // Decks (stacked)
@@ -5265,6 +5276,7 @@ let cruiseGroup;
     const rail2=box(26,.5,.15,0xaaaaaa);rail2.position.set(cx+40,baseH+11.2+d*4,cz+55);scene.add(rail2)}
   // Bridge (top deck, front)
   const bridge=box(20,5,15,0x336699);bridge.position.set(cx+40,baseH+32.5,cz-40);scene.add(bridge);
+  _addBldg({minX:cx+30,maxX:cx+50,minZ:cz-47,maxZ:cz-33,h:baseH+35});
   // Bridge windows
   const bWin=new THREE.Mesh(new THREE.PlaneGeometry(18,3),new THREE.MeshStandardMaterial({color:0x88ccff,emissive:0x4488cc,emissiveIntensity:1,transparent:true,opacity:.7}));
   bWin.position.set(cx+25,baseH+33,cz-40);bWin.rotation.y=Math.PI/2;scene.add(bWin);
@@ -5292,6 +5304,7 @@ let cruiseGroup;
   const shopGeos=[];const _shop=new THREE.BoxGeometry(6,3,5);
   for(let i=0;i<8;i++)shopGeos.push(geoAt(_shop,cx-80+i*12,baseH+1.5,cz+25,0,0,0));
   scene.add(new THREE.Mesh(mergeGeometries(shopGeos),new THREE.MeshStandardMaterial({color:0xddbb88})));
+  _addBldg({minX:cx-83,maxX:cx+13,minZ:cz+22,maxZ:cz+28,h:baseH+3});
   // Bollards and rope
   const bollGeos=[];const _boll=new THREE.CylinderGeometry(.2,.25,1,6);
   for(let i=0;i<10;i++)bollGeos.push(geoAt(_boll,cx-70+i*10,baseH+.8,cz-13,0,0,0));
@@ -5314,6 +5327,7 @@ let amalfiGroup;
   seedR(9408);
   // Steep coastal cliff
   const cliff=box(180,30,60,0xc4a484);cliff.position.set(cx,baseH+15,cz);scene.add(cliff);
+  _addBldg({minX:cx-90,maxX:cx+90,minZ:cz-30,maxZ:cz+30,h:baseH+30});
   // Colorful houses cascading down cliff
   const houseColors=[0xff7744,0xffcc44,0xff5577,0xffaa66,0xdd6655,0xffee77,0xee8855,0xff9988,0xddaa55,0xffbb88,
     0xff6666,0xffdd55,0xee7744,0xff8866,0xddcc66,0xffaa77,0xff9955,0xee6644,0xffbb55,0xdd8844,
@@ -5325,6 +5339,7 @@ let amalfiGroup;
     const hw=3+srand()*3,hh=3+srand()*3,hd=3+srand()*2;
     const hGeo=new THREE.BoxGeometry(hw,hh,hd);
     scene.add(new THREE.Mesh(geoAt(hGeo,hx,hy-hh/2,hz,0,srand()*.2,0),new THREE.MeshStandardMaterial({color:houseColors[i]})))}
+  _addBldg({minX:cx-80,maxX:cx+80,minZ:cz-25,maxZ:cz+15,h:baseH+36});
   // Church with tall bell tower
   const church=box(8,6,8,0xeeeecc);church.position.set(cx,baseH+33,cz-5);scene.add(church);
   const tower=box(4,15,4,0xeeeecc);tower.position.set(cx+6,baseH+37.5,cz-5);scene.add(tower);
@@ -5373,6 +5388,7 @@ let machuPicchuGroup;
   for(let t=0;t<10;t++){const tr=90-t*7,th=baseH+5+t*6;
     terrGeos.push(geoAt(new THREE.CylinderGeometry(tr,tr+2,2,12),cx,th,cz,0,0,0))}
   scene.add(new THREE.Mesh(mergeGeometries(terrGeos),new THREE.MeshStandardMaterial({color:0x779944,roughness:.9})));
+  _addBldg({minX:cx-80,maxX:cx+80,minZ:cz-80,maxZ:cz+80,h:baseH+55});
   // Stone walls on terraces
   const wallGeos=[];
   for(let t=0;t<10;t++){const tr=90-t*7,th=baseH+4+t*6;
@@ -5394,6 +5410,7 @@ let machuPicchuGroup;
     shGeos.push(geoAt(_sh,hx,baseH+63.5,hz,0,srand()*.3,0));
     shGeos.push(geoAt(_shR,hx,baseH+65.2,hz,.2,srand()*.1,0))}
   scene.add(new THREE.Mesh(mergeGeometries(shGeos),new THREE.MeshStandardMaterial({color:0x998866,roughness:.9})));
+  _addBldg({minX:cx-20,maxX:cx+20,minZ:cz-15,maxZ:cz+15,h:baseH+65});
   // Stairway up the mountain
   const stGeos=[];const _st=new THREE.BoxGeometry(3,.3,1);
   for(let i=0;i<50;i++){const a=(i/50)*Math.PI*1.5-Math.PI*.5;const r=90-i*1.2;
