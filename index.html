@@ -92,7 +92,7 @@ canvas{display:block}
 #wpn-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #wpn-close:hover{opacity:1}
 #char-menu{position:fixed;top:0;right:0;bottom:0;width:25%;min-width:155px;max-width:220px;z-index:20;display:none;background:rgba(15,5,20,0.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);flex-direction:column;align-items:stretch;padding:10px 8px 14px;border-radius:12px 0 0 12px;border-left:1px solid rgba(200,100,255,0.3);box-shadow:-4px 0 20px rgba(0,0,0,0.5);color:#fff;font-family:'Courier New',monospace;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
-#char-menu.open{display:flex}
+#char-menu.open{display:flex;z-index:10001}
 #char-menu h2{font-size:1em;letter-spacing:0.2em;margin-bottom:0;text-align:center;background:linear-gradient(90deg,#ff66cc,#aa66ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #char-menu .subtitle{font-size:0.5em;opacity:0.4;margin-bottom:0.5em;letter-spacing:0.15em;text-align:center}
 #char-cats{display:flex;flex-direction:column;gap:6px;padding:0}
@@ -103,7 +103,7 @@ canvas{display:block}
 .char-opt.active{border-color:rgba(200,150,255,0.6);background:rgba(200,100,255,0.2)}
 .char-swatch{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);flex-shrink:0}
 .char-opt-name{flex:1}
-#char-close{position:absolute;top:6px;right:8px;font-size:1.1em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
+#char-close{position:absolute;top:6px;right:8px;font-size:1.1em;cursor:pointer;opacity:0.6;transition:opacity 0.2s;padding:6px;z-index:10}
 #char-close:hover{opacity:1}
 #btn-char-m{background:rgba(80,30,120,0.5);border-color:rgba(200,100,255,0.25)}
 #weapon-hud{position:fixed;bottom:55px;right:30px;font-size:0.85em;color:#ff8844;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(255,100,0,0.4);display:none;text-align:right}
@@ -5606,7 +5606,6 @@ const _ZIP_ROUTES=[
   // ── Beach Hub (east coast) ──
   ['Beach → Hot Springs',860, 150,  2550,2750,  0xff8844, null],
   ['Beach → Amalfi',     860,  50,  3550,-2550, 0xffaa00, null],
-  ['Beach → Cruise',     870,  60,  3950,  50,  0xeeeeff, null],
   // ── Snow / North ──
   ['Snow → Extreme',    -700,   0,  -180, 1250, 0x88ccff, null],  // short, flat
   ['Park → Extreme',     180, 850,  -180, 1250, 0xff4444, null],
@@ -5621,11 +5620,10 @@ const _ZIP_ROUTES=[
   // ── Far west (stays in mountain region) ──
   ['Jungle → Dubai',   -3750,-1350,-3550, 2750,  0xffff44, null],
   // ── East coast connectors ──
-  ['Cruise → Hot Sp.',  3950,  50,  2550, 2750,  0xffccaa, null],
-  ['Amalfi → Cruise',   3550,-2550, 3950, -50,   0xdd88ff, null],
+  ['Amalfi → Hot Sp.',  3550,-2550, 2550, 2750,  0xdd88ff, null],
 ];
 const ziplines=[];
-let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
+let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1,_zipCooldown=0;
 (function buildZiplines(){
   const TH=35; // default tower height above terrain
   const CLEAR=40; // min clearance above terrain for cables
@@ -9489,7 +9487,7 @@ function update(dt){
     if(_nearZipI>=0&&!nv){
       const zl=ziplines[_nearZipI];
       const dir=_nearZipT<0.5?zl.name:zl.name.split(' → ').reverse().join(' → ');
-      vp.textContent=`${isMobile?'ENTER':'Press E'} \u2014 \u{1F6A1} ${dir}`;vp.style.opacity='1';
+      vp.textContent=`\u{1F6A1} ${dir}`;vp.style.opacity='1';
     }
   } else document.getElementById('vehicle-prompt').style.opacity='0';
   // Hide unused glow rings
@@ -10247,12 +10245,13 @@ function update(dt){
   }
 
   // ═══ ZIPLINE NETWORK RIDE ═══
+  if(_zipCooldown>0)_zipCooldown-=dt;
   if(zipRiding>=0){
     const zl=ziplines[zipRiding];
     const _zipBoost=(keys['ShiftLeft']||keys['ShiftRight'])?3:1;
     zipT+=dt*zipSpeed*zipDir*_zipBoost;
     if(zipT>=1||zipT<=0||keys['Space']){
-      zipRiding=-1;
+      zipRiding=-1;_zipCooldown=1.5;
     } else {
       // Follow curved cable path (arcs over terrain)
       const cp=zl.curve.getPoint(zipT);
@@ -10263,7 +10262,7 @@ function update(dt){
       if(zipDir<0)tang.negate();
       yaw=Math.atan2(-tang.x,-tang.z);
     }
-  } else if(!currentVeh&&keys['KeyE']&&_nearZipI>=0){
+  } else if(!currentVeh&&keys['KeyE']&&_nearZipI>=0&&_zipCooldown<=0){
     // Mount zipline from anywhere along the cable
     const zl=ziplines[_nearZipI];
     zipRiding=_nearZipI;
@@ -10272,11 +10271,11 @@ function update(dt){
     // Ride toward the farther end for maximum travel
     if(_nearZipT<0.5){
       zipT=Math.max(_nearZipT,0.001);zipDir=1;
-      showTip('\u{1F6A1} '+zl.name+' \u2014 SPACE to jump off');
+      showTip('\u{1F6A1} '+zl.name);
     } else {
       zipT=Math.min(_nearZipT,0.999);zipDir=-1;
       const pts=zl.name.split(' \u2192 ');
-      showTip('\u{1F6A1} '+pts[1]+' \u2192 '+pts[0]+' \u2014 SPACE to jump off');
+      showTip('\u{1F6A1} '+pts[1]+' \u2192 '+pts[0]);
     }
   }
 
@@ -10626,14 +10625,17 @@ function openCharMenu(){
   if(charMenuOpen||menuOpen||wpnMenuOpen)return;
   charMenuOpen=true;_charPreviewAngle=yaw;_savedCharQuat=charG.quaternion.clone();
   buildCharMenu();charMenu.classList.add('open');document.exitPointerLock?.();
+  const _fab=document.getElementById('ow-fab');if(_fab)_fab.style.display='none';
 }
 function closeCharMenu(){
   if(!charMenuOpen)return;
   charMenuOpen=false;charMenu.classList.remove('open');
   if(_savedCharQuat)charG.quaternion.copy(_savedCharQuat);
   if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
+  const _fab=document.getElementById('ow-fab');if(_fab)_fab.style.display='';
 }
 document.getElementById('char-close').addEventListener('click',closeCharMenu);
+document.getElementById('char-close').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();closeCharMenu()},{passive:false});
 document.addEventListener('keydown',e=>{
   if(e.code==='KeyC'&&locked&&!charMenuOpen&&!menuOpen&&!wpnMenuOpen){e.preventDefault();openCharMenu()}
   else if(e.code==='KeyC'&&charMenuOpen){e.preventDefault();closeCharMenu()}
