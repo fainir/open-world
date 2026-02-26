@@ -91,6 +91,21 @@ canvas{display:block}
 .wpn-item .wpn-info{flex:1}.wpn-item .wpn-name{font-weight:bold}.wpn-item .wpn-stats{font-size:0.7em;opacity:0.4;margin-top:2px}
 #wpn-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #wpn-close:hover{opacity:1}
+#char-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(15,5,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(200,100,255,0.25);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#char-menu.open{display:flex}
+#char-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#ff66cc,#aa66ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#char-menu .subtitle{font-size:0.75em;opacity:0.4;margin-bottom:1.5em;letter-spacing:0.2em}
+#char-cats{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:850px;padding:0 10px}
+.char-cat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;min-width:120px}
+.char-cat h3{font-size:0.7em;letter-spacing:0.15em;margin-bottom:8px;text-align:center;opacity:0.6;text-transform:uppercase;color:#cc88ff}
+.char-opt{display:flex;align-items:center;gap:8px;padding:5px 8px;margin:2px 0;border-radius:5px;cursor:pointer;transition:all 0.15s;font-size:0.75em;border:1px solid transparent}
+.char-opt:hover,.char-opt.selected{background:rgba(200,100,255,0.15);border-color:rgba(200,100,255,0.3)}
+.char-opt.active{border-color:rgba(200,150,255,0.6);background:rgba(200,100,255,0.2)}
+.char-swatch{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);flex-shrink:0}
+.char-opt-name{flex:1}
+#char-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
+#char-close:hover{opacity:1}
+#btn-char-m{background:rgba(80,30,120,0.5);border-color:rgba(200,100,255,0.25)}
 #weapon-hud{position:fixed;bottom:55px;right:30px;font-size:0.85em;color:#ff8844;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(255,100,0,0.4);display:none;text-align:right}
 #weapon-hud .wpn-ammo{font-size:1.4em;color:#ffaa44}
 /* ══════════════ MOBILE CONTROLS ══════════════ */
@@ -178,6 +193,7 @@ canvas{display:block}
 <span class="ctrl-key"><kbd>B</kbd><span class="ci">🔫</span><span class="cl">Weapons</span></span>
 <span class="ctrl-key"><kbd>1-4</kbd><span class="ci">🤸</span><span class="cl">Tricks</span></span>
 <span class="ctrl-key"><kbd>5-8</kbd><span class="ci">👊</span><span class="cl">Fight</span></span>
+<span class="ctrl-key"><kbd>C</kbd><span class="ci">👤</span><span class="cl">Style</span></span>
 </div>
 </div>
 <div id="wpn-menu">
@@ -187,6 +203,12 @@ canvas{display:block}
 <div id="wpn-list"></div>
 </div>
 <div id="weapon-hud"><div id="wpn-name-hud"></div><div class="wpn-ammo" id="wpn-ammo-hud"></div></div>
+<div id="char-menu">
+<div id="char-close">&#10005;</div>
+<h2>STYLE</h2>
+<div class="subtitle">Customize your look</div>
+<div id="char-cats"></div>
+</div>
 <div id="veh-menu">
 <div id="veh-close">&#10005;</div>
 <h2>VEHICLES</h2>
@@ -208,6 +230,7 @@ canvas{display:block}
 <div id="mobile-center-btns">
 <div id="btn-veh-m" class="mc-btn"><span class="mc-ico">🚗</span>VEHICLE</div>
 <div id="btn-wpn-m" class="mc-btn"><span class="mc-ico">🔫</span>WEAPON</div>
+<div id="btn-char-m" class="mc-btn"><span class="mc-ico">👤</span>STYLE</div>
 </div>
 <div id="btn-fs">&#x26F6;</div>
 <canvas id="game"></canvas>
@@ -5732,6 +5755,119 @@ gunG.position.set(.38,.85,.2);gunG.rotation.x=-Math.PI/6;
 charG.add(gunG);
 scene.add(charG);
 
+// ══════════════ CHARACTER CUSTOMIZATION ══════════════
+// Shared boot material
+const bootM=new THREE.MeshStandardMaterial({color:0x333333,roughness:.5});lb.material=bootM;rb.material=bootM;
+const neckM=neck.material;
+function _updateStripes(suitColor){const c=new THREE.Color(suitColor);c.multiplyScalar(0.85);st1.material.color.copy(c);st2.material.color.copy(c)}
+// Headgear meshes
+const _hgMeshes={};
+// Mohawk
+const _mohawk=new THREE.Group();
+for(let i=0;i<7;i++){const h=.06+Math.sin(i/6*Math.PI)*.06;const s=box(.03,h,.04,0xff0044);s.position.set(0,1.72+h/2,(i-3)*.04);_mohawk.add(s)}
+_mohawk.visible=false;charG.add(_mohawk);_hgMeshes.mohawk=_mohawk;
+// Devil Horns
+const _dhorns=new THREE.Group();
+const _lhorn=cyl(.025,.008,.14,0xcc0000);_lhorn.position.set(-.1,1.72,0);_lhorn.rotation.z=.35;_dhorns.add(_lhorn);
+const _rhorn=cyl(.025,.008,.14,0xcc0000);_rhorn.position.set(.1,1.72,0);_rhorn.rotation.z=-.35;_dhorns.add(_rhorn);
+_dhorns.visible=false;charG.add(_dhorns);_hgMeshes.horns=_dhorns;
+// Angel Halo
+const _halo=new THREE.Mesh(new THREE.TorusGeometry(.16,.015,8,24),new THREE.MeshStandardMaterial({color:0xffdd44,emissive:0xffaa00,emissiveIntensity:.5}));
+_halo.position.set(0,1.82,0);_halo.rotation.x=Math.PI/2;_halo.visible=false;charG.add(_halo);_hgMeshes.halo=_halo;
+// Cat Ears
+const _catEars=new THREE.Group();const _earGeo=new THREE.ConeGeometry(.05,.1,4);
+const _earMat=new THREE.MeshStandardMaterial({color:0xffaa88});
+const _le=new THREE.Mesh(_earGeo,_earMat);_le.position.set(-.12,1.78,0);_catEars.add(_le);
+const _re=new THREE.Mesh(_earGeo,_earMat);_re.position.set(.12,1.78,0);_catEars.add(_re);
+_catEars.visible=false;charG.add(_catEars);_hgMeshes.cat=_catEars;
+// Crown
+const _crown=new THREE.Group();
+const _crBase=cyl(.16,.16,.06,0xffd700);_crBase.position.set(0,1.72,0);_crown.add(_crBase);
+for(let ci=0;ci<5;ci++){const a=ci/5*Math.PI*2;const pk=box(.03,.06,.03,0xffd700);pk.position.set(Math.cos(a)*.13,1.78,Math.sin(a)*.13);_crown.add(pk);
+if(ci%2===0){const g=new THREE.Mesh(new THREE.SphereGeometry(.015,6,4),new THREE.MeshStandardMaterial({color:0xff0044,emissive:0xff0022,emissiveIntensity:.3}));g.position.set(Math.cos(a)*.13,1.81,Math.sin(a)*.13);_crown.add(g)}}
+_crown.visible=false;charG.add(_crown);_hgMeshes.crown=_crown;
+// Top Hat
+const _topHat=new THREE.Group();const _hatBrim=cyl(.18,.18,.02,0x111111);_hatBrim.position.set(0,1.7,0);_topHat.add(_hatBrim);
+const _hatTop=cyl(.12,.12,.2,0x111111);_hatTop.position.set(0,1.82,0);_topHat.add(_hatTop);
+const _hatBand=cyl(.125,.125,.025,0xcc0000);_hatBand.position.set(0,1.74,0);_topHat.add(_hatBand);
+_topHat.visible=false;charG.add(_topHat);_hgMeshes.tophat=_topHat;
+// Antenna
+const _antenna=new THREE.Group();
+const _antPole=cyl(.01,.01,.2,0x888888);_antPole.position.set(0,1.78,0);_antenna.add(_antPole);
+const _antBall=new THREE.Mesh(new THREE.SphereGeometry(.03,6,4),new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:.5}));_antBall.position.set(0,1.9,0);_antenna.add(_antBall);
+_antenna.visible=false;charG.add(_antenna);_hgMeshes.antenna=_antenna;
+// Viking Horns
+const _viking=new THREE.Group();
+const _vlh=cyl(.035,.01,.18,0xeedd99);_vlh.position.set(-.15,1.72,.05);_vlh.rotation.z=.6;_vlh.rotation.x=-.2;_viking.add(_vlh);
+const _vrh=cyl(.035,.01,.18,0xeedd99);_vrh.position.set(.15,1.72,.05);_vrh.rotation.z=-.6;_vrh.rotation.x=-.2;_viking.add(_vrh);
+_viking.visible=false;charG.add(_viking);_hgMeshes.viking=_viking;
+// Afro
+const _afro=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),new THREE.MeshStandardMaterial({color:0x2a1a0a,roughness:.9}));
+_afro.position.set(0,1.65,-.02);_afro.visible=false;charG.add(_afro);_hgMeshes.afro=_afro;
+// Customization data
+const charCustom={
+  suit:{label:'SUIT',mat:suM,current:0,options:[
+    {name:'Astronaut',color:0xe8e0d4,icon:'\u{1F9D1}\u200D\u{1F680}'},
+    {name:'Shadow Ops',color:0x111111,icon:'\u{1F977}'},
+    {name:'Neon Cyan',color:0x00ccff,icon:'\u{1F48E}'},
+    {name:'Lava',color:0xff2200,icon:'\u{1F525}'},
+    {name:'Forest',color:0x2d5a1e,icon:'\u{1F332}'},
+    {name:'Royal Gold',color:0xdaa520,icon:'\u{1F451}'},
+    {name:'Bubblegum',color:0xff69b4,icon:'\u{1F338}'},
+    {name:'Arctic',color:0xeeeeff,icon:'\u{2744}'},
+    {name:'Sunset',color:0xff6600,icon:'\u{1F305}'},
+    {name:'Purple Haze',color:0x7b2fbe,icon:'\u{1F49C}'},
+    {name:'Toxic',color:0x44ff22,icon:'\u{2622}'},
+    {name:'Ocean',color:0x1155aa,icon:'\u{1F30A}'}]},
+  helmet:{label:'HELMET',mat:hmM,current:0,options:[
+    {name:'Chrome',color:0xdddddd,icon:'\u26AA'},
+    {name:'Stealth',color:0x222222,icon:'\u26AB'},
+    {name:'Gold',color:0xffd700,icon:'\u{1F3C6}'},
+    {name:'Ruby',color:0xcc0000,icon:'\u{1F534}'},
+    {name:'Emerald',color:0x00cc44,icon:'\u{1F7E2}'},
+    {name:'Deep Sea',color:0x224488,icon:'\u{1F535}'}]},
+  visor:{label:'VISOR',mat:vsM,current:0,options:[
+    {name:'Tactical',color:0x1a1a2a,icon:'\u{1F535}'},
+    {name:'Blood',color:0x3a0808,icon:'\u{1F534}'},
+    {name:'Matrix',color:0x083a08,icon:'\u{1F7E2}'},
+    {name:'Amber',color:0x3a2508,icon:'\u{1F7E0}'},
+    {name:'Clear',color:0x667788,icon:'\u26AA'},
+    {name:'Void',color:0x050505,icon:'\u26AB'}]},
+  skin:{label:'SKIN',mat:neckM,current:0,options:[
+    {name:'Default',color:0xd4a574,icon:'\u{1F91A}'},
+    {name:'Fair',color:0xf5deb3,icon:'\u{1F91A}'},
+    {name:'Olive',color:0xc4a882,icon:'\u{1F91A}'},
+    {name:'Dark',color:0x8d6e53,icon:'\u{1F91A}'},
+    {name:'Zombie',color:0x7dab7d,icon:'\u{1F9DF}'},
+    {name:'Alien',color:0x5577bb,icon:'\u{1F47D}'},
+    {name:'Robot',color:0xaaaaaa,icon:'\u{1F916}'},
+    {name:'Pumpkin',color:0xff8822,icon:'\u{1F383}'}]},
+  boots:{label:'BOOTS',mat:bootM,current:0,options:[
+    {name:'Tactical',color:0x333333,icon:'\u2B1B'},
+    {name:'Red',color:0xcc0000,icon:'\u{1F534}'},
+    {name:'Gold',color:0xdaa520,icon:'\u{1F7E1}'},
+    {name:'White',color:0xeeeeee,icon:'\u2B1C'},
+    {name:'Neon',color:0x00ff44,icon:'\u{1F7E2}'},
+    {name:'Pink',color:0xff69b4,icon:'\u{1F49F}'}]},
+  headgear:{label:'HEADGEAR',current:0,options:[
+    {name:'None',icon:'\u274C',mesh:null},
+    {name:'Mohawk',icon:'\u{1F985}',mesh:_hgMeshes.mohawk},
+    {name:'Devil Horns',icon:'\u{1F608}',mesh:_hgMeshes.horns},
+    {name:'Halo',icon:'\u{1F607}',mesh:_hgMeshes.halo},
+    {name:'Cat Ears',icon:'\u{1F431}',mesh:_hgMeshes.cat},
+    {name:'Crown',icon:'\u{1F451}',mesh:_hgMeshes.crown},
+    {name:'Top Hat',icon:'\u{1F3A9}',mesh:_hgMeshes.tophat},
+    {name:'Antenna',icon:'\u{1F4E1}',mesh:_hgMeshes.antenna},
+    {name:'Viking',icon:'\u2694',mesh:_hgMeshes.viking},
+    {name:'Afro',icon:'\u{1F483}',mesh:_hgMeshes.afro}]}
+};
+function applyCharOpt(cat,idx){
+  charCustom[cat].current=idx;
+  const opt=charCustom[cat].options[idx];
+  if(cat==='headgear'){for(const k in _hgMeshes)_hgMeshes[k].visible=false;if(opt.mesh)opt.mesh.visible=true}
+  else{charCustom[cat].mat.color.setHex(opt.color);if(cat==='suit')_updateStripes(opt.color)}
+}
+
 // ══════════════ PARTICLES ══════════════
 const PC=400,pPos=new Float32Array(PC*3),pSz=new Float32Array(PC),pLf=new Float32Array(PC),pVl=[];
 for(let i=0;i<PC;i++){pPos[i*3+1]=-9999;pSz[i]=0;pLf[i]=0;pVl.push(new THREE.Vector3())}
@@ -8892,7 +9028,7 @@ document.addEventListener('keydown',e=>{keys[e.code]=true;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });
 document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')keys._sp=false;if(e.code==='KeyF'||e.code==='KeyE')keys._fp=false});
-document.addEventListener('mousedown',e=>{if(e.button===0&&locked&&!menuOpen&&!wpnMenuOpen){shooting=true;keys['mouse0']=true}});
+document.addEventListener('mousedown',e=>{if(e.button===0&&locked&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen){shooting=true;keys['mouse0']=true}});
 document.addEventListener('mouseup',e=>{if(e.button===0){shooting=false;keys['mouse0']=false}});
 document.addEventListener('mousemove',e=>{
   if(!locked)return;
@@ -8995,7 +9131,7 @@ document.addEventListener('pointerlockchange',()=>{
   const pl=document.pointerLockElement===canvas;
   if(!pl&&locked&&!isMobile){/* pointer lock lost — click game to re-lock */}
 });
-document.addEventListener('keydown',e=>{if(e.code==='Escape'&&locked&&!menuOpen&&!wpnMenuOpen)togglePause()});
+document.addEventListener('keydown',e=>{if(e.code==='Escape'&&locked&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen)togglePause()});
 // Pause screen — click/tap to resume
 document.getElementById('pause-screen').addEventListener('click',resumeGame);
 document.getElementById('pause-screen').addEventListener('touchstart',e=>{e.preventDefault();resumeGame()},{passive:false});
@@ -9172,7 +9308,7 @@ function update(dt){
   // Zone system — if inside a zone, only run zone update
   if(zoneManager.activeZone){zoneManager.update(dt);return}
   // Zone proximity check — press E on glowing circle to enter
-  if(!currentVeh&&mode==='walk'&&!menuOpen&&!wpnMenuOpen){
+  if(!currentVeh&&mode==='walk'&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen){
     zoneManager.update(dt);
     if(zoneManager.nearestZone)zoneUI.showPrompt((isMobile?'ENTER':'Press E')+' \u2014 '+zoneManager.nearestZone.label);
     else zoneUI.hidePrompt();
@@ -10183,7 +10319,7 @@ function update(dt){
 const vehMenu=document.getElementById('veh-menu');
 const vehBtn=document.getElementById('veh-btn');
 const vehCats=document.getElementById('veh-categories');
-let menuOpen=false;
+let menuOpen=false,charMenuOpen=false;
 
 const vehIcons={car:'\u{1F697}',motorcycle:'\u{1F3CD}',bike:'\u{1F6B2}',skateboard:'\u{1F6F9}',rollerblades:'\u{26F8}',pogo:'\u{1F680}',
   horse:'\u{1F40E}',airplane:'\u{2708}',helicopter:'\u{1F681}',boat:'\u{26F5}',jetski:'\u{1F6A4}',yacht:'\u{1F6F3}',
@@ -10287,7 +10423,7 @@ function closeVehMenu(){
 vehBtn.addEventListener('click',e=>{e.stopPropagation();if(menuOpen)closeVehMenu();else openVehMenu()});
 document.getElementById('veh-close').addEventListener('click',closeVehMenu);
 document.addEventListener('keydown',e=>{
-  if(e.code==='KeyV'&&locked&&!menuOpen&&!wpnMenuOpen){e.preventDefault();openVehMenu()}
+  if(e.code==='KeyV'&&locked&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen){e.preventDefault();openVehMenu()}
   else if(e.code==='KeyV'&&menuOpen){e.preventDefault();closeVehMenu()}
   else if(e.code==='Escape'&&menuOpen){e.preventDefault();closeVehMenu()}
   else if(menuOpen){
@@ -10367,7 +10503,7 @@ function closeWpnMenu(){
 wpnBtn.addEventListener('click',e=>{e.stopPropagation();if(wpnMenuOpen)closeWpnMenu();else openWpnMenu()});
 document.getElementById('wpn-close').addEventListener('click',closeWpnMenu);
 document.addEventListener('keydown',e=>{
-  if(e.code==='KeyB'&&locked&&!wpnMenuOpen&&!menuOpen){e.preventDefault();openWpnMenu()}
+  if(e.code==='KeyB'&&locked&&!wpnMenuOpen&&!menuOpen&&!charMenuOpen){e.preventDefault();openWpnMenu()}
   else if(e.code==='KeyB'&&wpnMenuOpen){e.preventDefault();closeWpnMenu()}
   else if(e.code==='Escape'&&wpnMenuOpen){e.preventDefault();closeWpnMenu()}
   else if(wpnMenuOpen){
@@ -10379,6 +10515,48 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ══════════════ CHARACTER STYLE MENU ══════════════
+const charMenu=document.getElementById('char-menu');
+const charCatsEl=document.getElementById('char-cats');
+function buildCharMenu(){
+  charCatsEl.innerHTML='';
+  const catOrder=['suit','helmet','visor','skin','boots','headgear'];
+  for(const cat of catOrder){
+    const cd=charCustom[cat];const div=document.createElement('div');div.className='char-cat';
+    div.innerHTML='<h3>'+cd.label+'</h3>';
+    cd.options.forEach((opt,i)=>{
+      const item=document.createElement('div');
+      item.className='char-opt'+(i===cd.current?' active':'');
+      if(cat==='headgear'){
+        item.innerHTML='<span style="font-size:1.2em">'+opt.icon+'</span><span class="char-opt-name">'+opt.name+'</span>';
+      }else{
+        item.innerHTML='<span class="char-swatch" style="background:#'+opt.color.toString(16).padStart(6,'0')+'"></span><span class="char-opt-name">'+opt.name+'</span>';
+      }
+      item.addEventListener('click',()=>{
+        applyCharOpt(cat,i);
+        div.querySelectorAll('.char-opt').forEach((el,j)=>el.classList.toggle('active',j===i));
+      });
+      div.appendChild(item);
+    });
+    charCatsEl.appendChild(div);
+  }
+}
+function openCharMenu(){
+  if(charMenuOpen||menuOpen||wpnMenuOpen)return;
+  charMenuOpen=true;buildCharMenu();charMenu.classList.add('open');document.exitPointerLock?.();
+}
+function closeCharMenu(){
+  if(!charMenuOpen)return;
+  charMenuOpen=false;charMenu.classList.remove('open');
+  if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
+}
+document.getElementById('char-close').addEventListener('click',closeCharMenu);
+document.addEventListener('keydown',e=>{
+  if(e.code==='KeyC'&&locked&&!charMenuOpen&&!menuOpen&&!wpnMenuOpen){e.preventDefault();openCharMenu()}
+  else if(e.code==='KeyC'&&charMenuOpen){e.preventDefault();closeCharMenu()}
+  else if(e.code==='Escape'&&charMenuOpen){e.preventDefault();closeCharMenu()}
+});
+
 // ══════════════ LOOP ══════════════
 let introTime=0;
 function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();
@@ -10387,7 +10565,7 @@ function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();
     const r=420,h=220,cx=0,cz=0;
     cam.position.set(cx+Math.cos(introTime)*r,h+Math.sin(introTime*.3)*30,cz+Math.sin(introTime)*r);
     cam.lookAt(cx,40,cz);
-  }else if(!menuOpen&&!wpnMenuOpen&&!gamePaused)update(dt);
+  }else if(!menuOpen&&!wpnMenuOpen&&!charMenuOpen&&!gamePaused)update(dt);
   // Screen shake (nuke etc)
   if(window._shakeIntensity>0){
     cam.position.x+=(Math.random()-.5)*window._shakeIntensity;
@@ -10414,7 +10592,7 @@ if(isMobile){
   // Prevent all default touch on canvas/body to stop scrolling/zooming
   canvas.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
   canvas.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
-  document.body.addEventListener('touchmove',e=>{if(locked&&!e.target.closest('#veh-menu')&&!e.target.closest('#wpn-menu'))e.preventDefault()},{passive:false});
+  document.body.addEventListener('touchmove',e=>{if(locked&&!e.target.closest('#veh-menu')&&!e.target.closest('#wpn-menu')&&!e.target.closest('#char-menu'))e.preventDefault()},{passive:false});
 
   // ── Joystick ──
   joyBase.addEventListener('touchstart',e=>{
@@ -10512,10 +10690,13 @@ if(isMobile){
     ()=>{fJust=true;zoneManager.eJust=true;keys['KeyE']=true;setTimeout(()=>keys['KeyE']=false,200)},null
   );
   mBtn('btn-veh-m',
-    ()=>{if(menuOpen)closeVehMenu();else if(!wpnMenuOpen)openVehMenu()},null
+    ()=>{if(menuOpen)closeVehMenu();else if(!wpnMenuOpen&&!charMenuOpen)openVehMenu()},null
   );
   mBtn('btn-wpn-m',
-    ()=>{if(wpnMenuOpen)closeWpnMenu();else if(!menuOpen)openWpnMenu()},null
+    ()=>{if(wpnMenuOpen)closeWpnMenu();else if(!menuOpen&&!charMenuOpen)openWpnMenu()},null
+  );
+  mBtn('btn-char-m',
+    ()=>{if(charMenuOpen)closeCharMenu();else if(!menuOpen&&!wpnMenuOpen)openCharMenu()},null
   );
 
   // ── Trick & Fight buttons (cycle through moves) ──
