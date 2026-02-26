@@ -95,7 +95,7 @@ canvas{display:block}
 #char-menu.open{display:flex}
 #char-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#ff66cc,#aa66ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #char-menu .subtitle{font-size:0.75em;opacity:0.4;margin-bottom:1.5em;letter-spacing:0.2em}
-#char-cats{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:850px;padding:0 10px}
+#char-cats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:950px;padding:0 10px}
 .char-cat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;min-width:120px}
 .char-cat h3{font-size:0.7em;letter-spacing:0.15em;margin-bottom:8px;text-align:center;opacity:0.6;text-transform:uppercase;color:#cc88ff}
 .char-opt{display:flex;align-items:center;gap:8px;padding:5px 8px;margin:2px 0;border-radius:5px;cursor:pointer;transition:all 0.15s;font-size:0.75em;border:1px solid transparent}
@@ -5804,6 +5804,49 @@ _viking.visible=false;charG.add(_viking);_hgMeshes.viking=_viking;
 // Afro
 const _afro=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),new THREE.MeshStandardMaterial({color:0x2a1a0a,roughness:.9}));
 _afro.position.set(0,1.65,-.02);_afro.visible=false;charG.add(_afro);_hgMeshes.afro=_afro;
+// Capes
+const _capeMeshes={};
+const _heroCape=new THREE.Mesh(new THREE.PlaneGeometry(.5,.8,1,4),new THREE.MeshStandardMaterial({color:0xcc0000,side:THREE.DoubleSide,roughness:.7}));
+_heroCape.position.set(0,.85,-.22);_heroCape.visible=false;charG.add(_heroCape);_capeMeshes.hero=_heroCape;
+const _royalCloak=new THREE.Mesh(new THREE.PlaneGeometry(.7,.9,1,4),new THREE.MeshStandardMaterial({color:0x5500aa,side:THREE.DoubleSide,roughness:.6}));
+_royalCloak.position.set(0,.85,-.22);_royalCloak.visible=false;charG.add(_royalCloak);_capeMeshes.royal=_royalCloak;
+const _ninjaShawl=new THREE.Mesh(new THREE.PlaneGeometry(.4,.4,1,2),new THREE.MeshStandardMaterial({color:0x111111,side:THREE.DoubleSide,roughness:.9}));
+_ninjaShawl.position.set(0,1.1,-.2);_ninjaShawl.visible=false;charG.add(_ninjaShawl);_capeMeshes.ninja=_ninjaShawl;
+const _rainbowCape=new THREE.Mesh(new THREE.PlaneGeometry(.55,.85,1,4),new THREE.MeshStandardMaterial({color:0xff6688,side:THREE.DoubleSide,emissive:0x332211,emissiveIntensity:.3}));
+_rainbowCape.position.set(0,.85,-.22);_rainbowCape.visible=false;charG.add(_rainbowCape);_capeMeshes.rainbow=_rainbowCape;
+const _scarf=new THREE.Mesh(new THREE.PlaneGeometry(.15,.5,1,3),new THREE.MeshStandardMaterial({color:0xff8800,side:THREE.DoubleSide,roughness:.8}));
+_scarf.position.set(.1,1.3,-.15);_scarf.rotation.z=.2;_scarf.visible=false;charG.add(_scarf);_capeMeshes.scarf=_scarf;
+// Backpacks
+const _bpMeshes={};
+const _boombox=new THREE.Group();
+const _bbBody=box(.4,.25,.15,0x222222);_boombox.add(_bbBody);
+const _bbSpk1=cyl(.08,.08,.02,0x555555);_bbSpk1.rotation.x=Math.PI/2;_bbSpk1.position.set(-.12,0,.08);_boombox.add(_bbSpk1);
+const _bbSpk2=cyl(.08,.08,.02,0x555555);_bbSpk2.rotation.x=Math.PI/2;_bbSpk2.position.set(.12,0,.08);_boombox.add(_bbSpk2);
+_boombox.position.set(0,1.05,-.25);_boombox.visible=false;charG.add(_boombox);_bpMeshes.boombox=_boombox;
+const _shield=new THREE.Group();
+const _shieldDisc=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.03,16),new THREE.MeshStandardMaterial({color:0x224488,metalness:.6,roughness:.3}));
+_shield.add(_shieldDisc);const _shieldStar=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.04,5),new THREE.MeshStandardMaterial({color:0xffffff}));
+_shieldStar.position.y=.005;_shield.add(_shieldStar);_shield.rotation.x=Math.PI/2;
+_shield.position.set(0,1.05,-.28);_shield.visible=false;charG.add(_shield);_bpMeshes.shield=_shield;
+const _teddy=new THREE.Group();
+const _tBody=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),new THREE.MeshStandardMaterial({color:0xcc8844,roughness:.9}));_teddy.add(_tBody);
+const _tHead=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),new THREE.MeshStandardMaterial({color:0xcc8844,roughness:.9}));_tHead.position.y=.14;_teddy.add(_tHead);
+const _tEar1=new THREE.Mesh(new THREE.SphereGeometry(.025,6,4),new THREE.MeshStandardMaterial({color:0xaa6633}));_tEar1.position.set(-.05,.18,0);_teddy.add(_tEar1);
+const _tEar2=new THREE.Mesh(new THREE.SphereGeometry(.025,6,4),new THREE.MeshStandardMaterial({color:0xaa6633}));_tEar2.position.set(.05,.18,0);_teddy.add(_tEar2);
+_teddy.position.set(0,1.05,-.25);_teddy.visible=false;charG.add(_teddy);_bpMeshes.teddy=_teddy;
+const _rocketPack=new THREE.Group();
+const _rp1=cyl(.06,.06,.25,0x888888);_rp1.position.set(-.08,0,0);_rocketPack.add(_rp1);
+const _rp2=cyl(.06,.06,.25,0x888888);_rp2.position.set(.08,0,0);_rocketPack.add(_rp2);
+const _rpn1=cyl(.05,.04,.04,0xff4400);_rpn1.position.set(-.08,-.14,0);_rocketPack.add(_rpn1);
+const _rpn2=cyl(.05,.04,.04,0xff4400);_rpn2.position.set(.08,-.14,0);_rocketPack.add(_rpn2);
+_rocketPack.position.set(0,1.05,-.25);_rocketPack.visible=false;charG.add(_rocketPack);_bpMeshes.rocket=_rocketPack;
+const _swordBack=new THREE.Group();
+const _sBlade=box(.04,.65,.02,0xcccccc);_sBlade.material=new THREE.MeshStandardMaterial({color:0xcccccc,metalness:.8,roughness:.2});_sBlade.position.set(0,.1,0);_swordBack.add(_sBlade);
+const _sHilt=box(.12,.06,.04,0x664422);_sHilt.position.set(0,-.25,0);_swordBack.add(_sHilt);
+_swordBack.position.set(.15,1.2,-.2);_swordBack.rotation.z=.2;_swordBack.visible=false;charG.add(_swordBack);_bpMeshes.sword=_swordBack;
+// Aura light
+const _auraLight=new THREE.PointLight(0x000000,0,6);_auraLight.position.set(0,1,0);charG.add(_auraLight);
+let _auraType='none';
 // Customization data
 const charCustom={
   suit:{label:'SUIT',mat:suM,current:0,options:[
@@ -5859,12 +5902,46 @@ const charCustom={
     {name:'Top Hat',icon:'\u{1F3A9}',mesh:_hgMeshes.tophat},
     {name:'Antenna',icon:'\u{1F4E1}',mesh:_hgMeshes.antenna},
     {name:'Viking',icon:'\u2694',mesh:_hgMeshes.viking},
-    {name:'Afro',icon:'\u{1F483}',mesh:_hgMeshes.afro}]}
+    {name:'Afro',icon:'\u{1F483}',mesh:_hgMeshes.afro}]},
+  build:{label:'BUILD',current:0,options:[
+    {name:'Normal',icon:'\u{1F9CD}',scale:[1,1,1]},
+    {name:'Buff',icon:'\u{1F4AA}',scale:[1.2,1,1.2]},
+    {name:'Slim',icon:'\u{1F483}',scale:[0.8,1.1,0.8]},
+    {name:'Chunky',icon:'\u{1F43B}',scale:[1.3,0.85,1.3]},
+    {name:'Tall',icon:'\u{1F992}',scale:[0.95,1.25,0.95]},
+    {name:'Mini',icon:'\u{1F42D}',scale:[0.65,0.65,0.65]}]},
+  cape:{label:'CAPE',current:0,options:[
+    {name:'None',icon:'\u274C',mesh:null},
+    {name:'Hero Cape',icon:'\u{1F9B8}',mesh:_capeMeshes.hero},
+    {name:'Royal Cloak',icon:'\u{1F451}',mesh:_capeMeshes.royal},
+    {name:'Ninja',icon:'\u{1F977}',mesh:_capeMeshes.ninja},
+    {name:'Rainbow',icon:'\u{1F308}',mesh:_capeMeshes.rainbow},
+    {name:'Scarf',icon:'\u{1F9E3}',mesh:_capeMeshes.scarf}]},
+  backpack:{label:'BACKPACK',current:0,options:[
+    {name:'Tactical',icon:'\u{1F392}',mesh:null},
+    {name:'Boombox',icon:'\u{1F4FB}',mesh:_bpMeshes.boombox},
+    {name:'Shield',icon:'\u{1F6E1}',mesh:_bpMeshes.shield},
+    {name:'Teddy',icon:'\u{1F9F8}',mesh:_bpMeshes.teddy},
+    {name:'Rocket',icon:'\u{1F680}',mesh:_bpMeshes.rocket},
+    {name:'Sword',icon:'\u2694',mesh:_bpMeshes.sword},
+    {name:'None',icon:'\u274C',mesh:'hide'}]},
+  aura:{label:'AURA',current:0,options:[
+    {name:'None',icon:'\u274C',color:0x000000,intensity:0},
+    {name:'Fire',icon:'\u{1F525}',color:0xff4400,intensity:2},
+    {name:'Ice',icon:'\u{2744}',color:0x4488ff,intensity:2},
+    {name:'Electric',icon:'\u26A1',color:0xffff00,intensity:2.5},
+    {name:'Ghost',icon:'\u{1F47B}',color:0xaaccff,intensity:1.5},
+    {name:'Toxic',icon:'\u2622',color:0x44ff00,intensity:2},
+    {name:'Rainbow',icon:'\u{1F308}',color:0xff0000,intensity:2}]}
 };
 function applyCharOpt(cat,idx){
   charCustom[cat].current=idx;
   const opt=charCustom[cat].options[idx];
   if(cat==='headgear'){for(const k in _hgMeshes)_hgMeshes[k].visible=false;if(opt.mesh)opt.mesh.visible=true}
+  else if(cat==='build'){charG.scale.set(opt.scale[0],opt.scale[1],opt.scale[2])}
+  else if(cat==='cape'){for(const k in _capeMeshes)_capeMeshes[k].visible=false;if(opt.mesh)opt.mesh.visible=true}
+  else if(cat==='backpack'){for(const k in _bpMeshes)_bpMeshes[k].visible=false;if(opt.mesh==='hide')ep.visible=false;else if(opt.mesh){ep.visible=false;opt.mesh.visible=true}else ep.visible=true}
+  else if(cat==='aura'){_auraType=opt.name==='Rainbow'?'rainbow':'static';_auraLight.color.setHex(opt.color);_auraLight.intensity=opt.intensity}
   else{charCustom[cat].mat.color.setHex(opt.color);if(cat==='suit')_updateStripes(opt.color)}
 }
 
@@ -10320,7 +10397,7 @@ function update(dt){
 const vehMenu=document.getElementById('veh-menu');
 const vehBtn=document.getElementById('veh-btn');
 const vehCats=document.getElementById('veh-categories');
-let menuOpen=false,charMenuOpen=false;
+let menuOpen=false,charMenuOpen=false,_charPreviewAngle=0,_savedCharQuat=null;
 
 const vehIcons={car:'\u{1F697}',motorcycle:'\u{1F3CD}',bike:'\u{1F6B2}',skateboard:'\u{1F6F9}',rollerblades:'\u{26F8}',pogo:'\u{1F680}',
   horse:'\u{1F40E}',airplane:'\u{2708}',helicopter:'\u{1F681}',boat:'\u{26F5}',jetski:'\u{1F6A4}',yacht:'\u{1F6F3}',
@@ -10521,15 +10598,21 @@ const charMenu=document.getElementById('char-menu');
 const charCatsEl=document.getElementById('char-cats');
 function buildCharMenu(){
   charCatsEl.innerHTML='';
-  const catOrder=['suit','helmet','visor','skin','boots','headgear'];
+  const catOrder=['suit','helmet','visor','skin','boots','headgear','build','cape','backpack','aura'];
+  const _iconCats=new Set(['headgear','build','cape','backpack']);
   for(const cat of catOrder){
     const cd=charCustom[cat];const div=document.createElement('div');div.className='char-cat';
     div.innerHTML='<h3>'+cd.label+'</h3>';
     cd.options.forEach((opt,i)=>{
       const item=document.createElement('div');
       item.className='char-opt'+(i===cd.current?' active':'');
-      if(cat==='headgear'){
+      if(_iconCats.has(cat)){
         item.innerHTML='<span style="font-size:1.2em">'+opt.icon+'</span><span class="char-opt-name">'+opt.name+'</span>';
+      }else if(cat==='aura'){
+        if(opt.intensity>0){
+          const hex='#'+opt.color.toString(16).padStart(6,'0');
+          item.innerHTML='<span class="char-swatch" style="background:'+hex+';box-shadow:0 0 8px '+hex+'"></span><span class="char-opt-name">'+opt.name+'</span>';
+        }else{item.innerHTML='<span style="font-size:1.2em">'+opt.icon+'</span><span class="char-opt-name">'+opt.name+'</span>'}
       }else{
         item.innerHTML='<span class="char-swatch" style="background:#'+opt.color.toString(16).padStart(6,'0')+'"></span><span class="char-opt-name">'+opt.name+'</span>';
       }
@@ -10544,11 +10627,13 @@ function buildCharMenu(){
 }
 function openCharMenu(){
   if(charMenuOpen||menuOpen||wpnMenuOpen)return;
-  charMenuOpen=true;buildCharMenu();charMenu.classList.add('open');document.exitPointerLock?.();
+  charMenuOpen=true;_charPreviewAngle=yaw;_savedCharQuat=charG.quaternion.clone();
+  buildCharMenu();charMenu.classList.add('open');document.exitPointerLock?.();
 }
 function closeCharMenu(){
   if(!charMenuOpen)return;
   charMenuOpen=false;charMenu.classList.remove('open');
+  if(_savedCharQuat)charG.quaternion.copy(_savedCharQuat);
   if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
 }
 document.getElementById('char-close').addEventListener('click',closeCharMenu);
@@ -10566,7 +10651,14 @@ function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();
     const r=420,h=220,cx=0,cz=0;
     cam.position.set(cx+Math.cos(introTime)*r,h+Math.sin(introTime*.3)*30,cz+Math.sin(introTime)*r);
     cam.lookAt(cx,40,cz);
-  }else if(!menuOpen&&!wpnMenuOpen&&!charMenuOpen&&!gamePaused)update(dt);
+  }else if(charMenuOpen){
+    _charPreviewAngle+=dt*0.4;
+    const _pr=3.5;
+    cam.position.set(P.x+Math.sin(_charPreviewAngle)*_pr,P.y+1.6,P.z+Math.cos(_charPreviewAngle)*_pr);
+    cam.lookAt(P.x,P.y+0.9,P.z);
+    charG.position.copy(P);
+    charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),_charPreviewAngle+Math.PI);
+  }else if(!menuOpen&&!wpnMenuOpen&&!gamePaused)update(dt);
   // Screen shake (nuke etc)
   if(window._shakeIntensity>0){
     cam.position.x+=(Math.random()-.5)*window._shakeIntensity;
@@ -10575,6 +10667,7 @@ function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();
     window._shakeIntensity*=0.93;
     if(window._shakeIntensity<0.02)window._shakeIntensity=0;
   }
+  if(_auraType==='rainbow'&&_auraLight.intensity>0){const _t=performance.now()*0.003;_auraLight.color.setHSL(_t%1,1,0.5)}
   R.render(scene,cam)}
 animate();
 
