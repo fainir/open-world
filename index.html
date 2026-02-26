@@ -27,10 +27,7 @@ canvas{display:block}
 #overlay .sub{font-size:1.1em;opacity:0.7;margin-bottom:1.2em;color:#ddd;text-shadow:0 1px 6px rgba(0,0,0,.8)}
 #overlay .click{font-size:1.3em;color:#fff;animation:pulse 2s infinite;text-shadow:0 1px 8px rgba(0,0,0,.7)}
 @keyframes pulse{0%,100%{opacity:0.7}50%{opacity:1}}
-#overlay .controls{margin-top:1.4em;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,auto));gap:8px 16px;justify-content:center;justify-items:center;max-width:720px;width:90%;padding:14px 20px;background:rgba(0,0,0,0.5);border-radius:12px;border:1px solid rgba(255,255,255,0.15);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-#overlay .controls .ctrl-key{font-size:0.82em;color:rgba(255,255,255,0.9)}
-#overlay .controls .ctrl-key kbd{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);padding:3px 8px;border-radius:4px}
-#overlay .controls .ctrl-key .cl{color:rgba(255,255,255,0.5)}
+#overlay .controls{margin-top:1.4em;display:flex;flex-wrap:wrap;gap:6px 10px;justify-content:center;align-items:center;max-width:800px;width:92%;padding:14px 20px;background:rgba(0,0,0,0.5);border-radius:12px;border:1px solid rgba(255,255,255,0.15);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 #hud{position:fixed;z-index:5;pointer-events:none;display:none}
 #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;display:none;pointer-events:none;z-index:6}
 #crosshair .dot{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 2px rgba(0,0,0,.8)}
@@ -131,16 +128,16 @@ canvas{display:block}
 <div class="sub"></div>
 <div class="click">Click or press anything to start</div>
 <div class="controls">
-<span class="ctrl-key"><kbd>WASD</kbd><span class="cl">/</span><kbd>Arrows</kbd><span class="cl">Move</span></span>
-<span class="ctrl-key"><kbd>Space</kbd><span class="cl">Jump / Fly</span></span>
-<span class="ctrl-key"><kbd>Shift</kbd><span class="cl">Boost</span></span>
-<span class="ctrl-key"><kbd>Mouse</kbd><span class="cl">Look</span></span>
-<span class="ctrl-key"><kbd>Click</kbd><span class="cl">Shoot</span></span>
-<span class="ctrl-key"><kbd>E</kbd><span class="cl">Enter / Vehicle</span></span>
-<span class="ctrl-key"><kbd>V</kbd><span class="cl">Vehicle Menu</span></span>
-<span class="ctrl-key"><kbd>B</kbd><span class="cl">Weapons</span></span>
-<span class="ctrl-key"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span class="cl">Tricks</span></span>
-<span class="ctrl-key"><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd><kbd>8</kbd><span class="cl">Fight</span></span>
+<span class="ctrl-key"><kbd>WASD</kbd> / <kbd>Arrows</kbd><span class="ci">🏃</span><span class="cl">Move</span></span>
+<span class="ctrl-key"><kbd>Space</kbd><span class="ci">⬆️</span><span class="cl">Jump</span></span>
+<span class="ctrl-key"><kbd>Shift</kbd><span class="ci">🚀</span><span class="cl">Boost</span></span>
+<span class="ctrl-key"><kbd>Mouse</kbd><span class="ci">👀</span><span class="cl">Look</span></span>
+<span class="ctrl-key"><kbd>Click</kbd><span class="ci">🎯</span><span class="cl">Shoot</span></span>
+<span class="ctrl-key"><kbd>E</kbd><span class="ci">🚪</span><span class="cl">Enter</span></span>
+<span class="ctrl-key"><kbd>V</kbd><span class="ci">🚗</span><span class="cl">Vehicles</span></span>
+<span class="ctrl-key"><kbd>B</kbd><span class="ci">🔫</span><span class="cl">Weapons</span></span>
+<span class="ctrl-key"><kbd>1-4</kbd><span class="ci">🤸</span><span class="cl">Tricks</span></span>
+<span class="ctrl-key"><kbd>5-8</kbd><span class="ci">👊</span><span class="cl">Fight</span></span>
 </div>
 </div>
 <div id="pause-screen"><h2>PAUSED</h2><div class="pause-sub">Tap or press ESC to resume</div></div>
@@ -159,16 +156,16 @@ canvas{display:block}
 <div style="display:none"><button id="veh-btn"></button><button id="wpn-btn"></button></div>
 <div id="bottom-bar">
 <div id="controls-bar">
-<span class="ctrl-key"><span class="ci">🏃</span><kbd>WASD</kbd><span class="cl">Move</span></span>
-<span class="ctrl-key"><span class="ci">⬆️</span><kbd>Space</kbd><span class="cl">Jump</span></span>
-<span class="ctrl-key"><span class="ci">🚀</span><kbd>Shift</kbd><span class="cl">Boost</span></span>
-<span class="ctrl-key"><span class="ci">👀</span><kbd>Mouse</kbd><span class="cl">Look</span></span>
-<span class="ctrl-key"><span class="ci">🎯</span><kbd>Click</kbd><span class="cl">Shoot</span></span>
-<span class="ctrl-key"><span class="ci">🚪</span><kbd>E</kbd><span class="cl">Enter</span></span>
-<span class="ctrl-key"><span class="ci">🚗</span><kbd>V</kbd><span class="cl">Vehicles</span></span>
-<span class="ctrl-key"><span class="ci">🔫</span><kbd>B</kbd><span class="cl">Weapons</span></span>
-<span class="ctrl-key"><span class="ci">🤸</span><kbd>1-4</kbd><span class="cl">Tricks</span></span>
-<span class="ctrl-key"><span class="ci">👊</span><kbd>5-8</kbd><span class="cl">Fight</span></span>
+<span class="ctrl-key"><kbd>WASD</kbd> / <kbd>Arrows</kbd><span class="ci">🏃</span><span class="cl">Move</span></span>
+<span class="ctrl-key"><kbd>Space</kbd><span class="ci">⬆️</span><span class="cl">Jump</span></span>
+<span class="ctrl-key"><kbd>Shift</kbd><span class="ci">🚀</span><span class="cl">Boost</span></span>
+<span class="ctrl-key"><kbd>Mouse</kbd><span class="ci">👀</span><span class="cl">Look</span></span>
+<span class="ctrl-key"><kbd>Click</kbd><span class="ci">🎯</span><span class="cl">Shoot</span></span>
+<span class="ctrl-key"><kbd>E</kbd><span class="ci">🚪</span><span class="cl">Enter</span></span>
+<span class="ctrl-key"><kbd>V</kbd><span class="ci">🚗</span><span class="cl">Vehicles</span></span>
+<span class="ctrl-key"><kbd>B</kbd><span class="ci">🔫</span><span class="cl">Weapons</span></span>
+<span class="ctrl-key"><kbd>1-4</kbd><span class="ci">🤸</span><span class="cl">Tricks</span></span>
+<span class="ctrl-key"><kbd>5-8</kbd><span class="ci">👊</span><span class="cl">Fight</span></span>
 </div>
 </div>
 <div id="wpn-menu">
