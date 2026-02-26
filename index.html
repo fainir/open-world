@@ -5929,7 +5929,7 @@ const charCustom={
     {name:'Toxic',icon:'\u2622',color:0x44ff00,intensity:2},
     {name:'Rainbow',icon:'\u{1F308}',color:0xff0000,intensity:2}]}
 };
-function applyCharOpt(cat,idx){
+function applyCharOpt(cat,idx,save){
   charCustom[cat].current=idx;
   const opt=charCustom[cat].options[idx];
   if(cat==='headgear'){for(const k in _hgMeshes)_hgMeshes[k].visible=false;if(opt.mesh)opt.mesh.visible=true}
@@ -5938,7 +5938,20 @@ function applyCharOpt(cat,idx){
   else if(cat==='backpack'){for(const k in _bpMeshes)_bpMeshes[k].visible=false;if(opt.mesh==='hide')ep.visible=false;else if(opt.mesh){ep.visible=false;opt.mesh.visible=true}else ep.visible=true}
   else if(cat==='aura'){_auraType=opt.name==='Rainbow'?'rainbow':'static';_auraLight.color.setHex(opt.color);_auraLight.intensity=opt.intensity}
   else{charCustom[cat].mat.color.setHex(opt.color);if(cat==='suit')_updateStripes(opt.color)}
+  if(save!==false)_saveCharStyle();
 }
+function _saveCharStyle(){
+  const d={};for(const cat in charCustom)d[cat]=charCustom[cat].current;
+  try{localStorage.setItem('ow-char-style',JSON.stringify(d))}catch(e){}
+}
+function _loadCharStyle(){
+  try{
+    const s=localStorage.getItem('ow-char-style');if(!s)return;
+    const d=JSON.parse(s);
+    for(const cat in d){if(charCustom[cat]&&d[cat]<charCustom[cat].options.length)applyCharOpt(cat,d[cat],false)}
+  }catch(e){}
+}
+_loadCharStyle();
 
 // ══════════════ PARTICLES ══════════════
 const PC=400,pPos=new Float32Array(PC*3),pSz=new Float32Array(PC),pLf=new Float32Array(PC),pVl=[];
