@@ -5571,30 +5571,42 @@ const ziplines=[];
 let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
 (function buildZiplines(){
   const TH=35; // default tower height above terrain
-  const CLEAR=22; // min clearance above terrain for cables
-  const NSAMP=28; // terrain samples along each cable
+  const CLEAR=40; // min clearance above terrain for cables
+  const STEP=30; // one sample every 30 world-units (dense enough for mountains)
   const poleMat=new THREE.MeshStandardMaterial({color:0x888888,metalness:.7,roughness:.3});
   for(const [name,sx,sz,ex,ez,col,endTH] of _ZIP_ROUTES){
     const shG=Math.max(getH(sx,sz),getSurfaceH(sx,sz),0), ehG=Math.max(getH(ex,ez),getSurfaceH(ex,ez),0);
     const sy=shG+TH;
     const ey=endTH!=null?ehG+endTH:ehG+TH;
     const cMat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3,metalness:.8,roughness:.2});
-    // Build curved path that clears terrain
-    const cPts=[new THREE.Vector3(sx,sy,sz)];
-    for(let s=1;s<NSAMP;s++){
-      const t=s/NSAMP;
+    // Dense terrain sampling — 1 point every STEP units of horizontal distance
+    const hDist=Math.sqrt((ex-sx)**2+(ez-sz)**2);
+    const nSamp=Math.max(20,Math.ceil(hDist/STEP));
+    // Pass 1: compute minimum safe height at each sample
+    const heights=[];
+    for(let s=0;s<=nSamp;s++){
+      const t=s/nSamp;
       const px=sx+(ex-sx)*t, pz=sz+(ez-sz)*t;
       const lineY=sy+(ey-sy)*t;
       const terrH=Math.max(getH(px,pz),0);
-      // Within city, add extra clearance for buildings
       const inCity=(Math.abs(px)<CH&&Math.abs(pz)<CH);
-      const minY=terrH+(inCity?CLEAR+20:CLEAR);
-      cPts.push(new THREE.Vector3(px,Math.max(lineY,minY),pz));
+      const minY=terrH+(inCity?CLEAR+25:CLEAR);
+      heights.push({px,pz,y:Math.max(lineY,minY)});
     }
-    cPts.push(new THREE.Vector3(ex,ey,ez));
-    const curve=new THREE.CatmullRomCurve3(cPts);
+    // Pass 2: upward smoothing — prevent curve from dipping between peaks
+    // Each point must be at least as high as midpoint of its neighbors
+    for(let pass=0;pass<3;pass++){
+      for(let s=1;s<heights.length-1;s++){
+        const mid=(heights[s-1].y+heights[s+1].y)/2;
+        if(heights[s].y<mid)heights[s].y=mid;
+      }
+    }
+    // Build curve control points
+    const cPts=heights.map(h=>new THREE.Vector3(h.px,h.y,h.pz));
+    const curve=new THREE.CatmullRomCurve3(cPts,'chordal');
     // Cable using TubeGeometry — follows curved path over terrain
-    const cable=new THREE.Mesh(new THREE.TubeGeometry(curve,48,.06,4,false),cMat);
+    const tubeSeg=Math.max(48,Math.ceil(nSamp*1.5));
+    const cable=new THREE.Mesh(new THREE.TubeGeometry(curve,tubeSeg,.06,4,false),cMat);
     scene.add(cable);
     // Start tower + platform
     const stH=sy-shG;
