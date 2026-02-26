@@ -5622,7 +5622,11 @@ let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
     const p2=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,.35,8),
       new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.15}));
     p2.position.set(ex,ey,ez);scene.add(p2);
-    ziplines.push({name,sx,sz,sy,ex,ez,ey,col,curve});
+    // Precompute sample points for proximity detection along entire cable
+    const _nCheck=Math.max(12,Math.ceil(hDist/80));
+    const samps=[];
+    for(let s=0;s<=_nCheck;s++){const t=s/_nCheck;const p=curve.getPoint(t);samps.push({t,x:p.x,y:p.y,z:p.z})}
+    ziplines.push({name,sx,sz,sy,ex,ez,ey,col,curve,samps});
   }
 })();
 
@@ -9156,11 +9160,12 @@ function update(dt){
 
   // Vehicle prompt + glow rings for interactables
   let _gi=0; // glow ring index
+  let _nearZipI=-1,_nearZipT=0,_nearZipDist=Infinity,_nearZipName='';
   if(!currentVeh&&mode==='walk'){
     const nv=nearestVehicle();
     const vp=document.getElementById('vehicle-prompt');
     if(nv){vp.textContent=`Press E - ${nv.type.charAt(0).toUpperCase()+nv.type.slice(1)}`;vp.style.opacity='1'}
-    else vp.style.opacity='0';
+    else vp.style.opacity='0'; // may be overridden by zipline prompt below
     // Glow nearby vehicles
     for(const v of vehicles){if(v.occupied||_gi>=_GLOW_POOL)continue;
       const dx=P.x-v.mesh.position.x,dz=P.z-v.mesh.position.z,d2=dx*dx+dz*dz;
@@ -9183,22 +9188,38 @@ function update(dt){
         r.scale.setScalar(z.radius?z.radius/1.5:1.5);
       }
     }
-    // Glow nearby zipline stations
-    for(const zl of ziplines){if(_gi>=_GLOW_POOL)break;
-      const ds=Math.sqrt((P.x-zl.sx)**2+(P.z-zl.sz)**2);
-      if(ds<25&&Math.abs(P.y-zl.sy)<30){
-        const r=_glowRings[_gi++];r.visible=true;
-        r.position.set(zl.sx,zl.sy+0.2,zl.sz);
-        const pulse=0.4+Math.sin(clock.elapsedTime*3)*.2;
-        r.material.opacity=pulse;r.material.color.setHex(zl.col);r.scale.setScalar(1.2);
+    // Glow nearest zipline cable point (detect along entire cable, not just stations)
+    _nearZipI=-1;_nearZipT=0;_nearZipDist=Infinity;_nearZipName='';
+    for(let i=0;i<ziplines.length;i++){
+      const zl=ziplines[i];
+      for(const sp of zl.samps){
+        const dx=P.x-sp.x,dz=P.z-sp.z,hd2=dx*dx+dz*dz;
+        const dy=P.y-sp.y;
+        if(hd2<225&&dy>-50&&dy<10&&hd2<_nearZipDist){
+          _nearZipDist=hd2;_nearZipI=i;_nearZipT=sp.t;_nearZipName=zl.name;
+        }
       }
-      const de=Math.sqrt((P.x-zl.ex)**2+(P.z-zl.ez)**2);
-      if(de<25&&Math.abs(P.y-zl.ey)<30&&_gi<_GLOW_POOL){
-        const r=_glowRings[_gi++];r.visible=true;
-        r.position.set(zl.ex,zl.ey+0.2,zl.ez);
-        const pulse=0.4+Math.sin(clock.elapsedTime*3)*.2;
-        r.material.opacity=pulse;r.material.color.setHex(zl.col);r.scale.setScalar(1.2);
+      // Also glow stations if close
+      if(_gi<_GLOW_POOL){
+        const ds2=(P.x-zl.sx)**2+(P.z-zl.sz)**2;
+        if(ds2<625&&Math.abs(P.y-zl.sy)<40){
+          const r=_glowRings[_gi++];r.visible=true;r.position.set(zl.sx,zl.sy+0.2,zl.sz);
+          r.material.opacity=0.4+Math.sin(clock.elapsedTime*3)*.2;r.material.color.setHex(zl.col);r.scale.setScalar(1.2);
+        }
       }
+      if(_gi<_GLOW_POOL){
+        const de2=(P.x-zl.ex)**2+(P.z-zl.ez)**2;
+        if(de2<625&&Math.abs(P.y-zl.ey)<40){
+          const r=_glowRings[_gi++];r.visible=true;r.position.set(zl.ex,zl.ey+0.2,zl.ez);
+          r.material.opacity=0.4+Math.sin(clock.elapsedTime*3)*.2;r.material.color.setHex(zl.col);r.scale.setScalar(1.2);
+        }
+      }
+    }
+    // Show zipline prompt when near cable
+    if(_nearZipI>=0&&!nv){
+      const zl=ziplines[_nearZipI];
+      const dir=_nearZipT<0.5?zl.name:zl.name.split(' → ').reverse().join(' → ');
+      vp.textContent=`Press E \u2014 \u{1F6A1} ${dir}`;vp.style.opacity='1';
     }
   } else document.getElementById('vehicle-prompt').style.opacity='0';
   // Hide unused glow rings
@@ -9966,25 +9987,20 @@ function update(dt){
       if(zipDir<0)tang.negate();
       yaw=Math.atan2(-tang.x,-tang.z);
     }
-  } else if(!currentVeh&&keys['KeyE']){
-    for(let i=0;i<ziplines.length;i++){
-      const zl=ziplines[i];
-      // Check start station
-      const dsx=P.x-zl.sx,dsz=P.z-zl.sz;
-      if(dsx*dsx+dsz*dsz<150&&P.y<=zl.sy+5&&P.y>=zl.sy-50){
-        zipRiding=i;zipT=0.001;zipDir=1;
-        zipSpeed=160/zl.curve.getLength();
-        keys['KeyE']=false;showTip('\u{1F6A1} '+zl.name+' \u2014 SPACE to jump off');break;
-      }
-      // Check end station (ride in reverse)
-      const dex=P.x-zl.ex,dez=P.z-zl.ez;
-      if(dex*dex+dez*dez<150&&P.y<=zl.ey+5&&P.y>=zl.ey-50){
-        zipRiding=i;zipT=0.999;zipDir=-1;
-        zipSpeed=160/zl.curve.getLength();
-        keys['KeyE']=false;
-        const pts=zl.name.split(' → ');
-        showTip('\u{1F6A1} '+pts[1]+' → '+pts[0]+' \u2014 SPACE to jump off');break;
-      }
+  } else if(!currentVeh&&keys['KeyE']&&_nearZipI>=0){
+    // Mount zipline from anywhere along the cable
+    const zl=ziplines[_nearZipI];
+    zipRiding=_nearZipI;
+    zipSpeed=160/zl.curve.getLength();
+    keys['KeyE']=false;
+    // Ride toward the farther end for maximum travel
+    if(_nearZipT<0.5){
+      zipT=Math.max(_nearZipT,0.001);zipDir=1;
+      showTip('\u{1F6A1} '+zl.name+' \u2014 SPACE to jump off');
+    } else {
+      zipT=Math.min(_nearZipT,0.999);zipDir=-1;
+      const pts=zl.name.split(' \u2192 ');
+      showTip('\u{1F6A1} '+pts[1]+' \u2192 '+pts[0]+' \u2014 SPACE to jump off');
     }
   }
 
