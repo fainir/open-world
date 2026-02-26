@@ -246,17 +246,17 @@ let trickActive=false,trickTimer=0,trickDur=0,trickName='',trickRot=new THREE.Eu
 let fightShake=0,fightHitNPC=false;
 let spaceJust=false,fJust=false;
 // Weapons state
-let currentWeapon='pistol',fireCooldown=0,wpnMenuOpen=false,shooting=false;
+let currentWeapon='minigun',fireCooldown=0,wpnMenuOpen=false,shooting=false;
 const weaponAmmo={pistol:Infinity,shotgun:Infinity,rifle:Infinity,rocket:Infinity,minigun:Infinity,
   sniper:Infinity,flamethrower:Infinity,grenade:Infinity,
   grapple:Infinity,jetboost:Infinity,binoculars:Infinity,flashlight:Infinity,paintgun:Infinity};
 const WEAPONS={
+  minigun:{name:'Minigun',icon:'\u{26A1}',maxAmmo:Infinity,fireRate:18,dmg:8,type:'hitscan',range:180,spread:.055,sound:'brrt'},
   pistol:{name:'Pistol',icon:'\u{1F52B}',maxAmmo:Infinity,fireRate:3.5,dmg:25,type:'hitscan',range:250,spread:.015,sound:'bang'},
   shotgun:{name:'Shotgun',icon:'\u{1F4A5}',maxAmmo:Infinity,fireRate:1.2,dmg:12,type:'hitscan',range:60,spread:.09,pellets:8,sound:'boom'},
   rifle:{name:'Rifle',icon:'\u{1F3AF}',maxAmmo:Infinity,fireRate:6,dmg:35,type:'hitscan',range:500,spread:.005,sound:'crack'},
   sniper:{name:'Sniper',icon:'\u{1F52D}',maxAmmo:Infinity,fireRate:.8,dmg:90,type:'hitscan',range:800,spread:.001,sound:'crack'},
   rocket:{name:'Rocket Launcher',icon:'\u{1F680}',maxAmmo:Infinity,fireRate:.6,dmg:100,type:'projectile',speed:90,blastR:18,sound:'whoosh'},
-  minigun:{name:'Minigun',icon:'\u{26A1}',maxAmmo:Infinity,fireRate:18,dmg:8,type:'hitscan',range:180,spread:.055,sound:'brrt'},
   flamethrower:{name:'Flamethrower',icon:'\u{1F525}',maxAmmo:Infinity,fireRate:20,dmg:5,type:'hitscan',range:25,spread:.12,pellets:3,sound:'whoosh'},
   grenade:{name:'Grenade Launcher',icon:'\u{1F4A3}',maxAmmo:Infinity,fireRate:.8,dmg:80,type:'projectile',speed:50,blastR:14,sound:'boom'},
   grapple:{name:'Grappling Hook',icon:'\u{1FA9D}',maxAmmo:Infinity,fireRate:.5,dmg:0,type:'tool',range:120,toolType:'grapple',sound:'whoosh'},
@@ -5705,6 +5705,26 @@ function emit(p,d){const i=pI%PC;pPos[i*3]=p.x;pPos[i*3+1]=p.y;pPos[i*3+2]=p.z;
   pVl[i].copy(d).multiplyScalar(8+Math.random()*12).add(new THREE.Vector3((Math.random()-.5)*3,(Math.random()-.5)*3,(Math.random()-.5)*3));
   pLf[i]=1;pSz[i]=1.5+Math.random()*1.5;pI++}
 
+// ── Blood splash particles ──
+const _BLOOD_POOL=40;const _bloodParts=[];
+const _bloodGeo=new THREE.SphereGeometry(0.12,3,3);
+for(let i=0;i<_BLOOD_POOL;i++){
+  const m=new THREE.Mesh(_bloodGeo,new THREE.MeshBasicMaterial({color:0xcc0000,transparent:true,opacity:0.9}));
+  m.visible=false;scene.add(m);
+  _bloodParts.push({mesh:m,vel:new THREE.Vector3(),life:0});
+}
+let _bloodIdx=0;
+function spawnBlood(pos,count){
+  count=count||8;
+  for(let i=0;i<count;i++){
+    const bp=_bloodParts[_bloodIdx%_BLOOD_POOL];_bloodIdx++;
+    bp.mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*1.2,Math.random()*1.2,(Math.random()-.5)*1.2));
+    bp.vel.set((Math.random()-.5)*10,Math.random()*7+2,(Math.random()-.5)*10);
+    bp.life=1;bp.mesh.visible=true;bp.mesh.material.opacity=0.9;
+    bp.mesh.scale.setScalar(0.4+Math.random()*0.7);
+  }
+}
+
 // ══════════════ ZONE SYSTEM ══════════════
 const gameAPI={
   THREE,scene,cam,R,canvas,P,V,charG,keys,
@@ -8896,7 +8916,8 @@ function startGame(){
   const ff=fwd();
   V.set(ff.x*60,8,ff.z*60);
   boostFuel=100;
-  currentWeapon='pistol';
+  currentWeapon='minigun';
+  aimMode=true;aimBlend=1;aimTimer=5;
   if(!isMobile)try{canvas.requestPointerLock()}catch(e){}
   if(isMobile){
     const de=document.documentElement;
@@ -9427,6 +9448,15 @@ function update(dt){
     pVl[i].multiplyScalar(.96);pSz[i]*=.97}
   pGeo.attributes.position.needsUpdate=true;pGeo.attributes.size.needsUpdate=true;
 
+  // Blood particles update
+  for(const bp of _bloodParts){
+    if(bp.life<=0)continue;
+    bp.life-=dt*2.5;bp.vel.y-=dt*22;
+    bp.mesh.position.addScaledVector(bp.vel,dt);
+    bp.mesh.material.opacity=bp.life*0.85;
+    if(bp.life<=0)bp.mesh.visible=false;
+  }
+
   // ═══ CHARACTER ═══
   if(!currentVeh){
     charG.position.copy(P);
@@ -9680,8 +9710,8 @@ function update(dt){
               const cl=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj));
               if(cl.distanceTo(npc.mesh.position)<1.5){
                 npc.hp-=w.dmg;
-                for(let e=0;e<4;e++)emit(npc.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random()*2,(Math.random()-.5)*2)),new THREE.Vector3((Math.random()-.5)*8,Math.random()*8,(Math.random()-.5)*8));
-                if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=100;comboCount++;comboTimer=2}
+                spawnBlood(npc.mesh.position,6);
+                if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=100;comboCount++;comboTimer=2;spawnBlood(npc.mesh.position,12)}
               }}}
           // ─── Hitscan damage to sharks ───
           for(const sh of sharks){if(sh.dead)continue;
@@ -9691,8 +9721,8 @@ function update(dt){
               const cl2=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj2));
               if(cl2.distanceTo(sh.mesh.position)<2.5){
                 sh.hp-=w.dmg;
-                for(let e=0;e<3;e++)emit(sh.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random(),(Math.random()-.5)*2)),new THREE.Vector3((Math.random()-.5)*6,Math.random()*4,(Math.random()-.5)*6));
-                if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2}
+                spawnBlood(sh.mesh.position,5);
+                if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2;spawnBlood(sh.mesh.position,10)}
               }}}
           // ─── Hitscan damage to aliens ───
           for(const al of aliens){if(al.dead)continue;
@@ -9702,7 +9732,7 @@ function update(dt){
               const cl3=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj3));
               if(cl3.distanceTo(al.mesh.position)<2){
                 al.hp-=w.dmg;
-                for(let e=0;e<5;e++)emit(al.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*2,Math.random()*2,(Math.random()-.5)*2)),new THREE.Vector3((Math.random()-.5)*10,Math.random()*8,(Math.random()-.5)*10));
+                spawnBlood(al.mesh.position,8);
                 if(al.hp<=0){al.dead=true;al.mesh.visible=false;score+=250;comboCount++;comboTimer=2;
                   // Alien explosion effect
                   const aLight=new THREE.PointLight(0x44ff88,8,20);aLight.position.copy(al.mesh.position);scene.add(aLight);
@@ -9880,11 +9910,11 @@ function update(dt){
         }
       }
       // Blast radius damage to NPCs
-      for(const npc of npcs){if(npc.dead)continue;const nd=ePos.distanceTo(npc.mesh.position);if(nd<p.blastR){npc.hp-=p.dmg;if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=200;comboCount++;comboTimer=2}}}
+      for(const npc of npcs){if(npc.dead)continue;const nd=ePos.distanceTo(npc.mesh.position);if(nd<p.blastR){npc.hp-=p.dmg;spawnBlood(npc.mesh.position,8);if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=200;comboCount++;comboTimer=2;spawnBlood(npc.mesh.position,15)}}}
       // Blast radius damage to sharks
-      for(const sh of sharks){if(sh.dead)continue;const sd=ePos.distanceTo(sh.mesh.position);if(sd<p.blastR){sh.hp-=p.dmg;if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2}}}
+      for(const sh of sharks){if(sh.dead)continue;const sd=ePos.distanceTo(sh.mesh.position);if(sd<p.blastR){sh.hp-=p.dmg;spawnBlood(sh.mesh.position,6);if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2;spawnBlood(sh.mesh.position,12)}}}
       // Blast radius damage to aliens
-      for(const al of aliens){if(al.dead)continue;const ad=ePos.distanceTo(al.mesh.position);if(ad<p.blastR){al.hp-=p.dmg;if(al.hp<=0){al.dead=true;al.mesh.visible=false;score+=250;comboCount++;comboTimer=2}}}
+      for(const al of aliens){if(al.dead)continue;const ad=ePos.distanceTo(al.mesh.position);if(ad<p.blastR){al.hp-=p.dmg;spawnBlood(al.mesh.position,8);if(al.hp<=0){al.dead=true;al.mesh.visible=false;score+=250;comboCount++;comboTimer=2}}}
       p.mesh.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose();if(c.isLight)c.dispose()});scene.remove(p.mesh);projectiles.splice(i,1);
     }
   }
