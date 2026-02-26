@@ -62,8 +62,8 @@ canvas{display:block}
 .ctrl-key .ci{font-size:1.1em;margin-right:1px}
 #vehicle-prompt{position:fixed;bottom:55px;left:50%;transform:translateX(-50%);font-size:1.3em;font-weight:bold;color:#fff;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
 #tip{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);font-size:1.25em;font-weight:bold;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
-.mobile #vehicle-prompt,.mobile #tip{bottom:30px!important}
-.mobile #zone-prompt{bottom:30px!important}
+.mobile #vehicle-prompt,.mobile #tip{bottom:280px!important}
+.mobile #zone-prompt{bottom:280px!important}
 #veh-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(0,8,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(100,180,255,0.2);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 #veh-menu.open{display:flex}
 #veh-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#88ccff,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -8855,7 +8855,7 @@ const zoneMarkers=[];
 for(const z of zoneManager.zones){
   const sp=document.createElement('div');
   sp.style.cssText='position:fixed;font-size:1.6em;pointer-events:none;z-index:5;text-shadow:0 0 8px rgba(0,0,0,0.8);opacity:0;transition:opacity 0.3s';
-  sp.textContent=z.icon||'\u2B50';document.body.appendChild(sp);
+  sp.innerHTML=(z.icon||'\u2B50')+'<span style="font-size:0.5em;display:block;color:#ffcc44;text-align:center">'+(isMobile?'ENTER':'[E]')+'</span>';document.body.appendChild(sp);
   zoneMarkers.push({el:sp,zone:z});
 }
 let _zmFrame=0;const _zmVec=new THREE.Vector3();
@@ -9115,7 +9115,7 @@ function tryFight(idx){
 
 // ══════════════ VEHICLE MOUNT/DISMOUNT ══════════════
 // Glow rings for interactable objects (vehicles + zones)
-const _glowRings=[];const _GLOW_POOL=8;
+const _glowRings=[];const _GLOW_POOL=24;
 const _glowMat=new THREE.MeshBasicMaterial({color:0x44ff66,transparent:true,opacity:0.5,side:THREE.DoubleSide});
 const _glowGeo=new THREE.RingGeometry(1.2,1.8,24);_glowGeo.rotateX(-Math.PI/2);
 for(let i=0;i<_GLOW_POOL;i++){
@@ -9174,7 +9174,7 @@ function update(dt){
   // Zone proximity check — press E on glowing circle to enter
   if(!currentVeh&&mode==='walk'&&!menuOpen&&!wpnMenuOpen){
     zoneManager.update(dt);
-    if(zoneManager.nearestZone)zoneUI.showPrompt('Press E \u2014 '+zoneManager.nearestZone.label);
+    if(zoneManager.nearestZone)zoneUI.showPrompt((isMobile?'ENTER':'Press E')+' \u2014 '+zoneManager.nearestZone.label);
     else zoneUI.hidePrompt();
   }else zoneUI.hidePrompt();
   // Animate zone entry circles
@@ -9223,7 +9223,7 @@ function update(dt){
   if(!currentVeh&&mode==='walk'){
     const nv=nearestVehicle();
     const vp=document.getElementById('vehicle-prompt');
-    if(nv){vp.textContent=`Press E - ${nv.type.charAt(0).toUpperCase()+nv.type.slice(1)}`;vp.style.opacity='1'}
+    if(nv){vp.textContent=`${isMobile?'ENTER':'Press E'} - ${nv.type.charAt(0).toUpperCase()+nv.type.slice(1)}`;vp.style.opacity='1'}
     else vp.style.opacity='0'; // may be overridden by zipline prompt below
     // Glow nearby vehicles
     for(const v of vehicles){if(v.occupied||_gi>=_GLOW_POOL)continue;
@@ -9238,12 +9238,12 @@ function update(dt){
     // Glow nearby zone entries
     for(const z of zoneManager.zones){if(_gi>=_GLOW_POOL)break;
       const dx=P.x-z.position[0],dz=P.z-z.position[2],d2=dx*dx+dz*dz;
-      if(d2<900){// within 30 units
+      if(d2<2500){// within 50 units
         const r=_glowRings[_gi++];r.visible=true;
         const zh=getH(z.position[0],z.position[2]);
         r.position.set(z.position[0],zh+0.15,z.position[2]);
-        const pulse=0.4+Math.sin(clock.elapsedTime*2.5+z.position[0])*.2;
-        r.material.opacity=pulse*(1-Math.sqrt(d2)/30);r.material.color.setHex(0xffaa22);
+        const pulse=0.5+Math.sin(clock.elapsedTime*2.5+z.position[0])*.25;
+        r.material.opacity=pulse*(1-Math.sqrt(d2)/50);r.material.color.setHex(0xffaa22);
         r.scale.setScalar(z.radius?z.radius/1.5:1.5);
       }
     }
@@ -9278,7 +9278,7 @@ function update(dt){
     if(_nearZipI>=0&&!nv){
       const zl=ziplines[_nearZipI];
       const dir=_nearZipT<0.5?zl.name:zl.name.split(' → ').reverse().join(' → ');
-      vp.textContent=`Press E \u2014 \u{1F6A1} ${dir}`;vp.style.opacity='1';
+      vp.textContent=`${isMobile?'ENTER':'Press E'} \u2014 \u{1F6A1} ${dir}`;vp.style.opacity='1';
     }
   } else document.getElementById('vehicle-prompt').style.opacity='0';
   // Hide unused glow rings
@@ -9720,8 +9720,9 @@ function update(dt){
     const w=WEAPONS[currentWeapon];
       fireCooldown=1/w.fireRate;
       const gunPos=new THREE.Vector3().copy(P).add(new THREE.Vector3(0,1.5,0));
-      // Aim direction matches camera exactly (flyFwd = yaw+pitch)
-      const _baseAimDir=_aimFwd.clone();
+      // Aim at convergence point from camera ray through crosshair center
+      const _aimConverge=cam.position.clone().add(_aimFwd.clone().multiplyScalar(150));
+      const _baseAimDir=new THREE.Vector3().subVectors(_aimConverge,gunPos).normalize();
       if(w.type==='hitscan'){
         const pellets=w.pellets||1;
         for(let p=0;p<pellets;p++){
