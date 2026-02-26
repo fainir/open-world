@@ -41,7 +41,7 @@ canvas{display:block}
 #crosshair .tv{top:0}#crosshair .bv{bottom:0}
 #score{position:fixed;top:25px;right:30px;font-size:1.4em;color:#ffdd00;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(255,200,0,0.5)}
 #combo{position:fixed;top:55px;right:30px;font-size:0.9em;color:#ff8800;font-family:'Courier New',monospace;opacity:0}
-#trick-display{position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);font-size:2.8em;font-weight:bold;color:#ffee00;text-shadow:0 0 30px rgba(255,200,0,0.8),0 0 60px rgba(255,100,0,0.4);opacity:0;transition:opacity 0.2s;font-family:'Courier New',monospace;pointer-events:none;white-space:nowrap}
+#trick-display{position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);font-size:2.8em;font-weight:bold;color:#ffee00;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 30px rgba(255,200,0,0.8),0 0 60px rgba(255,100,0,0.4);opacity:0;transition:opacity 0.2s;font-family:'Courier New',monospace;pointer-events:none;white-space:nowrap}
 #fight-hit{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%) scale(0.5);font-size:3.5em;font-weight:900;color:#fff;text-shadow:0 0 20px rgba(255,50,50,0.9),0 0 40px rgba(255,100,0,0.6),2px 2px 0 #000;opacity:0;transition:opacity 0.2s,transform 0.15s;font-family:'Impact','Arial Black',sans-serif;pointer-events:none;letter-spacing:3px;z-index:20}
 #fight-flash{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle,rgba(255,50,0,0.5),rgba(255,0,0,0.2));opacity:0;transition:opacity 0.15s;pointer-events:none;z-index:19}
 #bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:6;pointer-events:none;display:none;flex-direction:column;align-items:center;padding-bottom:10px;gap:6px;font-family:'Courier New',monospace}
@@ -57,8 +57,8 @@ canvas{display:block}
 .ctrl-key{display:inline-flex;align-items:center;gap:5px;font-size:0.75em;color:rgba(255,255,255,0.95);white-space:nowrap}
 .ctrl-key kbd{background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.45);border-radius:4px;padding:2px 7px;font-family:'Courier New',monospace;font-size:1em;min-width:20px;text-align:center;color:#fff;text-shadow:0 0 4px rgba(255,255,255,0.3)}
 .ctrl-key .cl{color:rgba(255,255,255,0.7);font-size:0.9em}
-#vehicle-prompt{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);font-size:0.95em;color:#44ff66;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:0 0 10px rgba(0,255,50,0.4)}
-#tip{position:fixed;bottom:145px;left:50%;transform:translateX(-50%);font-size:0.8em;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s}
+#vehicle-prompt{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);font-size:1.3em;font-weight:bold;color:#fff;font-family:'Courier New',monospace;opacity:0;transition:opacity 0.3s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
+#tip{position:fixed;bottom:160px;left:50%;transform:translateX(-50%);font-size:1.25em;font-weight:bold;color:#fff;opacity:0;font-family:'Courier New',monospace;transition:opacity 1s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8)}
 #veh-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:auto;max-width:90vw;max-height:80vh;z-index:20;display:none;background:rgba(0,8,20,0.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:24px 32px;border-radius:16px;border:1px solid rgba(100,180,255,0.2);box-shadow:0 8px 40px rgba(0,0,0,0.6);color:#fff;font-family:'Courier New',monospace;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 #veh-menu.open{display:flex}
 #veh-menu h2{font-size:1.8em;letter-spacing:0.3em;margin-bottom:0.3em;background:linear-gradient(90deg,#88ccff,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -5548,24 +5548,22 @@ const _ZIP_ROUTES=[
   ['Beach → Hot Springs',860, 150,  2550,2750,  0xff8844, null],
   ['Beach → Amalfi',     860,  50,  3550,-2550, 0xffaa00, null],
   ['Beach → Cruise',     870,  60,  3950,  50,  0xeeeeff, null],
-  // ── Snow Hub (west side) ──
-  ['Snow → Safari',     -800, -50, -2150,-2550, 0xcc8844, null],
-  ['Snow → Dubai',      -800,  50, -3550, 2750, 0xffdd00, null],
-  // ── Park / North ──
+  // ── Snow / North ──
+  ['Snow → Extreme',    -700,   0,  -180, 1250, 0x88ccff, null],  // short, flat
   ['Park → Extreme',     180, 850,  -180, 1250, 0xff4444, null],
-  ['Extreme → Hot Sp.',  -180,1350,  2550,2750,  0xff9966, null],  // north shortcut east
-  // ── Safari Hub (southwest) ──
+  ['Extreme → Hot Sp.',  -180,1350,  2550,2750,  0xff9966, null],
+  // ── Safari Hub (southwest — all west of mountains) ──
   ['Safari → Vegas',   -2250,-2650,-1850,-3150,  0xff44ff, null],
   ['Safari → Machu P.',-2250,-2600,-2550,-3150,  0x88ff88, null],
+  ['Safari → Jungle',  -2150,-2550,-3750,-1450,  0xcc8844, null],
   // ── Vegas / South ──
   ['Vegas → Jungle',   -1850,-3250,-3750,-1450,  0x00ff88, null],
-  ['Machu P. → Jungle',-2550,-3150,-3750,-1450,  0x44ddaa, null],  // removes dead-end
-  // ── Cross-connections ──
+  ['Machu P. → Jungle',-2550,-3150,-3750,-1450,  0x44ddaa, null],
+  // ── Far west (stays in mountain region) ──
   ['Jungle → Dubai',   -3750,-1350,-3550, 2750,  0xffff44, null],
-  ['Dubai → Extreme',  -3550, 2750, -180, 1350,  0xaaff44, null],  // NW to central north
-  ['Cruise → Hot Sp.',  3950,  50,  2550, 2750,  0xffccaa, null],  // east coast connector
+  // ── East coast connectors ──
+  ['Cruise → Hot Sp.',  3950,  50,  2550, 2750,  0xffccaa, null],
   ['Amalfi → Cruise',   3550,-2550, 3950, -50,   0xdd88ff, null],
-  ['Extreme → Safari',  -250, 1350,-2100,-2500,  0x8888ff, null],
 ];
 const ziplines=[];
 let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
@@ -5730,7 +5728,7 @@ const gameAPI={
 class ZoneUI{
   constructor(){
     this.prompt=document.createElement('div');this.prompt.id='zone-prompt';
-    this.prompt.style.cssText='position:fixed;bottom:145px;left:50%;transform:translateX(-50%);font-size:0.95em;color:#44aaff;font-family:"Courier New",monospace;opacity:0;transition:opacity 0.3s;text-shadow:0 0 10px rgba(0,150,255,0.4);z-index:6;pointer-events:none';
+    this.prompt.style.cssText='position:fixed;bottom:160px;left:50%;transform:translateX(-50%);font-size:1.3em;font-weight:bold;color:#fff;font-family:"Courier New",monospace;opacity:0;transition:opacity 0.3s;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 0 12px rgba(0,0,0,0.8);z-index:6;pointer-events:none';
     document.body.appendChild(this.prompt);
     this.overlay=document.createElement('div');this.overlay.id='zone-fade';
     this.overlay.style.cssText='position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:15;transition:opacity 0.4s';
@@ -9195,7 +9193,7 @@ function update(dt){
       for(const sp of zl.samps){
         const dx=P.x-sp.x,dz=P.z-sp.z,hd2=dx*dx+dz*dz;
         const dy=P.y-sp.y;
-        if(hd2<225&&dy>-50&&dy<10&&hd2<_nearZipDist){
+        if(hd2<400&&dy>-120&&dy<15&&hd2<_nearZipDist){
           _nearZipDist=hd2;_nearZipI=i;_nearZipT=sp.t;_nearZipName=zl.name;
         }
       }
