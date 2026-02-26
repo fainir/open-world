@@ -91,19 +91,19 @@ canvas{display:block}
 .wpn-item .wpn-info{flex:1}.wpn-item .wpn-name{font-weight:bold}.wpn-item .wpn-stats{font-size:0.7em;opacity:0.4;margin-top:2px}
 #wpn-close{position:absolute;top:12px;right:16px;font-size:1.5em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #wpn-close:hover{opacity:1}
-#char-menu{position:fixed;bottom:0;left:0;right:0;max-height:48vh;z-index:20;display:none;background:rgba(15,5,20,0.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex-direction:column;align-items:center;padding:14px 20px 18px;border-radius:18px 18px 0 0;border-top:1px solid rgba(200,100,255,0.3);box-shadow:0 -4px 30px rgba(0,0,0,0.5);color:#fff;font-family:'Courier New',monospace;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#char-menu{position:fixed;top:0;right:0;bottom:0;width:25%;min-width:155px;max-width:220px;z-index:20;display:none;background:rgba(15,5,20,0.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);flex-direction:column;align-items:stretch;padding:10px 8px 14px;border-radius:12px 0 0 12px;border-left:1px solid rgba(200,100,255,0.3);box-shadow:-4px 0 20px rgba(0,0,0,0.5);color:#fff;font-family:'Courier New',monospace;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 #char-menu.open{display:flex}
-#char-menu h2{font-size:1.3em;letter-spacing:0.3em;margin-bottom:0.1em;background:linear-gradient(90deg,#ff66cc,#aa66ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-#char-menu .subtitle{font-size:0.65em;opacity:0.4;margin-bottom:0.8em;letter-spacing:0.2em}
-#char-cats{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:0 6px}
-.char-cat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;min-width:100px}
-.char-cat h3{font-size:0.6em;letter-spacing:0.12em;margin-bottom:6px;text-align:center;opacity:0.6;text-transform:uppercase;color:#cc88ff}
-.char-opt{display:flex;align-items:center;gap:6px;padding:4px 6px;margin:1px 0;border-radius:4px;cursor:pointer;transition:all 0.15s;font-size:0.68em;border:1px solid transparent}
+#char-menu h2{font-size:1em;letter-spacing:0.2em;margin-bottom:0;text-align:center;background:linear-gradient(90deg,#ff66cc,#aa66ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#char-menu .subtitle{font-size:0.5em;opacity:0.4;margin-bottom:0.5em;letter-spacing:0.15em;text-align:center}
+#char-cats{display:flex;flex-direction:column;gap:6px;padding:0}
+.char-cat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:5px 6px}
+.char-cat h3{font-size:0.55em;letter-spacing:0.1em;margin-bottom:4px;text-align:center;opacity:0.6;text-transform:uppercase;color:#cc88ff}
+.char-opt{display:flex;align-items:center;gap:5px;padding:3px 5px;margin:1px 0;border-radius:3px;cursor:pointer;transition:all 0.15s;font-size:0.6em;border:1px solid transparent}
 .char-opt:hover,.char-opt.selected{background:rgba(200,100,255,0.15);border-color:rgba(200,100,255,0.3)}
 .char-opt.active{border-color:rgba(200,150,255,0.6);background:rgba(200,100,255,0.2)}
-.char-swatch{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);flex-shrink:0}
+.char-swatch{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);flex-shrink:0}
 .char-opt-name{flex:1}
-#char-close{position:absolute;top:10px;right:14px;font-size:1.3em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
+#char-close{position:absolute;top:6px;right:8px;font-size:1.1em;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
 #char-close:hover{opacity:1}
 #btn-char-m{background:rgba(80,30,120,0.5);border-color:rgba(200,100,255,0.25)}
 #weapon-hud{position:fixed;bottom:55px;right:30px;font-size:0.85em;color:#ff8844;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(255,100,0,0.4);display:none;text-align:right}
@@ -139,11 +139,8 @@ canvas{display:block}
 :fullscreen #btn-fs,:-webkit-full-screen #btn-fs{display:none!important}
 #btn-pause{position:fixed;top:12px;right:12px;width:40px;height:40px;z-index:9;pointer-events:all;border-radius:50%;border:2px solid rgba(255,255,255,0.25);background:rgba(0,0,0,0.4);color:#fff;font-size:1.2em;display:none;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .mobile.playing #btn-pause{display:flex}
-#pwa-install{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;background:rgba(0,20,50,0.95);border-bottom:1px solid rgba(100,180,255,0.3);font-family:'Courier New',monospace;font-size:0.85em;color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-#pwa-install .pwa-text{flex:1}
-#pwa-install button{border:none;border-radius:6px;padding:6px 14px;font-family:'Courier New',monospace;font-weight:bold;font-size:0.85em;cursor:pointer}
-#pwa-install .pwa-yes{background:#2266ff;color:#fff}
-#pwa-install .pwa-no{background:rgba(255,255,255,0.15);color:#fff}
+#pwa-install{position:fixed;top:12px;right:56px;z-index:50;width:36px;height:36px;border-radius:50%;border:2px solid rgba(100,180,255,0.35);background:rgba(0,20,50,0.7);color:#fff;font-size:1.1em;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#pwa-install:active{transform:scale(0.9)}
 #pause-screen{position:fixed;inset:0;z-index:11;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #pause-screen h2{font-size:2.5em;color:#fff;font-family:'Courier New',monospace;letter-spacing:0.15em;margin-bottom:0.3em;text-shadow:0 0 20px rgba(100,180,255,0.5)}
 #pause-screen .pause-sub{font-size:1em;color:rgba(255,255,255,0.6);font-family:'Courier New',monospace}
@@ -10833,15 +10830,13 @@ if(isMobile){
   let deferredPrompt=null;
   function showBanner(mode){
     const b=document.createElement('div');b.id='pwa-install';
-    if(mode==='android'){
-      b.innerHTML='<span>📲</span><span class="pwa-text">Add Open World to your home screen</span><button class="pwa-yes">Install</button><button class="pwa-no">✕</button>';
-    } else {
-      b.innerHTML='<span>📲</span><span class="pwa-text">Add to Home Screen: tap <b>Share ⬆</b> then <b>"Add to Home Screen"</b></span><button class="pwa-no">✕</button>';
-    }
+    b.textContent='\u{1F4F2}';
+    b.title=mode==='android'?'Install App':'Add to Home Screen';
     document.body.appendChild(b);
-    b.querySelector('.pwa-no').onclick=()=>{b.remove();localStorage.setItem('pwa_dismissed','1')};
-    const yesBtn=b.querySelector('.pwa-yes');
-    if(yesBtn)yesBtn.onclick=()=>{if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;b.remove()})}};
+    b.onclick=()=>{
+      if(mode==='android'&&deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;b.remove()})}
+      else{b.remove();localStorage.setItem('pwa_dismissed','1')}
+    };
   }
   // Android/Chrome: beforeinstallprompt
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;showBanner('android')});
