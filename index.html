@@ -386,7 +386,7 @@ terrain.receiveShadow=true;scene.add(terrain);
 // ══════════════ WATER ══════════════
 const wMat=new THREE.ShaderMaterial({uniforms:{time:{value:0},sunDir:{value:sunDir}},transparent:true,side:THREE.DoubleSide,depthWrite:false,
 vertexShader:`uniform float time;varying vec3 vW,vN;void main(){vec3 p=position;float w=sin(p.x*.015+time*.7)*cos(p.y*.012+time*.5)*.6+sin(p.x*.035+time*1.1)*cos(p.y*.025-time*.8)*.3+sin(p.x*.07+p.y*.06+time*1.9)*.1;p.z+=w;vN=normalize(vec3(-cos(p.x*.015+time*.7)*.015*cos(p.y*.012+time*.5)*.6,-sin(p.x*.015+time*.7)*(-sin(p.y*.012+time*.5))*.012*.6,1));vW=(modelMatrix*vec4(p,1)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1);}`,
-fragmentShader:`uniform vec3 sunDir;varying vec3 vW,vN;void main(){vec3 V2=normalize(cameraPosition-vW),n=normalize(vN);float fr=pow(1.0-max(dot(V2,n),0.0),4.0);vec3 col=mix(mix(vec3(.02,.15,.30),vec3(.01,.08,.22),.4),vec3(.25,.45,.70),fr*.65);col+=vec3(1,.9,.7)*pow(max(dot(n,normalize(sunDir+V2)),0.0),256.0)*2.0;gl_FragColor=vec4(col,.92);}`
+fragmentShader:`uniform vec3 sunDir;varying vec3 vW,vN;void main(){vec3 V2=normalize(cameraPosition-vW),n=normalize(vN);float fr=pow(1.0-max(dot(V2,n),0.0),4.0);vec3 col=mix(mix(vec3(.08,.28,.48),vec3(.05,.18,.38),.4),vec3(.35,.58,.82),fr*.65);col+=vec3(1,.9,.7)*pow(max(dot(n,normalize(sunDir+V2)),0.0),256.0)*2.0;gl_FragColor=vec4(col,.90);}`
 });
 const water=new THREE.Mesh(new THREE.PlaneGeometry(12000,12000,50,50),wMat);
 water.rotation.x=-Math.PI/2;water.position.set(CH+1200,-0.8,0);scene.add(water);
