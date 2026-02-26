@@ -5567,10 +5567,10 @@ const _ZIP_ROUTES=[
 const ziplines=[];
 let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1;
 (function buildZiplines(){
-  const TH=25; // default tower height above terrain
+  const TH=35; // default tower height above terrain
   const poleMat=new THREE.MeshStandardMaterial({color:0x888888,metalness:.7,roughness:.3});
   for(const [name,sx,sz,ex,ez,col,endTH] of _ZIP_ROUTES){
-    const shG=Math.max(getH(sx,sz),0), ehG=Math.max(getH(ex,ez),0);
+    const shG=Math.max(getH(sx,sz),getSurfaceH(sx,sz),0), ehG=Math.max(getH(ex,ez),getSurfaceH(ex,ez),0);
     const sy=shG+TH;
     const ey=endTH!=null?ehG+endTH:ehG+TH;
     const cMat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3,metalness:.8,roughness:.2});
@@ -9944,14 +9944,14 @@ function update(dt){
       const zl=ziplines[i];
       // Check start station
       const dsx=P.x-zl.sx,dsz=P.z-zl.sz;
-      if(dsx*dsx+dsz*dsz<120&&Math.abs(P.y-zl.sy)<30){
+      if(dsx*dsx+dsz*dsz<150&&P.y<=zl.sy+5&&P.y>=zl.sy-50){
         zipRiding=i;zipT=0.001;zipDir=1;
         zipSpeed=160/Math.sqrt((zl.ex-zl.sx)**2+(zl.ey-zl.sy)**2+(zl.ez-zl.sz)**2);
         keys['KeyE']=false;showTip('\u{1F6A1} '+zl.name+' \u2014 SPACE to jump off');break;
       }
       // Check end station (ride in reverse)
       const dex=P.x-zl.ex,dez=P.z-zl.ez;
-      if(dex*dex+dez*dez<120&&Math.abs(P.y-zl.ey)<30){
+      if(dex*dex+dez*dez<150&&P.y<=zl.ey+5&&P.y>=zl.ey-50){
         zipRiding=i;zipT=0.999;zipDir=-1;
         zipSpeed=160/Math.sqrt((zl.ex-zl.sx)**2+(zl.ey-zl.sy)**2+(zl.ez-zl.sz)**2);
         keys['KeyE']=false;
