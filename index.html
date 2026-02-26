@@ -6,6 +6,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Open World">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
 <title>Open World</title>
 <script>
 // Force reload if user has outdated cached version
@@ -119,6 +124,11 @@ canvas{display:block}
 :fullscreen #btn-fs,:-webkit-full-screen #btn-fs{display:none!important}
 #btn-pause{position:fixed;top:12px;right:12px;width:40px;height:40px;z-index:9;pointer-events:all;border-radius:50%;border:2px solid rgba(255,255,255,0.25);background:rgba(0,0,0,0.4);color:#fff;font-size:1.2em;display:none;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .mobile.playing #btn-pause{display:flex}
+#pwa-install{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;background:rgba(0,20,50,0.95);border-bottom:1px solid rgba(100,180,255,0.3);font-family:'Courier New',monospace;font-size:0.85em;color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#pwa-install .pwa-text{flex:1}
+#pwa-install button{border:none;border-radius:6px;padding:6px 14px;font-family:'Courier New',monospace;font-weight:bold;font-size:0.85em;cursor:pointer}
+#pwa-install .pwa-yes{background:#2266ff;color:#fff}
+#pwa-install .pwa-no{background:rgba(255,255,255,0.15);color:#fff}
 #pause-screen{position:fixed;inset:0;z-index:11;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #pause-screen h2{font-size:2.5em;color:#fff;font-family:'Courier New',monospace;letter-spacing:0.15em;margin-bottom:0.3em;text-shadow:0 0 20px rgba(100,180,255,0.5)}
 #pause-screen .pause-sub{font-size:1em;color:rgba(255,255,255,0.6);font-family:'Courier New',monospace}
@@ -188,7 +198,7 @@ canvas{display:block}
 <div id="mobile-joystick"><div id="joy-base"><div id="joy-thumb"></div></div></div>
 <div id="mobile-btns">
 <div id="btn-shoot" class="m-btn">🎯SHOOT</div>
-<div id="btn-jump" class="m-btn">⬆JUMP</div>
+<div id="btn-jump" class="m-btn">⬆️JUMP</div>
 <div id="btn-boost" class="m-btn">🚀BOOST</div>
 <div id="btn-enter" class="m-btn">🚪ENTER</div>
 <div id="btn-trick" class="m-btn">🤸FLIP</div>
@@ -9058,21 +9068,23 @@ function tryFight(idx){
       hitCount++;fightHitNPC=true;
       const kbDir=ff.clone().multiplyScalar(-1);
       if(m.type==='punch'){
-        // Punches: knock straight back
         npc.mesh.position.x+=kbDir.x*m.kb;
         npc.mesh.position.z+=kbDir.z*m.kb;
       } else if(m.type==='upper'){
-        // Uppercut: launch upward + slight back
         npc.mesh.position.x+=kbDir.x*2;
         npc.mesh.position.z+=kbDir.z*2;
         npc.mesh.position.y+=5;
       } else if(m.type==='kick'){
-        // Kick: send sideways + back (sweeping arc)
         const kbRight=new THREE.Vector3(-kbDir.z,0,kbDir.x);
         npc.mesh.position.x+=kbDir.x*m.kb*0.5+kbRight.x*m.kb*0.7;
         npc.mesh.position.z+=kbDir.z*m.kb*0.5+kbRight.z*m.kb*0.7;
-        npc.mesh.position.y+=1.5; // slight lift from kick
+        npc.mesh.position.y+=1.5;
       }
+      // Blood + damage from fight moves
+      const bPos=npc.mesh.position.clone();bPos.y+=1;
+      spawnBlood(bPos,m.type==='kick'?10:m.type==='upper'?12:6);
+      if(!npc.dead){npc.hp-=m.dmg;
+        if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=100;comboCount++;comboTimer=2;spawnBlood(npc.mesh.position,15)}}
       // Burst of particles at hit point
       const hp=npc.mesh.position.clone();hp.y+=1;
       const pCount=m.type==='kick'?20:m.type==='upper'?18:12;
@@ -9731,30 +9743,30 @@ function update(dt){
               }
             }
           }
-          // ─── Hitscan damage to NPCs ───
-          for(const npc of npcs){if(npc.dead)continue;
+          // ─── Hitscan damage to NPCs (alive + dead bodies) ───
+          for(const npc of npcs){
             const toN=new THREE.Vector3().subVectors(npc.mesh.position,gunPos);
             const pj=toN.dot(dir)/dir.length();
             if(pj>0&&pj<w.range){
               const cl=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj));
               if(cl.distanceTo(npc.mesh.position)<1.5){
-                npc.hp-=w.dmg;
-                spawnBlood(npc.mesh.position,6);
-                if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=100;comboCount++;comboTimer=2;spawnBlood(npc.mesh.position,12)}
+                if(!npc.dead){npc.hp-=w.dmg;spawnBlood(npc.mesh.position,6);
+                  if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=100;comboCount++;comboTimer=2;spawnBlood(npc.mesh.position,12)}
+                } else {spawnBlood(npc.mesh.position,4)}
               }}}
-          // ─── Hitscan damage to sharks ───
-          for(const sh of sharks){if(sh.dead)continue;
+          // ─── Hitscan damage to sharks (alive + dead) ───
+          for(const sh of sharks){
             const toS=new THREE.Vector3().subVectors(sh.mesh.position,gunPos);
             const pj2=toS.dot(dir)/dir.length();
             if(pj2>0&&pj2<w.range){
               const cl2=gunPos.clone().add(dir.clone().normalize().multiplyScalar(pj2));
               if(cl2.distanceTo(sh.mesh.position)<2.5){
-                sh.hp-=w.dmg;
-                spawnBlood(sh.mesh.position,5);
-                if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2;spawnBlood(sh.mesh.position,10)}
+                if(!sh.dead){sh.hp-=w.dmg;spawnBlood(sh.mesh.position,5);
+                  if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2;spawnBlood(sh.mesh.position,10)}
+                } else {spawnBlood(sh.mesh.position,3)}
               }}}
-          // ─── Hitscan damage to aliens ───
-          for(const al of aliens){if(al.dead)continue;
+          // ─── Hitscan damage to aliens (alive + dead) ───
+          for(const al of aliens){if(al.dead&&!al.mesh.visible)continue;
             const toA=new THREE.Vector3().subVectors(al.mesh.position,gunPos);
             const pj3=toA.dot(dir)/dir.length();
             if(pj3>0&&pj3<w.range){
@@ -9935,10 +9947,10 @@ function update(dt){
           if(tgt.hp<=0){destroyTarget(ti);score+=100;comboCount++;comboTimer=2}
         }
       }
-      // Blast radius damage to NPCs
-      for(const npc of npcs){if(npc.dead)continue;const nd=ePos.distanceTo(npc.mesh.position);if(nd<p.blastR){npc.hp-=p.dmg;spawnBlood(npc.mesh.position,8);if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=200;comboCount++;comboTimer=2;spawnBlood(npc.mesh.position,15)}}}
-      // Blast radius damage to sharks
-      for(const sh of sharks){if(sh.dead)continue;const sd=ePos.distanceTo(sh.mesh.position);if(sd<p.blastR){sh.hp-=p.dmg;spawnBlood(sh.mesh.position,6);if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2;spawnBlood(sh.mesh.position,12)}}}
+      // Blast radius damage to NPCs (alive + dead bodies)
+      for(const npc of npcs){const nd=ePos.distanceTo(npc.mesh.position);if(nd<p.blastR){if(!npc.dead){npc.hp-=p.dmg;spawnBlood(npc.mesh.position,8);if(npc.hp<=0){npc.dead=true;npc.mesh.rotation.x=Math.PI/2;score+=200;comboCount++;comboTimer=2;spawnBlood(npc.mesh.position,15)}}else{spawnBlood(npc.mesh.position,5)}}}
+      // Blast radius damage to sharks (alive + dead)
+      for(const sh of sharks){const sd=ePos.distanceTo(sh.mesh.position);if(sd<p.blastR){if(!sh.dead){sh.hp-=p.dmg;spawnBlood(sh.mesh.position,6);if(sh.hp<=0){sh.dead=true;sh.mesh.rotation.z=Math.PI;score+=150;comboCount++;comboTimer=2;spawnBlood(sh.mesh.position,12)}}else{spawnBlood(sh.mesh.position,3)}}}
       // Blast radius damage to aliens
       for(const al of aliens){if(al.dead)continue;const ad=ePos.distanceTo(al.mesh.position);if(ad<p.blastR){al.hp-=p.dmg;spawnBlood(al.mesh.position,8);if(al.hp<=0){al.dead=true;al.mesh.visible=false;score+=250;comboCount++;comboTimer=2}}}
       p.mesh.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose();if(c.isLight)c.dispose()});scene.remove(p.mesh);projectiles.splice(i,1);
@@ -10529,6 +10541,39 @@ if(isMobile){
   // Mobile overlay: tap anywhere to start
   overlay.addEventListener('touchstart',e=>{e.preventDefault();startGame()},{passive:false});
 }
+
+// ══════════════ PWA INSTALL PROMPT ══════════════
+(function(){
+  // Create manifest dynamically for PWA
+  const mData=JSON.stringify({name:'Open World',short_name:'Open World',display:'standalone',orientation:'landscape',start_url:location.pathname||'.',background_color:'#000000',theme_color:'#000000'});
+  const mBlob=new Blob([mData],{type:'application/json'});
+  const mLink=document.createElement('link');mLink.rel='manifest';mLink.href=URL.createObjectURL(mBlob);
+  document.head.appendChild(mLink);
+
+  if(localStorage.getItem('pwa_dismissed'))return;
+  const isStandalone=window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone;
+  if(isStandalone)return;
+
+  let deferredPrompt=null;
+  function showBanner(mode){
+    const b=document.createElement('div');b.id='pwa-install';
+    if(mode==='android'){
+      b.innerHTML='<span>📲</span><span class="pwa-text">Add Open World to your home screen</span><button class="pwa-yes">Install</button><button class="pwa-no">✕</button>';
+    } else {
+      b.innerHTML='<span>📲</span><span class="pwa-text">Add to Home Screen: tap <b>Share ⬆</b> then <b>"Add to Home Screen"</b></span><button class="pwa-no">✕</button>';
+    }
+    document.body.appendChild(b);
+    b.querySelector('.pwa-no').onclick=()=>{b.remove();localStorage.setItem('pwa_dismissed','1')};
+    const yesBtn=b.querySelector('.pwa-yes');
+    if(yesBtn)yesBtn.onclick=()=>{if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;b.remove()})}};
+  }
+  // Android/Chrome: beforeinstallprompt
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;showBanner('android')});
+  // iOS Safari detection
+  if(isMobile&&/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.navigator.standalone){
+    setTimeout(()=>showBanner('ios'),2000);
+  }
+})();
 </script>
 </body>
 </html>
