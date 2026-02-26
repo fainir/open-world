@@ -5687,10 +5687,10 @@ let zipRiding=-1,zipT=0,zipSpeed=0,zipDir=1,_zipCooldown=0;
 
 // ══════════════ CHARACTER ══════════════
 const charG=new THREE.Group();
-const suM=new THREE.MeshStandardMaterial({color:0xe8e0d4,roughness:.5});
-const acM=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:.4});
-const hmM=new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.3,metalness:.5});
-const vsM=new THREE.MeshStandardMaterial({color:0x1a1a2a,roughness:.05,metalness:.9});
+const suM=new THREE.MeshStandardMaterial({color:0xe8e0d4,roughness:.75});
+const acM=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:.5});
+const hmM=new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.65,metalness:.1});
+const vsM=new THREE.MeshStandardMaterial({color:0x1a1a2a,roughness:.2,metalness:.5});
 const bdM=box(.5,.8,.3,0xe8e0d4);bdM.material=suM;bdM.position.y=1;charG.add(bdM);
 // Subtle accent stripes (same width as body, subtle color)
 const st1=box(.5,.04,.31,0xc8c0b4);st1.position.set(0,1.22,0);charG.add(st1);
@@ -5710,7 +5710,7 @@ const lL=box(.18,.55,.18,0xe8e0d4);lL.material=suM;lL.position.set(-.13,.35,0);c
 const rL=box(.18,.55,.18,0xe8e0d4);rL.material=suM;rL.position.set(.13,.35,0);charG.add(rL);
 const lb=box(.19,.1,.26,0x333333);lb.position.set(-.13,.06,.03);charG.add(lb);
 const rb=box(.19,.1,.26,0x333333);rb.position.set(.13,.06,.03);charG.add(rb);
-const ep=box(.36,.32,.18,0x333333);ep.material=new THREE.MeshStandardMaterial({color:0x333333,metalness:.6,roughness:.3});ep.position.set(0,1.05,-.2);charG.add(ep);
+const ep=box(.36,.32,.18,0x333333);ep.material=new THREE.MeshStandardMaterial({color:0x333333,metalness:.2,roughness:.6});ep.position.set(0,1.05,-.2);charG.add(ep);
 // Jetpack wing - rigid carbon fiber wing with jet engines (Jetman style)
 const jetWing=new THREE.Group();jetWing.visible=false;
 const _cwM=new THREE.MeshStandardMaterial({color:0x0a0a0a,metalness:.85,roughness:.15});
