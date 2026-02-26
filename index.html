@@ -9567,7 +9567,7 @@ function update(dt){
     P.x+Math.sin(yaw)*Math.cos(pitch)*camD+_rightX*1.2,
     P.y+camH-Math.sin(pitch)*camD*0.5,
     P.z+Math.cos(yaw)*Math.cos(pitch)*camD+_rightZ*1.2);
-  let ideal=_normalIdeal.clone().lerp(_aimIdeal,aimBlend);
+  let ideal=_normalIdeal.clone().lerp(_aimIdeal,aimBlend),look;
   // Clamp camera target above terrain at camera position
   const _camFloor=Math.max(getH(ideal.x,ideal.z),getSurfaceH(ideal.x,ideal.z))+1.0;
   if(ideal.y<_camFloor)ideal.y=_camFloor;
