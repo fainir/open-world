@@ -8986,6 +8986,8 @@ for(const z of zoneManager.zones){
   zoneCircles.push({grp,ring,inner,zone:z});
 }
 
+const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;
+
 // Floating markers above enterable zones
 const zoneMarkers=[];
 for(const z of zoneManager.zones){
@@ -9038,7 +9040,6 @@ document.addEventListener('mousemove',e=>{
 
 const overlay=document.getElementById('overlay'),hud=document.getElementById('hud');
 
-const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;
 if(isMobile){
   document.body.classList.add('mobile');
   document.querySelector('#overlay .click').textContent='Tap to play';
