@@ -21,7 +21,9 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
   transition:background .15s;pointer-events:all;padding:0}
 #ow-fs-btn:hover{background:rgba(30,34,44,.9);color:#fff}
 #ow-fs-btn svg{width:18px;height:18px}
-:fullscreen #ow-fs-btn,:-webkit-full-screen #ow-fs-btn{display:none!important}
+:fullscreen #ow-fs-btn svg.fs-enter,:-webkit-full-screen #ow-fs-btn svg.fs-enter{display:none}
+:fullscreen #ow-fs-btn svg.fs-exit,:-webkit-full-screen #ow-fs-btn svg.fs-exit{display:block}
+#ow-fs-btn svg.fs-exit{display:none}
 
 #ow-panel{position:fixed;top:0;right:0;bottom:0;width:300px;max-width:90vw;z-index:9998;
   background:rgba(12,15,22,.97);border-left:1px solid rgba(80,90,110,.3);
@@ -183,7 +185,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
 </style>
 
 <div id="ow-overlay-root">
-  <button id="ow-fs-btn" title="Fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+  <button id="ow-fs-btn" title="Fullscreen"><svg class="fs-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><svg class="fs-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg></button>
   <button id="ow-fab" title="Edit this game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
   <div id="ow-panel">
     <div class="ow-header">
@@ -406,21 +408,18 @@ $('ow-panel-close').onclick=closePanel;
 
 // ── Fullscreen toggle ──
 const fsBtn=$('ow-fs-btn');
-fsBtn.onclick=(e)=>{e.stopPropagation();e.preventDefault()};
+function toggleFS(){
+  const de=document.documentElement;
+  if(document.fullscreenElement||document.webkitFullscreenElement){
+    try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}
+  }else{
+    try{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}
+  }
+}
 fsBtn.addEventListener('touchstart',(e)=>{
-  e.stopPropagation();e.preventDefault();
-  const de=document.documentElement;
-  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
-    try{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}
-  }
+  e.stopPropagation();e.preventDefault();toggleFS();
 },{passive:false});
-fsBtn.addEventListener('click',(e)=>{
-  e.stopPropagation();
-  const de=document.documentElement;
-  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
-    try{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}
-  }
-});
+fsBtn.onclick=(e)=>{e.stopPropagation();e.preventDefault();toggleFS()};
 
 // ── Keyboard handling ──
 document.addEventListener('keydown',(e)=>{
