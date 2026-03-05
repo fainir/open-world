@@ -9073,6 +9073,36 @@ for(const z of zoneManager.zones){
 
 const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;
 
+// ══════════════ STORE PORTAL ══════════════
+const _storePortalPos=new THREE.Vector3(15,0,0);
+const _storePortalGroup=new THREE.Group();
+_storePortalGroup.name='store-portal';
+const _spRingGeo=new THREE.RingGeometry(2,3,32);
+const _spRingMat=new THREE.MeshBasicMaterial({color:0xaa44ff,transparent:true,opacity:0.6,side:THREE.DoubleSide});
+const _spRing=new THREE.Mesh(_spRingGeo,_spRingMat);
+_spRing.rotation.x=-Math.PI/2;_storePortalGroup.add(_spRing);
+const _spInnerGeo=new THREE.CircleGeometry(2,32);
+const _spInnerMat=new THREE.MeshBasicMaterial({color:0xcc66ff,transparent:true,opacity:0.2,side:THREE.DoubleSide});
+const _spInner=new THREE.Mesh(_spInnerGeo,_spInnerMat);
+_spInner.rotation.x=-Math.PI/2;_spInner.position.y=0.01;_storePortalGroup.add(_spInner);
+const _spVertGeo=new THREE.TorusGeometry(2.5,0.15,8,32);
+const _spVertMat=new THREE.MeshBasicMaterial({color:0xaa44ff,transparent:true,opacity:0.5});
+const _spVert=new THREE.Mesh(_spVertGeo,_spVertMat);
+_spVert.position.y=2.5;_storePortalGroup.add(_spVert);
+const _spDiscGeo=new THREE.CircleGeometry(2.3,32);
+const _spDiscMat=new THREE.MeshBasicMaterial({color:0x8833cc,transparent:true,opacity:0.15,side:THREE.DoubleSide});
+const _spDisc=new THREE.Mesh(_spDiscGeo,_spDiscMat);
+_spDisc.position.y=2.5;_storePortalGroup.add(_spDisc);
+const _spParticles=[];
+for(let i=0;i<8;i++){
+  const p=new THREE.Mesh(new THREE.SphereGeometry(0.08,4,4),new THREE.MeshBasicMaterial({color:0xdd88ff,transparent:true,opacity:0.7}));
+  _storePortalGroup.add(p);
+  _spParticles.push({mesh:p,angle:(i/8)*Math.PI*2,speed:1+Math.random()*0.5,radius:2.8});
+}
+const _spH=getH(_storePortalPos.x,_storePortalPos.z);
+_storePortalGroup.position.set(_storePortalPos.x,_spH+0.08,_storePortalPos.z);
+scene.add(_storePortalGroup);
+
 // Floating markers above enterable zones
 const zoneMarkers=[];
 for(const z of zoneManager.zones){
@@ -9102,6 +9132,28 @@ function updateZoneMarkers(){
     m.el.style.left=sx+'px';m.el.style.top=sy+'px';
     m.el.style.opacity=dist<10?'1':String(Math.max(0,1-(dist-10)/30));
   }
+}
+
+// Store portal floating marker
+const _spMarker=document.createElement('div');
+_spMarker.style.cssText='position:fixed;font-size:1.8em;pointer-events:none;z-index:5;text-shadow:0 0 12px rgba(170,68,255,0.8);opacity:0;transition:opacity 0.3s;text-align:center';
+_spMarker.innerHTML='\uD83C\uDF00<span style="font-size:0.45em;display:block;color:#cc88ff;text-align:center">'+(isMobile?'ENTER':'[E]')+'</span><span style="font-size:0.35em;display:block;color:#aa88cc">STORE PORTAL</span>';
+document.body.appendChild(_spMarker);
+function updateStorePortalMarker(){
+  const dx=_storePortalPos.x-P.x,dz=_storePortalPos.z-P.z;
+  const dist2=dx*dx+dz*dz;
+  if(dist2>2500){_spMarker.style.opacity='0';return}
+  const h=getH(_storePortalPos.x,_storePortalPos.z);
+  _zmVec.set(_storePortalPos.x,h+5,_storePortalPos.z);
+  const sp=_zmVec.project(cam);
+  if(sp.z>1||sp.z<-1){_spMarker.style.opacity='0';return}
+  const w2=innerWidth/2,h2=innerHeight/2;
+  const sx=sp.x*w2+w2,sy=-sp.y*h2+h2;
+  const marginX=innerWidth*.2,marginY=innerHeight*.2;
+  if(sx<marginX||sx>innerWidth-marginX||sy<marginY||sy>innerHeight-marginY){_spMarker.style.opacity='0';return}
+  const dist=Math.sqrt(dist2);
+  _spMarker.style.left=sx+'px';_spMarker.style.top=sy+'px';
+  _spMarker.style.opacity=dist<10?'1':String(Math.max(0,1-(dist-10)/30));
 }
 
 // ══════════════ INPUT ══════════════
@@ -9415,6 +9467,26 @@ function update(dt){
     }
     updateZoneMarkers();
   }
+  // Animate store portal
+  {
+    const t=clock.elapsedTime;
+    const dx=P.x-_storePortalPos.x,dz=P.z-_storePortalPos.z;
+    const d2=dx*dx+dz*dz;
+    _storePortalGroup.visible=d2<40000;
+    if(_storePortalGroup.visible){
+      const pulse=0.4+Math.sin(t*2)*0.25;
+      _spRingMat.opacity=pulse;_spInnerMat.opacity=pulse*0.3;
+      _spVertMat.opacity=0.3+Math.sin(t*1.5)*0.2;
+      _spDiscMat.opacity=0.1+Math.sin(t*2.5)*0.08;
+      _spVert.rotation.y=t*0.5;_spDisc.rotation.y=t*0.5;
+      for(const pp of _spParticles){
+        pp.angle+=pp.speed*0.02;
+        pp.mesh.position.set(Math.cos(pp.angle)*pp.radius,2.5+Math.sin(pp.angle*2)*1,Math.sin(pp.angle)*pp.radius);
+        pp.mesh.material.opacity=0.4+Math.sin(t*3+pp.angle)*0.3;
+      }
+    }
+    updateStorePortalMarker();
+  }
 
   const tH=getH(P.x,P.z),sH=getSurfaceH(P.x,P.z),gH=Math.max(tH,sH);
   engineOn=false;
@@ -9435,7 +9507,16 @@ function update(dt){
     fJust=false;
     if(isFlying&&!currentVeh){isFlying=false;V.y=Math.min(V.y,0)}
     else if(currentVeh)dismountVehicle();
-    else{const nv=nearestVehicle();if(nv)mountVehicle(nv)}
+    else{
+      const _spDx=P.x-_storePortalPos.x,_spDz=P.z-_storePortalPos.z;
+      if(_spDx*_spDx+_spDz*_spDz<25){
+        showTip('Entering the Game Store...');
+        fetch('/api/store/random-slug').then(r=>r.json()).then(d=>{
+          if(d.share_slug)window.location.href='/shared/'+d.share_slug;
+          else showTip('No published games yet!');
+        }).catch(()=>showTip('No published games yet!'));
+      }else{const nv=nearestVehicle();if(nv)mountVehicle(nv)}
+    }
   }
   fJust=false;
 

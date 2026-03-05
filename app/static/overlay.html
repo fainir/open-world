@@ -24,6 +24,14 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
 :fullscreen #ow-fs-btn svg.fs-enter,:-webkit-full-screen #ow-fs-btn svg.fs-enter{display:none}
 :fullscreen #ow-fs-btn svg.fs-exit,:-webkit-full-screen #ow-fs-btn svg.fs-exit{display:block}
 #ow-fs-btn svg.fs-exit{display:none}
+#ow-vdrop-btn{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;
+  height:34px;border-radius:10px;pointer-events:all;
+  background:linear-gradient(135deg,rgba(124,58,237,.55),rgba(168,85,247,.45));
+  border:1px solid rgba(168,85,247,.35);cursor:pointer;color:#e0d4fc;
+  display:flex;align-items:center;gap:6px;padding:0 14px;
+  font-size:13px;font-family:'Inter',-apple-system,sans-serif;font-weight:500;transition:opacity .15s;white-space:nowrap}
+#ow-vdrop-btn:hover{opacity:.85}
+#ow-vdrop-btn svg{width:12px;height:12px;flex-shrink:0}
 
 #ow-panel{position:fixed;top:0;right:0;bottom:0;width:300px;max-width:90vw;z-index:9998;
   background:rgba(12,15,22,.97);border-left:1px solid rgba(80,90,110,.3);
@@ -175,17 +183,51 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
 #ow-new-version .ow-nv-dismiss{background:none;border:none;color:#4b5563;cursor:pointer;font-size:16px;padding:0 4px}
 #ow-new-version .ow-nv-dismiss:hover{color:#e8ecf0}
 
+.ow-store-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ow-store-header h3{margin:0;flex:1}
+.ow-store-sort{display:flex;gap:4px}
+.ow-store-sort button{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;color:#6b7280;cursor:pointer;font-size:12px;font-family:inherit;padding:4px 10px}
+.ow-store-sort button.ow-active{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#e8ecf0}
+.ow-store-random{width:100%;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;
+  color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;
+  font-family:inherit;font-weight:500;transition:opacity .15s;margin-bottom:12px}
+.ow-store-random:hover{opacity:.85}
+.ow-store-grid{display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;padding-right:4px}
+.ow-store-grid::-webkit-scrollbar{width:5px}
+.ow-store-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+.ow-store-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:12px;transition:all .15s}
+.ow-store-card:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15)}
+.ow-store-card-title{font-size:14px;color:#e8ecf0;margin-bottom:4px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.ow-store-card-author{font-size:11px;color:#6b7280;margin-bottom:8px}
+.ow-store-card-footer{display:flex;align-items:center;gap:8px}
+.ow-store-star{background:none;border:1px solid rgba(255,255,255,.1);border-radius:6px;
+  color:#9ca3af;padding:4px 8px;cursor:pointer;font-size:12px;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:4px}
+.ow-store-star:hover{border-color:rgba(255,200,0,.4);color:#fbbf24}
+.ow-store-star.ow-starred{border-color:rgba(255,200,0,.3);color:#fbbf24}
+.ow-store-play{background:#e0e4ea;border:none;border-radius:6px;color:#111;
+  padding:4px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;margin-left:auto}
+.ow-store-play:hover{background:#fff}
+.ow-store-empty{text-align:center;padding:30px;color:#6b7280;font-size:13px}
+.ow-store-more{width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;color:#9ca3af;cursor:pointer;font-size:12px;font-family:inherit;margin-top:8px}
+.ow-store-more:hover{background:rgba(255,255,255,.1);color:#e8ecf0}
+
 @media(max-width:600px){
   #ow-panel{width:100%;max-width:100%}
   #ow-game-container.ow-pushed{width:0;overflow:hidden}
   #ow-fab{top:8px;right:8px;width:34px;height:34px}
   #ow-fs-btn{top:8px;left:8px;width:34px;height:34px}
+  #ow-vdrop-btn{height:28px;font-size:11px;padding:0 10px}
 }
 
 </style>
 
 <div id="ow-overlay-root">
   <button id="ow-fs-btn" title="Fullscreen"><svg class="fs-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><svg class="fs-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg></button>
+  <button id="ow-vdrop-btn" title="Game Store">&#127922; Open World <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <button id="ow-fab" title="Edit this game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
   <div id="ow-panel">
     <div class="ow-header">
@@ -193,6 +235,7 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
       <div class="ow-hdr-btns">
         <button class="ow-hdr-btn" id="ow-btn-apikey" title="API Key" style="font-size:14px;padding:4px 8px">&#128273;</button>
         <button class="ow-hdr-btn" id="ow-btn-versions">Versions</button>
+        <button class="ow-hdr-btn" id="ow-btn-store" style="background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(168,85,247,.3));border-color:rgba(168,85,247,.3)">Store</button>
         <button class="ow-hdr-btn" id="ow-btn-auth">Sign In</button>
         <button class="ow-close" id="ow-panel-close">&times;</button>
       </div>
@@ -292,6 +335,23 @@ mixpanel.init('a12752f5e0abb12e54eadce05936561a',{track_pageview:true,persistenc
         <button class="ow-share-copy" id="ow-share-copy-btn">Copy</button>
       </div>
       <div class="ow-share-copied" id="ow-share-copied">Copied to clipboard!</div>
+    </div>
+  </div>
+
+  <!-- Store Modal -->
+  <div class="ow-modal-overlay" id="ow-store-modal">
+    <div class="ow-modal" style="max-width:540px">
+      <button class="ow-modal-close" id="ow-store-close">&times;</button>
+      <div class="ow-store-header">
+        <h3>Game Store</h3>
+        <div class="ow-store-sort">
+          <button class="ow-active" data-sort="recent">Recent</button>
+          <button data-sort="stars">Top Starred</button>
+        </div>
+      </div>
+      <button class="ow-store-random" id="ow-store-random">&#127922; Random Game</button>
+      <div class="ow-store-grid" id="ow-store-grid"></div>
+      <button class="ow-store-more" id="ow-store-more" style="display:none">Load More</button>
     </div>
   </div>
 
@@ -405,6 +465,19 @@ function closePanel(){
 fab.addEventListener('touchstart',(e)=>{e.stopPropagation()},{passive:false});
 fab.onclick=(e)=>{e.stopPropagation();panelOpen?closePanel():openPanel()};
 $('ow-panel-close').onclick=closePanel;
+
+// ── Store button (centered) ──
+const vdropBtn=$('ow-vdrop-btn');
+const chevronSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+function setDropLabel(t){vdropBtn.innerHTML=escHtml(t)+' '+chevronSvg}
+vdropBtn.addEventListener('touchstart',(e)=>{e.stopPropagation()},{passive:false});
+vdropBtn.onclick=(e)=>{e.stopPropagation();openStore();};
+// Set label from current version
+if(currentVersionId){
+  fetch('/api/versions/info/'+currentVersionId).then(r=>r.ok?r.json():null).then(d=>{
+    if(d&&(d.publish_title||d.description))setDropLabel(d.publish_title||d.description);
+  }).catch(()=>{});
+}
 
 // ── Fullscreen toggle ──
 const fsBtn=$('ow-fs-btn');
@@ -583,6 +656,7 @@ function addAssistantMsg(desc,versionId,versionNum){
     html+='<div class="ow-msg-actions">';
     html+='<button class="ow-msg-action" data-share="'+versionId+'">Share</button>';
     html+='<button class="ow-msg-action" data-suggest="'+versionId+'">Suggest to Game</button>';
+    html+='<button class="ow-msg-action" data-publish="'+versionId+'" style="background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(168,85,247,.2));border-color:rgba(168,85,247,.3);color:#c4b5fd">Publish</button>';
     html+='</div>';
   }
   el.innerHTML=html;msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
@@ -591,6 +665,8 @@ function addAssistantMsg(desc,versionId,versionNum){
   if(shareBtn)shareBtn.onclick=()=>handleShare(versionId,shareBtn);
   const suggestBtn=el.querySelector('[data-suggest]');
   if(suggestBtn)suggestBtn.onclick=()=>handleSuggest(versionId,suggestBtn);
+  const publishBtn=el.querySelector('[data-publish]');
+  if(publishBtn)publishBtn.onclick=()=>handlePublish(versionId,publishBtn);
   return el;
 }
 
@@ -640,6 +716,21 @@ async function handleSuggest(versionId,btn){
   }catch(e){showToast('Error: '+e.message)}
 }
 
+async function handlePublish(versionId,btn){
+  if(!Auth.isLoggedIn()){$('ow-auth-modal').classList.add('ow-show');return}
+  const title=prompt('Give your published game a title (optional):');
+  if(title===null)return;
+  try{
+    const r=await fetch('/api/versions/publish',{method:'POST',
+      headers:{'Content-Type':'application/json',...Auth.headers()},
+      body:JSON.stringify({version_id:versionId,title:title||null})});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||'Publish failed');
+    if(d.status==='already_published'){btn.textContent='Published';btn.disabled=true;btn.style.color='#a78bfa'}
+    else{btn.textContent='Published!';btn.disabled=true;btn.style.color='#a78bfa';
+      showToast('Published to Store!');mp('Version Published')}
+  }catch(e){showToast('Error: '+e.message)}
+}
+
 $('ow-share-close').onclick=()=>$('ow-share-modal').classList.remove('ow-show');
 $('ow-share-copy-btn').onclick=()=>{
   const inp=$('ow-share-link');inp.select();
@@ -672,7 +763,8 @@ async function showVersionsModal(){
       return '<div class="ow-ver-item'+(isActive?' ow-active':'')+'" data-vid="'+v.id+'" data-vnum="'+v.version_number+'">'+
         '<div class="ow-ver-num">'+(v.version_number===0?'Base':'v'+v.version_number)+'</div>'+
         '<div class="ow-ver-info"><div class="ow-ver-desc">'+escHtml(v.description)+'</div><div class="ow-ver-time">'+time+'</div></div>'+
-        '<div>'+(isActive?'<span class="ow-ver-badge ow-active-badge">Active</span>':'<button class="ow-hdr-btn" style="font-size:11px">Use</button>')+'</div>'+
+        '<div>'+(isActive?'<span class="ow-ver-badge ow-active-badge">Active</span>':'<button class="ow-hdr-btn" style="font-size:11px">Use</button>')+
+        (v.is_published?'<span class="ow-ver-badge" style="background:rgba(168,85,247,.2);color:#a78bfa;margin-left:4px">Published</span>':'')+'</div>'+
         '</div>';
     }).join('');
     list.querySelectorAll('.ow-ver-item').forEach(item=>{
@@ -721,6 +813,100 @@ function updateAuthUI(){
   const btn=$('ow-btn-auth');
   if(Auth.isLoggedIn()){const u=Auth.getUser();btn.textContent=u?u.username:'Logout'}
   else btn.textContent='Sign In';
+}
+
+// ── Store Modal ──
+$('ow-btn-store').onclick=()=>openStore();
+$('ow-store-close').onclick=()=>$('ow-store-modal').classList.remove('ow-show');
+
+let storeSort='recent',storePage=0;
+const storeSortBtns=$('ow-store-modal').querySelectorAll('.ow-store-sort button');
+storeSortBtns.forEach(btn=>{
+  btn.onclick=()=>{
+    storeSortBtns.forEach(b=>b.classList.remove('ow-active'));
+    btn.classList.add('ow-active');
+    storeSort=btn.dataset.sort;storePage=0;
+    loadStore(true);
+  }
+});
+
+$('ow-store-random').onclick=()=>{
+  mp('Store Random Click');
+  window.location.href='/api/store/random';
+};
+
+$('ow-store-more').onclick=()=>{storePage++;loadStore(false)};
+
+async function openStore(){
+  storePage=0;
+  $('ow-store-modal').classList.add('ow-show');
+  loadStore(true);
+  mp('Store Opened');
+}
+
+async function loadStore(clear){
+  const grid=$('ow-store-grid');
+  const moreBtn=$('ow-store-more');
+  if(clear)grid.innerHTML='<p class="ow-store-empty">Loading...</p>';
+  try{
+    const headers={...Auth.headers()};
+    const r=await fetch('/api/store/versions?sort='+storeSort+'&page='+storePage+'&limit=20',{headers});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||'Failed to load store');
+    if(clear)grid.innerHTML='';
+    if(!d.versions.length&&clear){
+      grid.innerHTML='<p class="ow-store-empty">No published games yet. Be the first to publish!</p>';
+      moreBtn.style.display='none';return;
+    }
+    d.versions.forEach(v=>{
+      const card=document.createElement('div');card.className='ow-store-card';
+      card.innerHTML=
+        '<div class="ow-store-card-title">'+escHtml(v.title||v.description)+'</div>'+
+        '<div class="ow-store-card-author">by '+escHtml(v.username)+' &middot; '+
+          (v.published_at?new Date(v.published_at).toLocaleDateString():'')+'</div>'+
+        '<div class="ow-store-card-footer">'+
+          '<button class="ow-store-star'+(v.starred_by_me?' ow-starred':'')+'" data-vid="'+v.id+'">'+
+            (v.starred_by_me?'&#9733;':'&#9734;')+' <span>'+v.star_count+'</span></button>'+
+          '<button class="ow-store-play" data-slug="'+v.share_slug+'">Play</button>'+
+        '</div>';
+      const starBtn=card.querySelector('.ow-store-star');
+      starBtn.onclick=async()=>{
+        if(!Auth.isLoggedIn()){$('ow-auth-modal').classList.add('ow-show');return}
+        try{
+          const sr=await fetch('/api/store/star/'+v.id,{method:'POST',headers:{'Content-Type':'application/json',...Auth.headers()}});
+          const sd=await sr.json();if(!sr.ok)throw new Error(sd.detail||'Star failed');
+          starBtn.querySelector('span').textContent=sd.star_count;
+          if(sd.status==='starred'){starBtn.classList.add('ow-starred');starBtn.innerHTML='&#9733; <span>'+sd.star_count+'</span>';mp('Version Starred')}
+          else{starBtn.classList.remove('ow-starred');starBtn.innerHTML='&#9734; <span>'+sd.star_count+'</span>';mp('Version Unstarred')}
+        }catch(e){showToast('Error: '+e.message)}
+      };
+      card.querySelector('.ow-store-play').onclick=()=>{
+        mp('Store Play Click',{id:v.id});
+        setDropLabel(v.title||v.description);
+        $('ow-store-modal').classList.remove('ow-show');
+        localStorage.removeItem(SK.SESSION);
+        window.location.href='/v/'+v.id;
+      };
+      grid.appendChild(card);
+    });
+    // Base game link at bottom (only on first page)
+    if(clear){
+      const base=document.createElement('div');base.className='ow-store-card';
+      base.style.borderColor='rgba(255,255,255,.15)';
+      base.innerHTML='<div class="ow-store-card-title">&#127758; Open World (Main Version)</div>'+
+        '<div class="ow-store-card-author">Base game</div>'+
+        '<div class="ow-store-card-footer"><button class="ow-store-play">Play</button></div>';
+      base.querySelector('.ow-store-play').onclick=()=>{
+        setDropLabel('Open World');
+        $('ow-store-modal').classList.remove('ow-show');
+        localStorage.removeItem(SK.SESSION);
+        window.location.href='/';
+      };
+      grid.appendChild(base);
+    }
+    moreBtn.style.display=(storePage+1)*20<d.total?'block':'none';
+  }catch(e){
+    if(clear)grid.innerHTML='<p class="ow-store-empty" style="color:#f87171">Error loading store</p>';
+  }
 }
 
 // ── Chat history persistence ──

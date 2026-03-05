@@ -1,0 +1,4 @@
+# Best Agent local overrides
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/logs/

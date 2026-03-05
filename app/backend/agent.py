@@ -11,7 +11,9 @@ from app.backend.models import GameVersion, ChatMessage, ChatSession
 
 _default_versions = os.path.join(os.path.dirname(os.path.dirname(__file__)), "versions")
 VERSIONS_DIR = os.environ.get("VERSIONS_DIR", _default_versions)
-BASE_GAME_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "index.html")
+BASE_GAME_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "index.html"
+)
 os.makedirs(VERSIONS_DIR, exist_ok=True)
 
 SYSTEM_PROMPT = """You are an expert game developer assistant. You modify an Open World 3D browser game built with Three.js.
@@ -240,30 +242,36 @@ def _minify_game_code(code: str) -> str:
     The game code is ~430KB which can exceed the 200K token API limit.
     This strips ~40% of tokens while preserving all functional code.
     """
+
     # 1. Collapse CSS <style> block to a single-line summary
     def _collapse_css(m: re.Match) -> str:
-        return '<style>\n/* [CSS styles - preserved in original, ~70 rules] */\n</style>'
-    code = re.sub(r'<style>(.*?)</style>', _collapse_css, code, count=1, flags=re.DOTALL)
+        return (
+            "<style>\n/* [CSS styles - preserved in original, ~70 rules] */\n</style>"
+        )
+
+    code = re.sub(
+        r"<style>(.*?)</style>", _collapse_css, code, count=1, flags=re.DOTALL
+    )
 
     # 2. Strip line-by-line
-    lines = code.split('\n')
+    lines = code.split("\n")
     out = []
     for line in lines:
         stripped = line.rstrip()
         if not stripped:
             continue
         # Skip full-line comments
-        if re.match(r'^\s*//', stripped):
+        if re.match(r"^\s*//", stripped):
             continue
         # Skip full-line decorative comments (═══, ───, etc.)
-        if re.match(r'^\s*/\*[\s═─*]+\*/', stripped):
+        if re.match(r"^\s*/\*[\s═─*]+\*/", stripped):
             continue
         # Remove trailing inline comments (but not URLs)
-        stripped = re.sub(r'(?<![:\'"=])\s*//[^"\']*$', '', stripped)
+        stripped = re.sub(r'(?<![:\'"=])\s*//[^"\']*$', "", stripped)
         # Collapse multiple spaces to single
-        stripped = re.sub(r'  +', ' ', stripped)
+        stripped = re.sub(r"  +", " ", stripped)
         out.append(stripped)
-    return '\n'.join(out)
+    return "\n".join(out)
 
 
 def run_agent(
@@ -292,11 +300,15 @@ def run_agent(
 
     # Build conversation history from session (limit to last 6 messages to save tokens)
     history = []
-    recent_messages = [m for m in session.messages if m.role in ("user", "assistant")][-6:]
+    recent_messages = [m for m in session.messages if m.role in ("user", "assistant")][
+        -6:
+    ]
     for msg in recent_messages:
         content = msg.content
         if msg.role == "assistant" and len(content) > 2000:
-            desc_match = re.search(r"<description>(.*?)</description>", content, re.DOTALL)
+            desc_match = re.search(
+                r"<description>(.*?)</description>", content, re.DOTALL
+            )
             if desc_match:
                 content = f"[Applied changes: {desc_match.group(1).strip()}]"
         history.append({"role": msg.role, "content": content})
@@ -351,7 +363,9 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
 
     # Apply SEARCH/REPLACE patches
     new_code = game_code
-    patches = re.findall(r"<<<SEARCH\n(.*?)\n===\n(.*?)\n>>>SEARCH", response_text, re.DOTALL)
+    patches = re.findall(
+        r"<<<SEARCH\n(.*?)\n===\n(.*?)\n>>>SEARCH", response_text, re.DOTALL
+    )
 
     if patches:
         for search_text, replace_text in patches:
@@ -367,10 +381,15 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
             }
     else:
         # Fallback: check if response contains full game code
-        code_match = re.search(r"<game_code>(.*?)</game_code>", response_text, re.DOTALL)
+        code_match = re.search(
+            r"<game_code>(.*?)</game_code>", response_text, re.DOTALL
+        )
         if code_match:
             new_code = code_match.group(1).strip()
-        elif "<!DOCTYPE html>" in response_text.lower() or "<html" in response_text.lower():
+        elif (
+            "<!DOCTYPE html>" in response_text.lower()
+            or "<html" in response_text.lower()
+        ):
             new_code = response_text.strip()
         else:
             return {
@@ -381,15 +400,20 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
             }
 
     # Extract description
-    desc_match = re.search(r"<description>(.*?)</description>", response_text, re.DOTALL)
+    desc_match = re.search(
+        r"<description>(.*?)</description>", response_text, re.DOTALL
+    )
     description = desc_match.group(1).strip() if desc_match else user_message
 
     # Extract suggestions
     suggestions = []
-    sugg_match = re.search(r"<suggestions>(.*?)</suggestions>", response_text, re.DOTALL)
+    sugg_match = re.search(
+        r"<suggestions>(.*?)</suggestions>", response_text, re.DOTALL
+    )
     if sugg_match:
         try:
             import json
+
             suggestions = json.loads(sugg_match.group(1).strip())
         except (json.JSONDecodeError, ValueError):
             # Parse as plain text lines
@@ -401,9 +425,7 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
 
     # Determine version number
     existing_versions = (
-        db.query(GameVersion)
-        .filter(GameVersion.session_id == session.id)
-        .count()
+        db.query(GameVersion).filter(GameVersion.session_id == session.id).count()
     )
     version_number = existing_versions + 1
 
@@ -456,19 +478,27 @@ def get_version_path(version_id: str, db: Session) -> Optional[str]:
     return os.path.join(VERSIONS_DIR, version.file_path)
 
 
-def create_initial_version(session_id: str, db: Session) -> GameVersion:
-    """Create the initial version (copy of base game) for a session."""
+def create_initial_version(
+    session_id: str, db: Session, source_path: str = None
+) -> GameVersion:
+    """Create the initial version for a session.
+
+    If source_path is provided (branching from a store version), copies that
+    file instead of the base game.
+    """
     version_id = str(uuid.uuid4())
     version_filename = f"{version_id}.html"
     version_path = os.path.join(VERSIONS_DIR, version_filename)
 
-    shutil.copy2(BASE_GAME_PATH, version_path)
+    src = source_path if source_path and os.path.exists(source_path) else BASE_GAME_PATH
+    shutil.copy2(src, version_path)
 
+    is_branch = source_path and os.path.exists(source_path)
     version = GameVersion(
         id=version_id,
         session_id=session_id,
         version_number=0,
-        description="Original game - base version",
+        description="Branched version" if is_branch else "Original game - base version",
         file_path=version_filename,
     )
     db.add(version)

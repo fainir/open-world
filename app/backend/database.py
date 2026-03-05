@@ -42,6 +42,9 @@ def _migrate(eng):
             ("reviewed_at", "DATETIME"),
             ("reviewed_by", "VARCHAR"),
             ("user_prompt", "TEXT"),
+            ("is_published", "BOOLEAN DEFAULT 0"),
+            ("published_at", "DATETIME"),
+            ("publish_title", "VARCHAR"),
         ],
     }
 
