@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.backend.database import Base
 
@@ -71,10 +71,24 @@ class GameVersion(Base):
     reviewed_at = Column(DateTime, nullable=True)
     reviewed_by = Column(String, ForeignKey("users.id"), nullable=True)
     user_prompt = Column(Text, nullable=True)  # The original user request
+    # Publishing system
+    is_published = Column(Boolean, default=False)
+    published_at = Column(DateTime, nullable=True)
+    publish_title = Column(String, nullable=True)
     created_at = Column(DateTime, default=_now)
 
     session = relationship("ChatSession", back_populates="versions")
     user = relationship("User", back_populates="versions", foreign_keys=[user_id])
+
+
+class Star(Base):
+    __tablename__ = "stars"
+    __table_args__ = (UniqueConstraint('user_id', 'version_id', name='uq_star_user_version'),)
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    version_id = Column(String, ForeignKey("game_versions.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=_now)
 
 
 class ContactMessage(Base):
