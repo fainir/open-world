@@ -268,15 +268,24 @@ const box=(w,h,d,c)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshS
 const cyl=(rt,rb,h,c,s=8)=>new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s),new THREE.MeshStandardMaterial({color:c,roughness:0.6}));
 
 // ══════════════ CONSTANTS ══════════════
-const CS=1500,CH=750,BK=42,ST=12,GRAV=26,WALK_SPD=8,RUN_SPD=22,JFORCE=14;
+const CS=1500,CH=750,BK=42,ST=12,GRAV=38,WALK_SPD=8,RUN_SPD=22,JFORCE=17;
+// ══════════════ PHYSICS TUNING ══════════════
+const PHY_ACCEL=50,PHY_DECEL=32,PHY_AIR_CTRL=0.22,PHY_COYOTE=0.12,PHY_JBUF=0.1;
+const PHY_JHOLD_G=0.42,PHY_LAND_SPD=10,PHY_SLIDE_ANG=0.65,PHY_SLOPE_PUSH=20;
 
 // ══════════════ STATE ══════════════
 const keys={};let yaw=Math.PI,pitch=0,locked=false,boostFuel=100,score=0,comboCount=0,comboTimer=0;
 const P=new THREE.Vector3(0,2,0),V=new THREE.Vector3();
 let onGround=true,isFlying=false,mode='walk',currentVeh=null,climbing=false,climbBldg=null;
+// Momentum & advanced jump state
+const hVel=new THREE.Vector2(0,0);let coyoteT=0,jBufT=0,jumpHeld=false,landImpact=0;
 let trickActive=false,trickTimer=0,trickDur=0,trickName='',trickRot=new THREE.Euler();
 let fightShake=0,fightHitNPC=false;
 let spaceJust=false,fJust=false;
+// ══════════════ ANIMATION ══════════════
+const anim={state:'idle',lAx:0,rAx:0,lLx:0,rLx:0,bdx:0,bdy:0,bdz:0,hipY:0,
+  bodyLeanX:0,bodyLeanZ:0,slopeTiltX:0,slopeTiltZ:0,camBobY:0,camBobX:0,
+  prevYaw:Math.PI,turnRate:0,landTimer:0,breathPhase:0};
 // Weapons state
 let currentWeapon='minigun',fireCooldown=0,wpnMenuOpen=false,shooting=false;
 const weaponAmmo={pistol:Infinity,shotgun:Infinity,rifle:Infinity,rocket:Infinity,minigun:Infinity,
@@ -366,6 +375,22 @@ function getH(x,z){
   // Far north hills (z > 2000)
   let fnh=0;if(z>2000){const d=clamp((z-2000)/600,0,1.2);fnh=fbm(x*0.004+3,z*0.004+3,4)*28*d+Math.sin(x*.006)*10*d}
   return lerp(mt+bc+ds+nh+sk+lg+rv+fnh+fbm(x*0.007,z*0.007,3)*3,0,cityB);
+}
+// Terrain normal via finite differences (for slope physics)
+function getTerrainN(x,z){
+  const e=0.5,hC=getH(x,z),hR=getH(x+e,z),hF=getH(x,z+e);
+  const nx=(hC-hR)/e,nz=(hC-hF)/e,len=Math.sqrt(nx*nx+1+nz*nz);
+  return{x:nx/len,y:1/len,z:nz/len};
+}
+// Surface friction: 1=grippy concrete, 0.15=slippery snow, 0.6=sand
+function getSurfFriction(x,z){
+  if(isOnWater(x))return 0.02;
+  const h=getH(x,z);
+  if(h>25&&x<-CH+100)return 0.18; // snow
+  if(z<-CH)return 0.55; // desert sand
+  if(x>CH-30&&h<3)return 0.5; // beach sand
+  if(Math.abs(x)<CH+20&&Math.abs(z)<CH+20)return 1.0; // city
+  return 0.82; // grass
 }
 const tG=new THREE.PlaneGeometry(10000,10000,220,220);tG.rotateX(-Math.PI/2);
 const tP=tG.attributes.position,tC=new Float32Array(tP.count*3);
@@ -9418,7 +9443,7 @@ const rideOnVeh={
 function mountVehicle(v){
   v.occupied=true;currentVeh=v;mode='vehicle';v.speed=0;
   P.copy(v.mesh.position);
-  V.set(0,0,0);onGround=true;isFlying=false;
+  V.set(0,0,0);hVel.set(0,0);onGround=true;isFlying=false;
   // Vehicle meshes are rendered with yaw+PI/2, so undo the offset
   yaw=v.mesh.rotation.y-Math.PI/2;
   const riderInfo=rideOnVeh[v.type];
@@ -9428,17 +9453,112 @@ function mountVehicle(v){
 
 function dismountVehicle(){
   if(!currentVeh)return;
+  // Transfer vehicle momentum to character
+  const spd=currentVeh.speed,ff=fwd();
   currentVeh.occupied=false;
   charG.visible=true;
   P.set(currentVeh.mesh.position.x+2,currentVeh.mesh.position.y+1,currentVeh.mesh.position.z);
-  V.set(0,0,0);currentVeh=null;mode='walk';isFlying=false;
+  // Carry momentum: half forward speed + slight upward pop if fast
+  hVel.set(ff.x*spd*0.5,ff.z*spd*0.5);
+  V.set(0,Math.abs(spd)>15?spd*0.12:0,0);
+  currentVeh=null;mode='walk';isFlying=false;
 }
 
 // ══════════════ HELPERS ══════════════
 function fwd(){return new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw))}
 function rgt(){const f=fwd();return new THREE.Vector3(f.z,0,-f.x)}
 function flyFwd(){return new THREE.Vector3(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)).normalize()}
-let walkBob=0,engineOn=false,aimMode=false,aimTimer=0,aimBlend=0,camBlend=0;
+let walkBob=0,engineOn=false,aimMode=false,aimTimer=0,aimBlend=0,camBlend=0,camRoll=0;
+
+// ══════════════ PROCEDURAL ANIMATION ══════════════
+function updateAnimState(dt){
+  const spd=hVel.length();
+  if(!onGround&&!climbing){
+    if(V.y>3)anim.state='jumpAscend';
+    else if(V.y>-3)anim.state='jumpApex';
+    else anim.state='jumpDescend';
+  }else if(landImpact>0.15){
+    anim.state='land';anim.landTimer=landImpact;
+  }else if(anim.state==='land'){
+    anim.landTimer-=dt*3;
+    if(anim.landTimer<=0)anim.state=spd>1?(spd>12?'run':'walk'):'idle';
+  }else if(spd>12){anim.state='run';
+  }else if(spd>0.5){anim.state='walk';
+  }else{anim.state='idle'}
+  let dy=yaw-anim.prevYaw;
+  if(dy>Math.PI)dy-=Math.PI*2;
+  if(dy<-Math.PI)dy+=Math.PI*2;
+  anim.turnRate+=(dy/Math.max(dt,0.001)-anim.turnRate)*Math.min(8*dt,1);
+  anim.prevYaw=yaw;
+}
+function computeGaitTargets(spd,phase){
+  const rf=clamp((spd-WALK_SPD)/(RUN_SPD-WALK_SPD),0,1);
+  const sf=clamp(spd/RUN_SPD,0,1);
+  const raw=Math.sin(phase);
+  const asym=raw+0.3*Math.sin(2*phase)*rf;
+  const legA=lerp(0.45,0.7,rf),armA=lerp(0.35,0.55,rf);
+  const hipA=lerp(0.025,0.04,rf),twistA=lerp(0.06,0.12,rf);
+  return{lLx:-asym*legA*sf,rLx:asym*legA*sf,
+    lAx:asym*armA*sf,rAx:-asym*armA*sf,
+    hipY:-Math.abs(Math.sin(phase))*hipA*sf,
+    bdx:lerp(0.04,0.15,sf),bdy:Math.sin(phase)*twistA*sf,bdz:0};
+}
+function computeIdleTargets(dt){
+  anim.breathPhase+=dt*1.57;
+  const b=Math.sin(anim.breathPhase);
+  return{lLx:0,rLx:0,
+    lAx:Math.sin(anim.breathPhase*0.5)*0.02,
+    rAx:-Math.sin(anim.breathPhase*0.5)*0.02,
+    hipY:b*0.015,bdx:0,bdy:0,bdz:Math.sin(anim.breathPhase*0.37)*0.01};
+}
+function computeJumpTargets(){
+  const s=anim.state;
+  if(s==='jumpAscend')return{lAx:-1.2,rAx:-1.2,lLx:0.15,rLx:0.15,hipY:0.03,bdx:-0.1,bdy:0,bdz:0};
+  if(s==='jumpApex')return{lAx:-0.6,rAx:-0.6,lLx:0.3,rLx:0.3,hipY:0,bdx:0,bdy:0,bdz:0};
+  if(s==='jumpDescend')return{lAx:-0.4,rAx:-0.4,lLx:-0.5,rLx:-0.5,hipY:-0.02,bdx:0.1,bdy:0,bdz:0};
+  const t=anim.landTimer;
+  return{lAx:-0.3*t,rAx:-0.3*t,lLx:0.6*t,rLx:0.6*t,hipY:-0.08*t,bdx:0.2*t,bdy:0,bdz:0};
+}
+function updateBodyDynamics(dt){
+  const spd=hVel.length(),sf=clamp(spd/RUN_SPD,0,1);
+  anim.bodyLeanX+=(clamp(spd*0.007,0,0.18)-anim.bodyLeanX)*Math.min(6*dt,1);
+  anim.bodyLeanZ+=(clamp(anim.turnRate*0.015*sf,-0.12,0.12)-anim.bodyLeanZ)*Math.min(5*dt,1);
+  if(onGround){
+    const n=getTerrainN(P.x,P.z);
+    anim.slopeTiltX+=(-Math.asin(clamp(n.z,-1,1))*0.3-anim.slopeTiltX)*Math.min(4*dt,1);
+    anim.slopeTiltZ+=(Math.asin(clamp(n.x,-1,1))*0.3-anim.slopeTiltZ)*Math.min(4*dt,1);
+  }else{
+    anim.slopeTiltX*=1-Math.min(3*dt,1);
+    anim.slopeTiltZ*=1-Math.min(3*dt,1);
+  }
+}
+function applyCharAnimation(dt){
+  updateAnimState(dt);
+  updateBodyDynamics(dt);
+  let tg;
+  if(anim.state==='idle')tg=computeIdleTargets(dt);
+  else if(anim.state==='walk'||anim.state==='run')tg=computeGaitTargets(hVel.length(),walkBob);
+  else tg=computeJumpTargets();
+  const br=anim.state==='land'?12:(anim.state==='idle'?4:10);
+  const t=Math.min(br*dt,1);
+  anim.lAx+=(tg.lAx-anim.lAx)*t;anim.rAx+=(tg.rAx-anim.rAx)*t;
+  anim.lLx+=(tg.lLx-anim.lLx)*t;anim.rLx+=(tg.rLx-anim.rLx)*t;
+  anim.hipY+=(tg.hipY-anim.hipY)*t;
+  anim.bdx+=(tg.bdx-anim.bdx)*t;anim.bdy+=(tg.bdy-anim.bdy)*t;anim.bdz+=(tg.bdz-anim.bdz)*t;
+  const tbx=anim.bdx+anim.bodyLeanX+anim.slopeTiltX;
+  const tbz=anim.bdz+anim.bodyLeanZ+anim.slopeTiltZ;
+  charG.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
+  charG.position.y+=anim.hipY;
+  bdM.rotation.set(tbx,anim.bdy,tbz);
+  lA.position.set(-.35,1,0);rA.position.set(.35,1,0);
+  lA.rotation.set(anim.lAx,0,0);rA.rotation.set(anim.rAx,0,0);
+  lL.position.set(-.13,.35,0);rL.position.set(.13,.35,0);
+  lL.rotation.set(anim.lLx,0,0);rL.rotation.set(anim.rLx,0,0);
+  const lby=0.35-0.275*Math.cos(anim.lLx),lbz=-0.275*Math.sin(anim.lLx);
+  const rby=0.35-0.275*Math.cos(anim.rLx),rbz=-0.275*Math.sin(anim.rLx);
+  lb.position.set(-.13,lby-0.02,lbz+0.03);lb.rotation.x=anim.lLx;
+  rb.position.set(.13,rby-0.02,rbz+0.03);rb.rotation.x=anim.rLx;
+}
 
 // ══════════════ GAME UPDATE ══════════════
 function update(dt){
@@ -9595,40 +9715,94 @@ function update(dt){
         const cosR=Math.cos(r.ry),sinR=Math.sin(r.ry);
         const lz=dx*sinR+dz*cosR;
         if(lz<=-2.5*r.sc){
-          const spd=currentVeh?Math.abs(currentVeh.speed):V.length();
+          const spd=currentVeh?Math.abs(currentVeh.speed):Math.max(hVel.length(),V.length());
           if(spd>3&&V.y<=1){V.y=Math.max(V.y,r.launch*(spd/30));onGround=false;}}}}
     for(const t of trampolines){const dx=P.x-t.x,dz=P.z-t.z;if(Math.sqrt(dx*dx+dz*dz)<t.r&&P.y<t.baseH+1*t.sc){
       V.y=t.bounce;onGround=false;}}
   };
 
-  // ═══ WALKING ═══
+  // ═══ WALKING (momentum-based) ═══
   if(mode==='walk'&&!isFlying){
-    // Left/Right turn the camera
     if(kL())yaw+=2.5*dt;
     if(kR())yaw-=2.5*dt;
     const isRunning=keys['ShiftLeft']||keys['ShiftRight'];
-    const spd=isRunning?RUN_SPD:WALK_SPD;
-    const mv=new THREE.Vector3();
-    if(kU())mv.add(fwd());if(kD())mv.sub(fwd());
-    // Wall climbing detection (colBldgY = height-aware: allows walking on rooftops)
+    const maxSpd=isRunning?RUN_SPD:WALK_SPD;
+
+    // Desired move direction from input
+    const dir=new THREE.Vector3();
+    if(kU())dir.add(fwd());if(kD())dir.sub(fwd());
+    const hasInput=dir.lengthSq()>0;
+    if(hasInput)dir.normalize();
+
+    // Terrain slope & surface
+    const tN=getTerrainN(P.x,P.z);
+    const slopeY=tN.y; // 1=flat, 0=wall
+    const fric=getSurfFriction(P.x,P.z);
+
+    // Slope push: gravity projected onto slope surface
+    let slopeX=0,slopeZ=0;
+    if(slopeY<0.97&&onGround){
+      slopeX=tN.x*PHY_SLOPE_PUSH*(1-slopeY);
+      slopeZ=tN.z*PHY_SLOPE_PUSH*(1-slopeY);
+    }
+
+    // Acceleration (reduced in air for limited air control)
+    const accelMul=onGround?1:PHY_AIR_CTRL;
+    const curAccel=PHY_ACCEL*accelMul*fric;
+
+    if(hasInput){
+      hVel.x+=(dir.x*curAccel+slopeX)*dt;
+      hVel.y+=(dir.z*curAccel+slopeZ)*dt;
+      const hSpd=hVel.length();
+      const slopeBonus=Math.max(0,(1-slopeY)*10);
+      if(hSpd>maxSpd+slopeBonus)hVel.multiplyScalar((maxSpd+slopeBonus)/hSpd);
+    } else if(onGround){
+      // Friction deceleration when no input
+      const hSpd=hVel.length();
+      if(hSpd>0.1){
+        const dec=PHY_DECEL*fric*dt;
+        hVel.multiplyScalar(Math.max(0,hSpd-dec)/hSpd);
+      } else hVel.set(0,0);
+      // Slope slide even with no input
+      hVel.x+=slopeX*dt;hVel.y+=slopeZ*dt;
+    } else {
+      // Air drag (very mild — preserves momentum while airborne)
+      hVel.multiplyScalar(Math.pow(0.994,dt*60));
+    }
+
+    // Steep slope slide (can't stand on cliffs)
+    if(onGround&&slopeY<PHY_SLIDE_ANG){
+      hVel.x+=tN.x*45*dt;hVel.y+=tN.z*45*dt;
+      // Cap slide speed so steep slopes don't launch player to infinity
+      const slideSpd=hVel.length();
+      if(slideSpd>maxSpd*1.8)hVel.multiplyScalar(maxSpd*1.8/slideSpd);
+    }
+
+    // Apply horizontal velocity
+    const mx=hVel.x*dt,mz=hVel.y*dt;
     let wallHit=null,movingFwd=kU();
-    if(mv.lengthSq()>0){mv.normalize().multiplyScalar(spd*dt);
-      let nx=P.x+mv.x,nz=P.z+mv.z;
+    if(mx!==0||mz!==0){
+      let nx=P.x+mx,nz=P.z+mz;
       const bx=colBldgY(nx,P.z,P.y),bz=colBldgY(P.x,nz,P.y);
-      if(bx)wallHit=bx;
+      if(bx){wallHit=bx;hVel.x*=-0.05} // wall bounce dampening
       else P.x=nx;
-      if(bz)wallHit=wallHit||bz;
+      if(bz){wallHit=wallHit||bz;hVel.y*=-0.05}
       else P.z=nz;
-      walkBob+=dt*(isRunning?12:5)}
-    // Climbing: if pressing forward into a wall and player is below building top
+      // Walk bob driven by actual speed
+      const actualSpd=hVel.length();
+      if(actualSpd>0.5){walkBob+=dt*(actualSpd>15?12:actualSpd>5?8:4);
+        // Running dust particles (sparse, only on non-city terrain)
+        if(onGround&&actualSpd>14&&Math.random()<dt*4){
+          emit(new THREE.Vector3(P.x+(Math.random()-.5),P.y+.05,P.z+(Math.random()-.5)),new THREE.Vector3((Math.random()-.5)*1.5,Math.random()*0.8,(Math.random()-.5)*1.5))}}
+    }
+
+    // Climbing (unchanged logic)
     if(wallHit&&movingFwd&&P.y<wallHit.h-1.5){
       if(!climbing){climbing=true;climbBldg=wallHit}
-      const climbSpd=keys['ShiftLeft']||keys['ShiftRight']?12:8;
+      const climbSpd=isRunning?12:8;
       V.y=0;P.y+=climbSpd*dt;onGround=false;
       if(P.y>=wallHit.h-1.5){
-        // Reached the top — vault onto roof
         P.y=wallHit.h;
-        // Push player slightly onto the roof so they don't fall off the edge
         const cx=(wallHit.minX+wallHit.maxX)/2,cz=(wallHit.minZ+wallHit.maxZ)/2;
         const toCenter=new THREE.Vector3(cx-P.x,0,cz-P.z);
         if(toCenter.length()>0.1)toCenter.normalize().multiplyScalar(1.2);
@@ -9637,19 +9811,69 @@ function update(dt){
     }else{
       if(climbing&&!wallHit){climbing=false;climbBldg=null}
     }
-    // Recalculate ground after movement
+
+    // Ground detection
     const wgH=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
     if(!climbing){
-      // Always snap up if below ground (prevents underground on steep terrain)
-      if(P.y<wgH){P.y=wgH;if(V.y<0)V.y=0;onGround=true}
-      else{onGround=P.y<=wgH+.15&&V.y<=0;if(onGround){P.y=wgH;V.y=0}}
+      if(P.y<wgH){
+        P.y=wgH;
+        // Landing impact scales with fall speed
+        if(V.y<-PHY_LAND_SPD*0.4){landImpact=clamp(-V.y/PHY_LAND_SPD,0,1);
+          hVel.multiplyScalar(1-landImpact*0.4); // hard landings kill momentum
+          // Dust particles on hard landing
+          if(landImpact>0.3){const n=Math.floor(landImpact*6);for(let li=0;li<n;li++)emit(new THREE.Vector3(P.x+(Math.random()-.5)*1.5,P.y+.1,P.z+(Math.random()-.5)*1.5),new THREE.Vector3((Math.random()-.5)*2,Math.random()*1.5,(Math.random()-.5)*2))}
+        }
+        V.y=0;onGround=true;
+      } else {
+        onGround=P.y<=wgH+.15&&V.y<=0;
+        if(onGround){P.y=wgH;V.y=0}
+      }
     }
-    if(spaceJust&&onGround){V.y=JFORCE;onGround=false;climbing=false;climbBldg=null;spaceJust=false}
-    if(spaceJust&&climbing){V.y=JFORCE*.6;climbing=false;climbBldg=null;onGround=false;spaceJust=false}
-    if(spaceJust&&!onGround&&!climbing&&P.y>wgH+1){isFlying=true;const s=Math.max(25,V.length());
+
+    // Coyote time: brief grace period after walking off edge
+    if(onGround)coyoteT=PHY_COYOTE;
+    else coyoteT=Math.max(0,coyoteT-dt);
+
+    // Jump buffer: press space slightly early and still jump on landing
+    if(spaceJust)jBufT=PHY_JBUF;
+    else jBufT=Math.max(0,jBufT-dt);
+
+    // Jump (with coyote time + buffer)
+    if(jBufT>0&&coyoteT>0&&!climbing){
+      V.y=JFORCE;onGround=false;climbing=false;climbBldg=null;
+      jumpHeld=true;coyoteT=0;jBufT=0;spaceJust=false;anim.state='jumpAscend';
+    }
+    if(spaceJust&&climbing){V.y=JFORCE*.6;climbing=false;climbBldg=null;onGround=false;spaceJust=false;anim.state='jumpAscend'}
+    // Wall jump: kick off walls when pressing into them while falling
+    if(spaceJust&&wallHit&&!onGround&&!climbing&&V.y<2&&P.y<wallHit.h-1.5&&coyoteT<=0){
+      V.y=JFORCE*0.7;
+      const wcx=(wallHit.minX+wallHit.maxX)/2,wcz=(wallHit.minZ+wallHit.maxZ)/2;
+      const pd=new THREE.Vector2(P.x-wcx,P.z-wcz);
+      if(pd.length()>0.1){pd.normalize();hVel.set(pd.x*9,pd.y*9)}
+      jumpHeld=true;coyoteT=0;jBufT=0;onGround=false;spaceJust=false;anim.state='jumpAscend';
+    }
+    if(spaceJust&&!onGround&&!climbing&&P.y>wgH+1){
+      isFlying=true;const s=Math.max(25,Math.sqrt(hVel.x*hVel.x+hVel.y*hVel.y+V.y*V.y));
       V.set(fwd().x*s,Math.max(V.y,2),fwd().z*s);showTip('Wingsuit! SHIFT=boost SPACE=rise');spaceJust=false}
     spaceJust=false;
-    if(!onGround&&!climbing){V.y-=GRAV*dt;P.y+=V.y*dt}
+
+    // Variable jump height: hold space = less gravity while rising
+    if(!keys['Space'])jumpHeld=false;
+    if(!onGround&&!climbing){
+      let gMul;
+      if(jumpHeld&&V.y>0)gMul=PHY_JHOLD_G; // holding jump: floaty ascent
+      else if(V.y>0)gMul=0.85; // released but rising: still light
+      else if(V.y>-3)gMul=0.5; // apex float zone: hang at peak
+      else gMul=1.35; // falling: snappy heavy descent
+      V.y-=GRAV*gMul*dt;
+      if(V.y<-50)V.y=-50;
+      P.y+=V.y*dt;
+    }
+
+    // Landing impact decay
+    if(landImpact>0)landImpact=Math.max(0,landImpact-dt*4);
+
+    // Final ground clamp
     if(P.y<wgH){P.y=wgH;V.y=0;onGround=true;climbing=false;climbBldg=null}
     checkRT();
   }
@@ -9666,7 +9890,7 @@ function update(dt){
     // Constant forward glide + extra thrust from speed
     const sf=25;
     V.add(ff.clone().multiplyScalar(sf*dt));
-    V.y-=GRAV*.35*dt;
+    V.y-=GRAV*.24*dt;
     const hs=Math.sqrt(V.x*V.x+V.z*V.z);V.y+=clamp(hs*.08,0,12)*dt;
     V.x*=Math.pow(.98,dt*60);V.z*=Math.pow(.98,dt*60);V.y*=Math.pow(.985,dt*60);
     // Boost
@@ -9677,22 +9901,41 @@ function update(dt){
     if(V.length()>160)V.setLength(160);
     P.add(V.clone().multiplyScalar(dt));
     const _flyGH=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
-    if(P.y<_flyGH+.5){P.y=_flyGH+.5;if(V.y<-5){isFlying=false;V.set(0,0,0);showTip('Crash!')}else{V.y=0;isFlying=false}}
-    // Landing on rooftops: if descending onto a building, land on its roof
+    if(P.y<_flyGH+.5){
+      P.y=_flyGH+.5;
+      const impactSpd=-V.y;
+      if(impactSpd>18){
+        // Hard crash: total wipeout
+        isFlying=false;V.set(0,0,0);hVel.set(0,0);landImpact=1;fightShake=0.5;showTip('Crash!');
+        for(let ci=0;ci<8;ci++)emit(new THREE.Vector3(P.x+(Math.random()-0.5)*3,P.y+0.2,P.z+(Math.random()-0.5)*3),new THREE.Vector3((Math.random()-0.5)*6,Math.random()*4+2,(Math.random()-0.5)*6));
+      } else if(impactSpd>8){
+        // Rough landing: keep some forward momentum
+        isFlying=false;hVel.set(V.x*0.4,V.z*0.4);V.y=0;landImpact=0.6;fightShake=0.2;showTip('Rough landing!');
+        for(let ci=0;ci<4;ci++)emit(new THREE.Vector3(P.x+(Math.random()-0.5)*2,P.y+0.1,P.z+(Math.random()-0.5)*2),new THREE.Vector3((Math.random()-0.5)*3,Math.random()*2,(Math.random()-0.5)*3));
+      } else {
+        // Smooth landing: carry momentum into a run
+        isFlying=false;hVel.set(V.x*0.7,V.z*0.7);V.y=0;landImpact=0.15;
+      }
+    }
+    // Landing on rooftops
     const bl=colBldg(P.x,P.z);
-    if(bl&&P.y<=bl.h+1.5&&V.y<=0){P.y=bl.h;V.set(0,0,0);isFlying=false;onGround=true}
+    if(bl&&P.y<=bl.h+1.5&&V.y<=0){P.y=bl.h;hVel.set(V.x*0.3,V.z*0.3);V.set(0,0,0);isFlying=false;onGround=true;spaceJust=false}
     else if(bl&&P.y<bl.h+2){P.y=bl.h+2;V.y=Math.max(V.y,2)}
+    // Clear space on any wingsuit landing to prevent immediate re-jump
+    if(!isFlying)spaceJust=false;
     mode='walk';
   }
 
-  // ═══ VEHICLE RIDING ═══
+  // ═══ VEHICLE RIDING (improved physics) ═══
   if(currentVeh){
     const v=currentVeh,d=v.def,m=v.mesh;
     const pt=d.pt;
 
-    // Steering
-    if(kL())yaw+=d.tn*dt;
-    if(kR())yaw-=d.tn*dt;
+    // Speed-dependent steering: less turn at high speed for realism
+    const spdRatio=clamp(Math.abs(v.speed)/(d.ms||1),0,1);
+    const steerMul=lerp(1,0.32,spdRatio*spdRatio); // quadratic falloff
+    if(kL())yaw+=d.tn*steerMul*dt;
+    if(kR())yaw-=d.tn*steerMul*dt;
 
     // Air vehicles: Up/Down = pitch, auto-accelerate
     if(pt==='air'){
@@ -9705,49 +9948,69 @@ function update(dt){
     // Ground/water: Up/Down = accel/brake
     else{
     if(kU())v.speed=Math.min(v.speed+d.ac*dt,d.ms);
-    else if(kD())v.speed=Math.max(v.speed-d.ac*1.5*dt,-d.ms*.3);
-    else v.speed*=(1-.8*dt);
-    if(Math.abs(v.speed)<.1&&!kU()&&!kD())v.speed=0;}
+    else if(kD())v.speed=Math.max(v.speed-d.ac*1.8*dt,-d.ms*.3);
+    else v.speed*=(1-1.2*dt); // slightly more engine brake than before
+    if(Math.abs(v.speed)<.15&&!kU()&&!kD())v.speed=0;}
 
     // Boost
     if(keys['ShiftLeft']||keys['ShiftRight']){v.speed=Math.min(v.speed+d.ac*2*dt,d.ms*1.5);engineOn=true;
       if(pt!=='water')emit(m.position.clone().add(new THREE.Vector3(0,.5,0)),fwd().multiplyScalar(-1))}
 
     const ff=fwd(),spd=v.speed;
-    const moveX=ff.x*spd*dt,moveZ=ff.z*spd*dt;
 
     if(pt==='ground'||pt==='wearable'||pt==='snow'){
+      // Drift physics: actual velocity lags behind facing direction
+      if(v.vx===undefined){v.vx=0;v.vz=0}
+      const targetVx=ff.x*spd,targetVz=ff.z*spd;
+      // Grip: how fast velocity aligns with facing (snow/wearable = slippery)
+      const gripRate=pt==='snow'?3.5:pt==='wearable'?6:9;
+      const gripT=clamp(gripRate*dt,0,1);
+      v.vx+=(targetVx-v.vx)*gripT;v.vz+=(targetVz-v.vz)*gripT;
+      // Drift particles: emit when lateral velocity is high
+      const _driftAmt=Math.abs(v.vx*(-ff.z)+v.vz*ff.x);
+      if(_driftAmt>8&&onGround&&Math.random()<dt*5)emit(new THREE.Vector3(P.x+(Math.random()-.5)*2,P.y+.1,P.z+(Math.random()-.5)*2),new THREE.Vector3((Math.random()-.5)*2,Math.random()*1.5,(Math.random()-.5)*2));
+      const moveX=v.vx*dt,moveZ=v.vz*dt;
       P.x+=moveX;P.z+=moveZ;
       const gh=Math.max(getH(P.x,P.z),getSurfaceH(P.x,P.z));
-      // Building collision — height-aware wall sliding (allows rooftop driving)
+
+      // Slope effect on vehicle speed: uphill slows, downhill accelerates
+      const vTN=getTerrainN(P.x,P.z);
+      const fwdDot=ff.x*vTN.x+ff.z*vTN.z;
+      v.speed-=fwdDot*22*dt;
+
+      // Building collision — height-aware wall sliding with drift reset
       const bl=colBldgY(P.x,P.z,P.y,1);
       if(bl){
         P.x-=moveX;P.z-=moveZ;
-        // Try sliding along X only
         P.x+=moveX;
-        if(colBldgY(P.x,P.z,P.y,1)){P.x-=moveX}else{v.speed*=.85}
-        // Try sliding along Z only
+        if(colBldgY(P.x,P.z,P.y,1)){P.x-=moveX;v.speed*=.5;v.vx*=-.1}else{v.speed*=.8}
         P.z+=moveZ;
-        if(colBldgY(P.x,P.z,P.y,1)){P.z-=moveZ;v.speed*=.85}
+        if(colBldgY(P.x,P.z,P.y,1)){P.z-=moveZ;v.speed*=.5;v.vz*=-.1}
       }
       // Snow check
-      if(pt==='snow'&&!isOnSnow(P.x,P.z)){v.speed*=.95;if(v.speed<1)showTip('Need snow!')}
+      if(pt==='snow'&&!isOnSnow(P.x,P.z)){v.speed*=.95;v.vx*=.95;v.vz*=.95;if(v.speed<1)showTip('Need snow!')}
       // Jump with space
       if(spaceJust){V.y=JFORCE*.8;onGround=false;spaceJust=false}
-      if(P.y<gh){P.y=gh;V.y=0;onGround=true}// snap up if below ground
+      // Spring-damper suspension: realistic bounce over bumps
+      const suspK=lerp(20,35,clamp(Math.abs(v.speed)/d.ms,0,1));
+      const suspD=lerp(7,12,clamp(Math.abs(v.speed)/d.ms,0,1));
+      if(P.y<gh){P.y=gh;if(V.y<0)V.y=0;onGround=true}
       else if(!onGround){V.y-=GRAV*dt;P.y+=V.y*dt;if(P.y<=gh){P.y=gh;V.y=0;onGround=true}}
-      else{P.y=lerp(P.y,gh,.25);V.y=0;if(P.y<gh+.2)onGround=true}
+      else{const sf=(gh-P.y)*suspK-V.y*suspD;V.y+=sf*dt;P.y+=V.y*dt;if(P.y<gh){P.y=gh;if(V.y<0)V.y=0}onGround=P.y<gh+0.3}
       checkRT();
     } else if(pt==='water'){
+      const moveX=ff.x*spd*dt,moveZ=ff.z*spd*dt;
       P.x+=moveX;P.z+=moveZ;
-      // Compute wave height to match water shader (same frequencies, reduced amplitude)
+      // Wave height matching water shader
       const t=clock.elapsedTime;
       const waveH=-0.8+Math.sin(P.x*.015+t*.7)*Math.cos(P.z*.012+t*.5)*.6+Math.sin(P.x*.035+t*1.1)*Math.cos(P.z*.025-t*.8)*.3;
-      const waterSurface=waveH+0.5;// offset to sit on top of wave
-      P.y=lerp(P.y,waterSurface,.12);
+      const waterSurface=waveH+0.5;
+      // Speed-dependent wave response: faster = less bobbing
+      const wLerp=lerp(0.12,0.04,clamp(Math.abs(v.speed)/d.ms,0,1));
+      P.y=lerp(P.y,waterSurface,wLerp);
       if(!isOnWater(P.x)){P.x=CH+52;v.speed*=.5;showTip('Stay on water!')}
       if(spaceJust){V.y=12;spaceJust=false}
-      if(V.y!==0){V.y-=GRAV*.5*dt;P.y+=V.y*dt;if(P.y<waterSurface){P.y=waterSurface;V.y=0}}
+      if(V.y!==0){V.y-=GRAV*.34*dt;P.y+=V.y*dt;if(P.y<waterSurface){P.y=waterSurface;V.y=0}}
     } else if(pt==='air'){
       const af=flyFwd();
       P.x+=af.x*spd*dt;P.y+=af.y*spd*dt;P.z+=af.z*spd*dt;
@@ -9766,6 +10029,16 @@ function update(dt){
     if(v.type==='helicopter'&&m.userData.rotor)m.userData.rotor.rotation.y+=dt*20;
     if(v.type==='helicopter'&&m.userData.tailRotor)m.userData.tailRotor.rotation.z+=dt*25;
 
+    // Body lean: tilt on turns + pitch on accel/brake (ground vehicles only)
+    if(v.leanZ===undefined){v.leanZ=0;v.pitchX=0}
+    if(pt==='ground'||pt==='wearable'||pt==='snow'){
+      const turnIn=kL()?1:kR()?-1:0;
+      const spdFrac=clamp(Math.abs(v.speed)/(d.ms||1),0,1);
+      v.leanZ+=(turnIn*spdFrac*0.18-v.leanZ)*clamp(6*dt,0,1);
+      const accelIn=kU()?-1:kD()?0.7:0;
+      v.pitchX+=(accelIn*0.1-v.pitchX)*clamp(4*dt,0,1);
+    } else {v.leanZ*=Math.pow(0.1,dt);v.pitchX*=Math.pow(0.1,dt)}
+
     // Trick rotation on mesh (in vehicle's local space)
     if(trickActive){
       const prog=trickTimer/trickDur;
@@ -9773,21 +10046,24 @@ function update(dt){
       const ct=tricks.find(t=>t.n===trickName);
       if(ct){
         const tQ=new THREE.Quaternion();
-        if(ct.ax==='x'){// front/back flip: rotate around vehicle's side axis (local Z)
-          tQ.setFromAxisAngle(new THREE.Vector3(0,0,1),ct.ag*Math.sin(prog*Math.PI));
-        } else if(ct.ax==='y'){// spin: rotate around Y
-          tQ.setFromAxisAngle(new THREE.Vector3(0,1,0),ct.ag*prog);
-        } else if(ct.ax==='z'){// barrel roll: rotate around vehicle's forward axis (local X)
-          tQ.setFromAxisAngle(new THREE.Vector3(1,0,0),ct.ag*Math.sin(prog*Math.PI));
-        }
+        if(ct.ax==='x'){tQ.setFromAxisAngle(new THREE.Vector3(0,0,1),ct.ag*Math.sin(prog*Math.PI))}
+        else if(ct.ax==='y'){tQ.setFromAxisAngle(new THREE.Vector3(0,1,0),ct.ag*prog)}
+        else if(ct.ax==='z'){tQ.setFromAxisAngle(new THREE.Vector3(1,0,0),ct.ag*Math.sin(prog*Math.PI))}
         m.quaternion.copy(baseQ).multiply(tQ);
       } else {m.quaternion.copy(baseQ)}
-    } else {m.quaternion.copy(baseQ)}
+    } else {
+      // Apply body lean when not tricking
+      if(Math.abs(v.leanZ)>0.001||Math.abs(v.pitchX)>0.001){
+        const leanQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(v.pitchX,0,v.leanZ));
+        m.quaternion.copy(baseQ).multiply(leanQ);
+      } else {m.quaternion.copy(baseQ)}
+    }
   }
 
   // ═══ PARTICLES ═══
   for(let i=0;i<PC;i++){if(pLf[i]<=0)continue;pLf[i]-=dt*2;
     if(pLf[i]<=0){pPos[i*3+1]=-9999;continue}
+    pVl[i].y-=15*dt;
     pPos[i*3]+=pVl[i].x*dt;pPos[i*3+1]+=pVl[i].y*dt;pPos[i*3+2]+=pVl[i].z*dt;
     pVl[i].multiplyScalar(.96);pSz[i]*=.97}
   pGeo.attributes.position.needsUpdate=true;pGeo.attributes.size.needsUpdate=true;
@@ -9835,11 +10111,7 @@ function update(dt){
       lA.rotation.set(-2.5+Math.sin(ct)*.4,0,.2);rA.rotation.set(-2.5-Math.sin(ct)*.4,0,-.2);
       lL.position.set(-.13,.35,0);rL.position.set(.13,.35,0);
       lL.rotation.x=Math.sin(ct)*.6;rL.rotation.x=-Math.sin(ct)*.6;bdM.rotation.x=0}
-    else{lA.position.set(-.35,1,0);lA.rotation.set(0,0,0);rA.position.set(.35,1,0);rA.rotation.set(0,0,0);
-      lL.position.set(-.13,.35,0);lL.rotation.set(0,0,0);rL.position.set(.13,.35,0);rL.rotation.set(0,0,0);
-      bdM.rotation.set(0,0,0);
-      if(kU()||kD()||kL()||kR()){lA.rotation.x=Math.sin(walkBob)*.4;rA.rotation.x=-Math.sin(walkBob)*.4;
-        lL.rotation.x=-Math.sin(walkBob)*.5;rL.rotation.x=Math.sin(walkBob)*.5}}
+    else{applyCharAnimation(dt)}
     // Parkour trick / fight rotation + limb animation
     if(trickActive&&mode==='walk'){
       const ct=parkourTricks.find(t=>t.n===trickName);
@@ -9966,6 +10238,10 @@ function update(dt){
   camBlend+=(_runTarget-camBlend)*Math.min(4*dt,1);
   const _walkD=2.2,_walkH=1.4,_runD=3.5,_runH=1.8;
   let camD=lerp(_walkD,_runD,camBlend),camH=lerp(_walkH,_runH,camBlend);
+  // Landing impact: camera dips down and shakes on hard landings
+  if(landImpact>0.05){camH-=landImpact*0.7;if(landImpact>0.4)fightShake=Math.max(fightShake,landImpact*0.25)}
+  // Speed-based camera pull-back while walking/running
+  if(!isFlying&&!cv){const hSpd=hVel.length();if(hSpd>12)camD+=clamp((hSpd-12)*0.08,0,1.5)}
   if(isFlying){camD=lerp(6,14,clamp(V.length()/100,0,1));camH=2}
   if(cv){camD=cv.def.pt==='air'?12:cv.type==='yacht'?14:6;camH=cv.def.pt==='air'?3:cv.type==='yacht'?5:2}
   // Aim mode timer — enter on fire, exit after 2s idle
@@ -9995,6 +10271,15 @@ function update(dt){
   // Clamp final cam position after lerp so it never dips underground
   const _camFloor2=Math.max(getH(cam.position.x,cam.position.z),getSurfaceH(cam.position.x,cam.position.z))+0.5;
   if(cam.position.y<_camFloor2)cam.position.y=_camFloor2;
+  // Camera head bob
+  {const _hbSpd=hVel.length(),_hbF=clamp(_hbSpd/RUN_SPD,0,1);
+  if(onGround&&_hbSpd>1&&!cv&&!isFlying){
+    anim.camBobY+=(Math.sin(walkBob*2)*0.035*_hbF-anim.camBobY)*Math.min(8*dt,1);
+    anim.camBobX+=(Math.sin(walkBob)*0.02*_hbF-anim.camBobX)*Math.min(8*dt,1);
+  }else{anim.camBobY*=1-Math.min(5*dt,1);anim.camBobX*=1-Math.min(5*dt,1)}
+  cam.position.y+=anim.camBobY;
+  const _hbR=Math.cos(yaw),_hbRz=-Math.sin(yaw);
+  cam.position.x+=_hbR*anim.camBobX;cam.position.z+=_hbRz*anim.camBobX;}
   // Fight screen shake
   if(fightShake>0){
     fightShake-=dt;
@@ -10008,6 +10293,21 @@ function update(dt){
   const _aimLook=cam.position.clone().add(_aimFwd.clone().multiplyScalar(50));
   look=_normalLook.clone().lerp(_aimLook,aimBlend);
   cam.lookAt(look);
+
+  // Camera roll: subtle tilt when turning for weight/momentum feel
+  {const turnDir=(kL()?1:0)-(kR()?1:0);
+  const spdFac=cv?clamp(Math.abs(cv.speed)/30,0,1):isFlying?clamp(V.length()/60,0,1):clamp(hVel.length()/10,0,1);
+  const targetRoll=turnDir*(cv?0.06:isFlying?0.08:0.035)*spdFac;
+  camRoll+=(targetRoll-camRoll)*Math.min(6*dt,1);
+  if(Math.abs(camRoll)>0.001){const rQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),camRoll);cam.quaternion.multiply(rQ)}}
+
+  // Speed-based FOV: wider at high speed for motion feel
+  {const baseFOV=70;
+  const walkFOV=(!isFlying&&!cv)?clamp((hVel.length()-14)*0.25,0,5):0;
+  const vehFOV=cv?clamp((Math.abs(cv.speed)-20)*0.15,0,15):0;
+  const flyFOV=isFlying?clamp((V.length()-40)*0.1,0,18):0;
+  const tgtFOV=baseFOV+walkFOV+vehFOV+flyFOV;
+  cam.fov+=(tgtFOV-cam.fov)*Math.min(3*dt,1);cam.updateProjectionMatrix()}
 
   // Sky + shadow follow camera
   skyMesh.position.copy(cam.position);
