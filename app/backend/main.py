@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 import uuid
@@ -11,7 +12,7 @@ import rjsmin
 
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -1026,38 +1027,40 @@ def _obfuscate_html(html: str) -> str:
     return _INLINE_SCRIPT_RE.sub(_minify_script, html)
 
 
+def _revalidated_html(request: Request, html: str) -> Response:
+    """Serve a page browsers may keep but must re-check on every visit.
+
+    "no-cache" (unlike "no-store") lets the browser ask whether the page
+    changed; an unchanged game then costs a 304 instead of the whole page,
+    and a new version is still picked up on the next visit.
+    """
+    etag = '"' + hashlib.sha256(html.encode("utf-8")).hexdigest()[:32] + '"'
+    headers = {"Cache-Control": "no-cache", "ETag": etag}
+    if etag in request.headers.get("if-none-match", ""):
+        return Response(status_code=304, headers=headers)
+    return HTMLResponse(html, headers=headers)
+
+
 @app.get("/")
-def serve_home():
+def serve_home(request: Request):
     """Serve the base game with studio overlay (no iframe)."""
     path = get_base_game_path()
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Base game not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return HTMLResponse(
-        _inject_overlay(_obfuscate_html(game_html)),
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-        },
-    )
+    return _revalidated_html(request, _inject_overlay(_obfuscate_html(game_html)))
 
 
 @app.get("/v/{version_id}")
-def serve_version_with_overlay(version_id: str, db: Session = Depends(get_db)):
+def serve_version_with_overlay(version_id: str, request: Request, db: Session = Depends(get_db)):
     """Serve a specific version with studio overlay."""
     path = get_version_path(version_id, db)
     if not path or not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Version not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return HTMLResponse(
-        _inject_overlay(_obfuscate_html(game_html)),
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-        },
-    )
+    return _revalidated_html(request, _inject_overlay(_obfuscate_html(game_html)))
 
 
 @app.get("/admin")
