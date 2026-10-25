@@ -347,10 +347,13 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
 
     try:
         response = client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-opus-5-5",
             max_tokens=16000,
             system=SYSTEM_PROMPT,
             messages=messages,
+            # Opus 5.5 always thinks, inside max_tokens; medium effort leaves room
+            # for the edits. SDK 0.42 predates output_config, hence extra_body.
+            extra_body={"output_config": {"effort": "medium"}},
         )
     except anthropic.AuthenticationError:
         return {"error": "Invalid API key. Please check your Anthropic API key."}
@@ -359,7 +362,8 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
     except anthropic.APIError as e:
         return {"error": f"API error: {str(e)}"}
 
-    response_text = response.content[0].text
+    # The reply is the text blocks; Opus 5.5 puts a thinking block first.
+    response_text = "".join(block.text for block in response.content if block.type == "text")
 
     # Apply SEARCH/REPLACE patches
     new_code = game_code
