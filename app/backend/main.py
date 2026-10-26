@@ -39,6 +39,7 @@ from app.backend.request_limits import boundaries
 from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK
 from app.backend.agent import (
     run_agent,
+    GAME_MODEL,
     get_base_game_path,
     create_initial_version,
     VERSIONS_DIR,
@@ -367,7 +368,7 @@ def healthz(db: Session = Depends(get_db)):
         recovery = recovery_health(DATA_DIR)
         ok = files_ok and recovery['ok']
         return JSONResponse({'status': 'ok' if ok else 'degraded', 'database': 'ok',
-                             'gameFiles': files_ok, 'recovery': recovery, 'providerMode': 'user-supplied-key'},
+                             'gameFiles': files_ok, 'recovery': recovery, 'providerMode': 'user-supplied-key', 'model': GAME_MODEL},
                             status_code=200 if ok else 503, headers={'Cache-Control':'no-store'})
     except Exception:
         return JSONResponse({'status':'degraded','database':'unavailable'}, status_code=503,

@@ -20,6 +20,11 @@ if not os.path.exists(BASE_GAME_PATH):
     os.chmod(BASE_GAME_PATH, 0o600)
 os.makedirs(VERSIONS_DIR, exist_ok=True)
 
+# Sonnet handles normal game patches at half Opus token prices. Operators may opt into Opus.
+GAME_MODEL = os.environ.get('OPENWORLD_MODEL', 'claude-sonnet-5-5').strip()
+if GAME_MODEL not in ['claude-sonnet-5-5', 'claude-opus-5-5']:
+    GAME_MODEL = 'claude-sonnet-5-5'
+
 SYSTEM_PROMPT = """You are an expert game developer assistant. You modify an Open World 3D browser game built with Three.js.
 
 ## GAME IDENTITY
@@ -353,7 +358,7 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
 
     try:
         response = client.messages.create(
-            model="claude-opus-5-5",
+            model=GAME_MODEL,
             max_tokens=16000,
             system=SYSTEM_PROMPT,
             messages=messages,
