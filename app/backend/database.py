@@ -31,8 +31,12 @@ def _migrate(eng):
 
     # Map of table -> list of (column_name, column_ddl)
     migrations = {
+        "chat_sessions": [
+            ("guest_access_hash", "VARCHAR"),
+        ],
         "users": [
             ("is_admin", "BOOLEAN DEFAULT 0"),
+            ("auth_revision", "INTEGER NOT NULL DEFAULT 0"),
         ],
         "game_versions": [
             ("parent_version_id", "VARCHAR"),

@@ -8,12 +8,16 @@ import anthropic
 from sqlalchemy.orm import Session
 
 from app.backend.models import GameVersion, ChatMessage, ChatSession
+from app.backend.database import DATA_DIR
 
 _default_versions = os.path.join(os.path.dirname(os.path.dirname(__file__)), "versions")
 VERSIONS_DIR = os.environ.get("VERSIONS_DIR", _default_versions)
-BASE_GAME_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "index.html"
-)
+DEFAULT_GAME_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "index.html")
+BASE_GAME_PATH = os.environ.get("BASE_GAME_PATH") or os.path.join(DATA_DIR, "base.html")
+if not os.path.exists(BASE_GAME_PATH):
+    with open(DEFAULT_GAME_PATH, "rb") as source, open(BASE_GAME_PATH, "xb") as dest:
+        shutil.copyfileobj(source, dest)
+    os.chmod(BASE_GAME_PATH, 0o600)
 os.makedirs(VERSIONS_DIR, exist_ok=True)
 
 SYSTEM_PROMPT = """You are an expert game developer assistant. You modify an Open World 3D browser game built with Three.js.
@@ -296,6 +300,8 @@ def run_agent(
         game_code = f.read()
 
     # Minify game code to reduce token count
+    if len(game_code.encode("utf-8")) > 4 * 1024 * 1024:
+        return {"error": "This game is too large to edit safely."}
     game_code_for_prompt = _minify_game_code(game_code)
 
     # Build conversation history from session (limit to last 6 messages to save tokens)
@@ -343,7 +349,7 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
     messages = history + [{"role": "user", "content": current_content}]
 
     # Call Claude API
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key, timeout=90.0, max_retries=0)
 
     try:
         response = client.messages.create(
@@ -359,8 +365,11 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
         return {"error": "Invalid API key. Please check your Anthropic API key."}
     except anthropic.RateLimitError:
         return {"error": "Rate limit exceeded. Please wait a moment and try again."}
-    except anthropic.APIError as e:
-        return {"error": f"API error: {str(e)}"}
+    except anthropic.APIError:
+        return {"error": "The AI provider could not complete this request. Please try again."}
+
+    if response.stop_reason not in ("end_turn", "stop_sequence"):
+        return {"error": "The AI response was incomplete. No game changes were saved."}
 
     # The reply is the text blocks; Opus 5.5 puts a thinking block first.
     response_text = "".join(block.text for block in response.content if block.type == "text")
@@ -372,9 +381,12 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
     )
 
     if patches:
+        if len(patches) > 100:
+            return {"error": "Too many edits were returned. No game changes were saved."}
         for search_text, replace_text in patches:
-            if search_text in new_code:
-                new_code = new_code.replace(search_text, replace_text, 1)
+            if not search_text or new_code.count(search_text) != 1:
+                return {"error": "The proposed edit did not match uniquely. No game changes were saved."}
+            new_code = new_code.replace(search_text, replace_text, 1)
         if new_code == game_code:
             # None of the patches matched - try the fallback
             return {
@@ -403,6 +415,9 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
                 "suggestions": [],
             }
 
+    if len(new_code.encode("utf-8")) > 4 * 1024 * 1024:
+        return {"error": "The generated game is too large. No game changes were saved."}
+
     # Extract description
     desc_match = re.search(
         r"<description>(.*?)</description>", response_text, re.DOTALL
@@ -427,6 +442,11 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
                 if line.strip()
             ]
 
+    if not isinstance(suggestions, list):
+        suggestions = []
+    suggestions = [value[:500] for value in suggestions if isinstance(value, str)][:3]
+    description = description[:8000]
+
     # Determine version number
     existing_versions = (
         db.query(GameVersion).filter(GameVersion.session_id == session.id).count()
@@ -438,8 +458,7 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
     version_filename = f"{version_id}.html"
     version_path = os.path.join(VERSIONS_DIR, version_filename)
 
-    with open(version_path, "w", encoding="utf-8") as f:
-        f.write(new_code)
+    _atomic_game_write(version_path, new_code)
 
     # Create version record
     version = GameVersion(
@@ -460,7 +479,12 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
         content=response_text,
     )
     db.add(assistant_msg)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        os.unlink(version_path)
+        raise
 
     return {
         "version_id": version_id,
@@ -469,6 +493,21 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
         "suggestions": suggestions[:3],
         "error": None,
     }
+
+
+def _atomic_game_write(path, html):
+    import tempfile
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=os.path.dirname(path), delete=False) as f:
+            temporary = f.name
+            f.write(html)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary and os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def get_base_game_path() -> str:
@@ -495,7 +534,8 @@ def create_initial_version(
     version_path = os.path.join(VERSIONS_DIR, version_filename)
 
     src = source_path if source_path and os.path.exists(source_path) else BASE_GAME_PATH
-    shutil.copy2(src, version_path)
+    with open(src, "r", encoding="utf-8") as source:
+        _atomic_game_write(version_path, source.read())
 
     is_branch = source_path and os.path.exists(source_path)
     version = GameVersion(

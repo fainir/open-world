@@ -5,3 +5,12 @@ video/
 node_modules/
 .git/
 app/venv/
+
+.mcp.json
+.env
+.env.*
+app/.env
+app/data/
+app/versions/
+**/__pycache__/
+tests/

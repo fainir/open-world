@@ -21,6 +21,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False)
+    auth_revision = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=_now)
 
     versions = relationship("GameVersion", back_populates="user", foreign_keys="[GameVersion.user_id]", order_by="desc(GameVersion.created_at)")
@@ -33,6 +34,7 @@ class ChatSession(Base):
     id = Column(String, primary_key=True, default=_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=True)
     api_key_hash = Column(String, nullable=True)
+    guest_access_hash = Column(String, nullable=True)
     created_at = Column(DateTime, default=_now)
 
     user = relationship("User", back_populates="sessions")

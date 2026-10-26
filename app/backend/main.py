@@ -4,20 +4,18 @@ import re
 import uuid
 import random
 import asyncio
-import functools
+import threading
 from typing import Optional
 from datetime import datetime, timezone
-
-import rjsmin
 
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
-from app.backend.database import get_db, init_db
+from app.backend.database import get_db, init_db, DATA_DIR
 from app.backend.models import (
     User,
     ChatSession,
@@ -34,22 +32,25 @@ from app.backend.auth import (
     login,
     get_current_user_optional,
     get_current_user_required,
-    hash_api_key,
 )
+from app.backend.access import guest_hash, require_session, require_version, claim_session
+from app.backend.game_security import game_response, studio_shell
+from app.backend.request_limits import boundaries
+from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK
 from app.backend.agent import (
     run_agent,
     get_base_game_path,
-    get_version_path,
     create_initial_version,
     VERSIONS_DIR,
 )
 
 app = FastAPI(title="Open World Game Studio", version="1.0.0")
+app.middleware("http")(boundaries)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[origin.strip() for origin in os.environ.get("STUDIO_ORIGINS", "https://open-world.gg").split(",") if origin.strip()],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -330,44 +331,97 @@ def _seed_store():
 
 @app.on_event("startup")
 def on_startup():
+    if os.environ.get('RAILWAY_ENVIRONMENT_ID') and len(os.environ.get('JWT_SECRET', '')) < 32:
+        raise RuntimeError('A stable production JWT_SECRET of at least 32 characters is required')
+    if os.environ.get('RAILWAY_ENVIRONMENT_ID') and not all(os.environ.get(name) for name in ['DATA_DIR','VERSIONS_DIR']):
+        raise RuntimeError('Persistent production DATA_DIR and VERSIONS_DIR are required')
+    database = os.path.join(DATA_DIR, 'openworld.db')
+    if os.path.exists(database):
+        snapshot(DATA_DIR, VERSIONS_DIR, get_base_game_path())
     init_db()
-    _seed_store()
+    if os.environ.get("SEED_DEMO_STORE") == "1":
+        _seed_store()
+    snapshot(DATA_DIR, VERSIONS_DIR, get_base_game_path())
+    threading.Thread(target=_recovery_loop, daemon=True, name='openworld-recovery').start()
+
+
+def _recovery_loop():
+    import time
+    while True:
+        time.sleep(12 * 3600)
+        try:
+            snapshot(DATA_DIR, VERSIONS_DIR, get_base_game_path())
+        except Exception:
+            # Health fails once the last verified copy ages out; no private exception content.
+            print('[Recovery] Snapshot failed; see health endpoint')
 
 
 @app.get("/healthz")
-def healthz():
-    return {"status": "ok"}
+def healthz(db: Session = Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        db.execute(text('SELECT 1'))
+        paths = db.query(GameVersion.file_path).all()
+        files_ok = os.path.isfile(get_base_game_path()) and all(
+            os.path.basename(name) == name and os.path.isfile(os.path.join(VERSIONS_DIR, name)) for (name,) in paths)
+        recovery = recovery_health(DATA_DIR)
+        ok = files_ok and recovery['ok']
+        return JSONResponse({'status': 'ok' if ok else 'degraded', 'database': 'ok',
+                             'gameFiles': files_ok, 'recovery': recovery, 'providerMode': 'user-supplied-key'},
+                            status_code=200 if ok else 503, headers={'Cache-Control':'no-store'})
+    except Exception:
+        return JSONResponse({'status':'degraded','database':'unavailable'}, status_code=503,
+                            headers={'Cache-Control':'no-store'})
 
 
 # ── Pydantic schemas ──
 
 
 class ImageData(BaseModel):
-    data: str  # base64
+    data: str = Field(max_length=6_000_000)
     media_type: str = "image/png"
+
+    @field_validator('media_type')
+    @classmethod
+    def image_type(cls, value):
+        if value not in ['image/png', 'image/jpeg', 'image/gif', 'image/webp']:
+            raise ValueError('Unsupported image type')
+        return value
+
+    @field_validator('data')
+    @classmethod
+    def image_size(cls, value):
+        import base64
+        try:
+            decoded = base64.b64decode(value, validate=True)
+        except ValueError:
+            raise ValueError('Invalid image')
+        if not decoded or len(decoded) > 4 * 1024 * 1024:
+            raise ValueError('Image must be at most 4MB')
+        return value
 
 
 class ChatRequest(BaseModel):
-    message: str
-    session_id: Optional[str] = None
-    current_version_id: Optional[str] = None
-    api_key: str
+    message: str = Field(min_length=1, max_length=8000)
+    session_id: Optional[str] = Field(default=None, max_length=36)
+    current_version_id: Optional[str] = Field(default=None, max_length=36)
+    api_key: str = Field(min_length=10, max_length=256)
     image: Optional[ImageData] = None
 
 
 class VersionIdRequest(BaseModel):
-    version_id: str
+    version_id: str = Field(min_length=1, max_length=36)
 
 
 class ContactRequest(BaseModel):
-    name: str
-    email: str
-    message: str
+    name: str = Field(min_length=1, max_length=120)
+    email: str = Field(min_length=3, max_length=254)
+    message: str = Field(min_length=1, max_length=8000)
 
 
 class PublishRequest(BaseModel):
-    version_id: str
-    title: Optional[str] = None
+    version_id: str = Field(min_length=1, max_length=36)
+    title: Optional[str] = Field(default=None, max_length=100)
 
 
 # ── Auth routes ──
@@ -391,9 +445,27 @@ def api_me(user: User = Depends(get_current_user_required)):
 # ── Chat / Agent routes ──
 
 
+_generation_slots = asyncio.Semaphore(2)
+_active_generations = set()
+
+
 @app.post("/api/chat")
-async def api_chat(
+async def api_chat(req: ChatRequest, request: Request, db: Session = Depends(get_db),
+                   user: Optional[User] = Depends(get_current_user_optional)):
+    identity = (user.id if user else guest_hash(request)) or request.client.host
+    if _generation_slots.locked() or identity in _active_generations:
+        raise HTTPException(429, "A generation is already running; please try again shortly")
+    async with _generation_slots:
+        _active_generations.add(identity)
+        try:
+            return await _api_chat_impl(req, request, db, user)
+        finally:
+            _active_generations.discard(identity)
+
+
+async def _api_chat_impl(
     req: ChatRequest,
+    request: Request,
     db: Session = Depends(get_db),
     user: Optional[User] = Depends(get_current_user_optional),
 ):
@@ -404,30 +476,36 @@ async def api_chat(
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    # Get or create session
     session = None
+    selected = None
     if req.session_id:
-        session = db.query(ChatSession).filter(ChatSession.id == req.session_id).first()
-
-    if not session:
-        session = ChatSession(
-            user_id=user.id if user else None,
-            api_key_hash=hash_api_key(req.api_key),
-        )
+        session = require_session(db, req.session_id, request, user)
+    if req.current_version_id:
+        selected = require_version(db, req.current_version_id, request, user, allow_shared=True)
+        if session and selected.session_id != session.id:
+            raise HTTPException(400, "Start a new chat to branch another game")
+    if session:
+        claim_session(db, session, user, request)
+        if not session.user_id and not session.guest_access_hash:
+            proof = guest_hash(request)
+            if not proof:
+                raise HTTPException(400, "Reload the studio to secure this guest session")
+            session.guest_access_hash = proof
+            session.api_key_hash = None
+        db.commit()
+    else:
+        proof = guest_hash(request)
+        if not user and not proof:
+            raise HTTPException(400, "Reload the studio to start a secure guest session")
+        session = ChatSession(user_id=user.id if user else None,
+                              guest_access_hash=proof if not user else None)
         db.add(session)
         db.commit()
         db.refresh(session)
-        # Branch from selected version if provided, otherwise copy base game
-        branch_path = None
-        if req.current_version_id:
-            branch_ver = (
-                db.query(GameVersion)
-                .filter(GameVersion.id == req.current_version_id)
-                .first()
-            )
-            if branch_ver:
-                branch_path = os.path.join(VERSIONS_DIR, branch_ver.file_path)
-        create_initial_version(session.id, db, source_path=branch_path)
+        branch_path = os.path.join(VERSIONS_DIR, selected.file_path) if selected else None
+        initial = create_initial_version(session.id, db, source_path=branch_path)
+        initial.user_id = session.user_id
+        db.commit()
 
     # Save user message
     user_msg = ChatMessage(
@@ -441,15 +519,9 @@ async def api_chat(
     # Find the version to modify: use the selected version, or fall back to latest
     current_path = None
     parent_version_id = None
-    if req.current_version_id:
-        selected = (
-            db.query(GameVersion)
-            .filter(GameVersion.id == req.current_version_id)
-            .first()
-        )
-        if selected:
-            current_path = os.path.join(VERSIONS_DIR, selected.file_path)
-            parent_version_id = selected.id
+    if selected:
+        current_path = os.path.join(VERSIONS_DIR, selected.file_path)
+        parent_version_id = selected.id
     if not current_path:
         latest_version = (
             db.query(GameVersion)
@@ -497,8 +569,11 @@ async def api_chat(
 @app.get("/api/versions/{session_id}")
 def api_get_versions(
     session_id: str,
+    request: Request,
     db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_current_user_optional),
 ):
+    require_session(db, session_id, request, user)
     versions = (
         db.query(GameVersion)
         .filter(GameVersion.session_id == session_id)
@@ -522,10 +597,9 @@ def api_get_versions(
 
 
 @app.get("/api/versions/info/{version_id}")
-def api_version_info(version_id: str, db: Session = Depends(get_db)):
-    v = db.query(GameVersion).filter(GameVersion.id == version_id).first()
-    if not v:
-        raise HTTPException(status_code=404, detail="Version not found")
+def api_version_info(version_id: str, request: Request, db: Session = Depends(get_db),
+                     user: Optional[User] = Depends(get_current_user_optional)):
+    v = require_version(db, version_id, request, user, allow_shared=True)
     return {
         "id": v.id,
         "description": v.description,
@@ -537,13 +611,13 @@ def api_version_info(version_id: str, db: Session = Depends(get_db)):
 @app.post("/api/versions/share")
 def api_share_version(
     req: VersionIdRequest,
+    request: Request,
     db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_current_user_optional),
 ):
-    version = db.query(GameVersion).filter(GameVersion.id == req.version_id).first()
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
+    version = require_version(db, req.version_id, request, user)
     if not version.share_slug:
-        version.share_slug = str(uuid.uuid4())[:8]
+        version.share_slug = uuid.uuid4().hex
     version.is_shared = True
     db.commit()
     return {"status": "shared", "share_slug": version.share_slug}
@@ -552,12 +626,12 @@ def api_share_version(
 @app.post("/api/versions/suggest")
 def api_suggest_version(
     req: VersionIdRequest,
+    request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user_required),
 ):
-    version = db.query(GameVersion).filter(GameVersion.id == req.version_id).first()
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
+    version = require_version(db, req.version_id, request, user)
+    claim_session(db, version.session, user, request)
     if version.is_suggested:
         return {
             "status": "already_suggested",
@@ -595,16 +669,16 @@ def api_suggest_version(
 @app.post("/api/versions/publish")
 def api_publish_version(
     req: PublishRequest,
+    request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user_required),
 ):
-    version = db.query(GameVersion).filter(GameVersion.id == req.version_id).first()
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
+    version = require_version(db, req.version_id, request, user)
+    claim_session(db, version.session, user, request)
     if version.is_published:
         return {"status": "already_published", "share_slug": version.share_slug}
     if not version.share_slug:
-        version.share_slug = str(uuid.uuid4())[:8]
+        version.share_slug = uuid.uuid4().hex
     version.is_shared = True
     version.is_published = True
     version.published_at = datetime.now(timezone.utc)
@@ -811,22 +885,24 @@ def api_admin_approve(
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
 
-    # Copy version file to replace the base game
-    import shutil
+    with PUBLICATION_LOCK:
+        # Copy version file to replace the base game
+        from app.backend.agent import _atomic_game_write
 
-    version_path = os.path.join(VERSIONS_DIR, version.file_path)
-    if not os.path.exists(version_path):
-        raise HTTPException(status_code=404, detail="Version file not found")
+        version_path = os.path.join(VERSIONS_DIR, version.file_path)
+        if not os.path.exists(version_path):
+            raise HTTPException(status_code=404, detail="Version file not found")
 
-    base_path = get_base_game_path()
-    shutil.copy2(version_path, base_path)
+        base_path = get_base_game_path()
+        with open(version_path, "r", encoding="utf-8") as source:
+            _atomic_game_write(base_path, source.read())
 
-    from datetime import datetime, timezone
+        from datetime import datetime, timezone
 
-    version.suggestion_status = "approved"
-    version.reviewed_at = datetime.now(timezone.utc)
-    version.reviewed_by = admin.id
-    db.commit()
+        version.suggestion_status = "approved"
+        version.reviewed_at = datetime.now(timezone.utc)
+        version.reviewed_by = admin.id
+        db.commit()
     return {"status": "approved", "version_id": version.id}
 
 
@@ -904,15 +980,17 @@ def serve_base_game():
     path = get_base_game_path()
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Base game not found")
-    return FileResponse(path, media_type="text/html")
+    return game_response(path)
 
 
 @app.get("/game/version/{version_id}")
-def serve_game_version(version_id: str, db: Session = Depends(get_db)):
-    path = get_version_path(version_id, db)
-    if not path or not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Version not found")
-    return FileResponse(path, media_type="text/html")
+def serve_game_version(version_id: str, request: Request, db: Session = Depends(get_db),
+                       user: Optional[User] = Depends(get_current_user_optional)):
+    version = require_version(db, version_id, request, user, allow_shared=True)
+    path = os.path.join(VERSIONS_DIR, version.file_path)
+    if not os.path.isfile(path):
+        raise HTTPException(404, "Version not found")
+    return game_response(path)
 
 
 @app.get("/game/shared/{share_slug}")
@@ -927,14 +1005,16 @@ def serve_shared_game(share_slug: str, db: Session = Depends(get_db)):
     path = os.path.join(VERSIONS_DIR, version.file_path)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Game file not found")
-    return FileResponse(path, media_type="text/html")
+    return game_response(path)
 
 
 # ── Chat history ──
 
 
 @app.get("/api/chat/history/{session_id}")
-def api_chat_history(session_id: str, db: Session = Depends(get_db)):
+def api_chat_history(session_id: str, request: Request, db: Session = Depends(get_db),
+                     user: Optional[User] = Depends(get_current_user_optional)):
+    require_session(db, session_id, request, user)
     messages = (
         db.query(ChatMessage)
         .filter(ChatMessage.session_id == session_id)
@@ -999,34 +1079,6 @@ def _load_overlay_html() -> str:
         return f.read()
 
 
-def _inject_overlay(game_html: str) -> str:
-    """Inject the studio overlay into game HTML before </body>."""
-    overlay = _load_overlay_html()
-    if "</body>" in game_html:
-        return game_html.replace("</body>", f"\n{overlay}\n</body>", 1)
-    return game_html + f"\n{overlay}"
-
-
-_INLINE_SCRIPT_RE = re.compile(r"<script((?:(?!src=)[^>])*)>(.*?)</script>", re.DOTALL)
-
-
-def _obfuscate_html(html: str) -> str:
-    """Minify inline JS in HTML so source code is not easily readable."""
-
-    def _minify_script(match: re.Match) -> str:
-        attrs = match.group(1)
-        content = match.group(2)
-        if not content.strip():
-            return match.group(0)
-        try:
-            minified = rjsmin.jsmin(content)
-            return f"<script{attrs}>{minified}</script>"
-        except Exception:
-            return match.group(0)
-
-    return _INLINE_SCRIPT_RE.sub(_minify_script, html)
-
-
 def _revalidated_html(request: Request, html: str) -> Response:
     """Serve a page browsers may keep but must re-check on every visit.
 
@@ -1043,24 +1095,13 @@ def _revalidated_html(request: Request, html: str) -> Response:
 
 @app.get("/")
 def serve_home(request: Request):
-    """Serve the base game with studio overlay (no iframe)."""
-    path = get_base_game_path()
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Base game not found")
-    with open(path, "r", encoding="utf-8") as f:
-        game_html = f.read()
-    return _revalidated_html(request, _inject_overlay(_obfuscate_html(game_html)))
+    return _revalidated_html(request, studio_shell(_load_overlay_html()))
 
 
 @app.get("/v/{version_id}")
-def serve_version_with_overlay(version_id: str, request: Request, db: Session = Depends(get_db)):
-    """Serve a specific version with studio overlay."""
-    path = get_version_path(version_id, db)
-    if not path or not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Version not found")
-    with open(path, "r", encoding="utf-8") as f:
-        game_html = f.read()
-    return _revalidated_html(request, _inject_overlay(_obfuscate_html(game_html)))
+def serve_version_with_overlay(version_id: str, request: Request):
+    # The shell contains no private game or metadata; the owner-authenticated fetch loads it.
+    return _revalidated_html(request, studio_shell(_load_overlay_html()))
 
 
 @app.get("/admin")
@@ -1092,14 +1133,14 @@ def shared_page(share_slug: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Game file not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return HTMLResponse(_obfuscate_html(game_html))
+    return game_response(path)
 
 
 @app.get("/{path:path}")
 def serve_catchall(path: str):
     """Serve static files or redirect to home."""
-    static_path = os.path.join(STATIC_DIR, path)
-    if path and os.path.isfile(static_path):
+    static_path = os.path.realpath(os.path.join(STATIC_DIR, path))
+    if path and os.path.commonpath([os.path.realpath(STATIC_DIR), static_path]) == os.path.realpath(STATIC_DIR) and os.path.isfile(static_path):
         return FileResponse(static_path)
     from fastapi.responses import RedirectResponse
 

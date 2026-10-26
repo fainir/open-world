@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+app/.env
+.mcp.json
+video
+*.mp4
+*.mov
+app/venv
+app/data
+app/versions
+**/__pycache__

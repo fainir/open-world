@@ -2,3 +2,14 @@
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/logs/
+
+# Runtime data, credentials and local environments
+.env
+.env.*
+app/.env
+.mcp.json
+app/venv/
+**/__pycache__/
+app/data/
+app/versions/*
+!app/versions/.gitkeep

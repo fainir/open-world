@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 import bcrypt
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.backend.database import get_db
@@ -25,13 +25,20 @@ security = HTTPBearer(auto_error=False)
 
 class SignupRequest(BaseModel):
     email: EmailStr
-    username: str
-    password: str
+    username: str = Field(min_length=2, max_length=50)
+    password: str = Field(min_length=10, max_length=72)
+
+    @field_validator('password')
+    @classmethod
+    def password_bytes(cls, value):
+        if len(value.encode('utf-8')) > 72:
+            raise ValueError('Password must fit within 72 UTF-8 bytes')
+        return value
 
 
 class LoginRequest(BaseModel):
-    login: str  # email or username
-    password: str
+    login: str = Field(min_length=1, max_length=254)
+    password: str = Field(min_length=1, max_length=256)
 
 
 class TokenResponse(BaseModel):
@@ -53,12 +60,15 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
+    try:
+        return bcrypt.checkpw(plain.encode('utf-8')[:72], hashed.encode('utf-8'))
+    except (ValueError, TypeError):
+        return False
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, revision: int = 0) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    payload = {"sub": user_id, "exp": expire}
+    payload = {"sub": user_id, "exp": expire, "rev": revision}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -80,6 +90,8 @@ def get_current_user_optional(
         if not user_id:
             return None
         user = db.query(User).filter(User.id == user_id).first()
+        if not user or payload.get('rev', 0) != user.auth_revision:
+            return None
         return user
     except jwt.PyJWTError:
         return None
@@ -114,7 +126,7 @@ def signup(req: SignupRequest, db: Session) -> TokenResponse:
     db.commit()
     db.refresh(user)
 
-    token = create_access_token(user.id)
+    token = create_access_token(user.id, user.auth_revision)
     return TokenResponse(
         access_token=token,
         user={"id": user.id, "email": user.email, "username": user.username},
@@ -128,7 +140,7 @@ def login(req: LoginRequest, db: Session) -> TokenResponse:
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = create_access_token(user.id)
+    token = create_access_token(user.id, user.auth_revision)
     return TokenResponse(
         access_token=token,
         user={"id": user.id, "email": user.email, "username": user.username},
