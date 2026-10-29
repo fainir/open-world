@@ -13,3 +13,6 @@ app/venv/
 app/data/
 app/versions/*
 !app/versions/.gitkeep
+
+.runtime/*.lock
+qa/**/*.webm
