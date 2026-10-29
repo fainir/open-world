@@ -19,6 +19,15 @@ PUBLICATION_LOCK = threading.RLock()
 
 
 DELETIONS_FILE = 'deleted-accounts.json'
+RESTORE_CONTRACT_VERSION = 2
+
+
+def needs_restore_drill(previous, snapshot_sha, target_exists):
+    """A changed restore contract requires a real drill even for the same archive."""
+    previous=previous if isinstance(previous,dict) else {}
+    return (not target_exists or previous.get('sha256')!=snapshot_sha
+            or previous.get('restoreContract')!=RESTORE_CONTRACT_VERSION
+            or previous.get('restoreDrillPassed') is not True or not previous.get('restoreDrillAt'))
 
 
 def _validate_deleted_accounts(value):

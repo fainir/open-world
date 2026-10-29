@@ -106,7 +106,7 @@ with p.open('rb') as f:
                 raise RuntimeError('Server snapshot is stale or its clock is invalid')
             target = ROOT / (metadata['name'] + '.aesgcm')
             previous = json.loads((ROOT / 'status.json').read_text()) if (ROOT / 'status.json').exists() else {}
-            drill = previous.get('sha256') != metadata['sha256'] or not target.exists()
+            drill = recovery.needs_restore_drill(previous, metadata['sha256'], target.exists())
             if drill:
                 recovery.restore(archive, Path(temporary) / 'restored', deletions=recovery.snapshot_deleted_accounts(archive))
                 db = sqlite3.connect(Path(temporary) / 'restored/openworld.db')
@@ -141,6 +141,7 @@ with p.open('rb') as f:
                       'sha256': metadata['sha256'], 'snapshot': metadata['name'],
                       'encryptedCopyVerified': True, 'restoreDrillPassed': True,
                       'restoreDrillRanThisCheck': drill,
+                      'restoreContract': recovery.RESTORE_CONTRACT_VERSION,
                       'restoreDrillAt': datetime.datetime.now(datetime.timezone.utc).isoformat() if drill else previous['restoreDrillAt'],
                       'scope': 'Independent encrypted Mac copy; runs only while this Mac is awake and its Railway login works.'}
             atomic_private(ROOT / 'status.json', (json.dumps(status, indent=2) + '\n').encode())
