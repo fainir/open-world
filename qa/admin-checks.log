@@ -1,0 +1,3 @@
+Actual role denial, authenticated submitted-game preview/isolation, confirm/cancel, review failure/retry, messages/read and logout 375: passed
+Actual role denial, authenticated submitted-game preview/isolation, confirm/cancel, review failure/retry, messages/read and logout 1440: passed
+Admin own-site UI acceptance passed; local generated accounts/contributions only. No browser-native dialogs or provider calls.

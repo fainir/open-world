@@ -61,7 +61,7 @@ const Auth = (() => {
   }
 
   function logout() {
-    clearAuth();
+    for(const key of Object.keys(localStorage))if(key.startsWith('ow_'))localStorage.removeItem(key);
   }
 
   return { getToken, getUser, setAuth, clearAuth, isLoggedIn, authHeaders, signup, login, logout };

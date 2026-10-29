@@ -313,3 +313,14 @@
     flex-wrap: wrap;
   }
 }
+
+/* Review controls must remain readable and usable on narrow screens. */
+:root{--text-secondary:#a4afc1;--text-muted:#a4afc1}
+#admin-app button,#admin-app a,.admin-dialog button{min-height:44px;min-width:44px;box-sizing:border-box}
+#admin-app a{display:inline-flex;align-items:center;overflow-wrap:anywhere}
+#admin-header{height:auto;min-height:64px;flex-wrap:wrap;padding:12px 24px}.header-left,.header-right,.suggestion-meta{flex-wrap:wrap;min-width:0}.admin-back{margin-right:0}.username-badge{overflow-wrap:anywhere;max-width:100%}
+#nav-tabs,#filter-tabs{flex-wrap:wrap}.stat-card{min-width:0;padding:16px 10px}.suggestion-meta{max-width:100%}.suggestion-meta a{max-width:100%;overflow-wrap:anywhere}.prompt-text{overflow-wrap:anywhere}
+#admin-status,#admin-action-error{margin:0;padding:10px 24px;background:var(--bg-secondary)}#admin-status:empty,#admin-action-error:empty{display:none}#admin-action-error{color:#ffb3bc}.btn-approve{background:#176b3a;color:#fff}.btn-decline{color:#ffb3bc;border-color:#ffb3bc}
+.admin-dialog{width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:24px;background:#151b28;color:#e8edf6;border:1px solid #687b9a;border-radius:14px}.admin-dialog::backdrop{background:#000b}.admin-dialog h3{padding-right:44px;margin:0 0 16px}.admin-dialog p{line-height:1.6;color:#b9c4d7}.admin-dialog-close{position:absolute;right:12px;top:10px;width:44px;height:44px;background:none;border:1px solid #687b9a;border-radius:8px;color:#e8edf6;font:inherit;font-size:22px;cursor:pointer}.admin-preview{width:min(1200px,calc(100vw - 24px));height:80dvh}.admin-preview[open]{display:flex;flex-direction:column}.admin-preview iframe{min-height:0}.admin-dialog .suggestion-actions{display:flex;flex-wrap:wrap;gap:12px}
+button:focus-visible,a:focus-visible{outline:3px solid #a9c6ff;outline-offset:3px}
+@media(max-width:700px){#admin-header{flex-direction:column;align-items:flex-start;padding:16px;gap:10px}.header-right{margin-left:0}#nav-tabs{padding:0 12px!important}.suggestion-meta{gap:8px}.suggestion-actions{gap:10px}.admin-dialog{padding:20px}}

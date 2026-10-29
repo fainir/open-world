@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contact Us - Open World</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg-primary: #0a0a0f;
@@ -130,12 +128,13 @@ textarea {
   text-decoration: none;
 }
 .email-link:hover { text-decoration: underline; }
-</style>
+button,input,textarea,a{min-height:44px;min-width:44px}a{display:inline-flex;align-items:center}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #a9c6ff;outline-offset:3px}:root{--text-secondary:#a4afc1;--text-muted:#a4afc1}</style>
 </head>
 <body>
 <div class="page">
   <a href="/" class="back-link">&larr; Back to Open World</a>
   <h1>Contact Us</h1>
+  <a class="back-link" href="/privacy">Privacy and data controls</a>
   <p class="subtitle">Got feedback, ideas, or questions? We'd love to hear from you.</p>
 
   <form id="contact-form" onsubmit="submitForm(event)">
@@ -154,8 +153,8 @@ textarea {
     <button type="submit" class="btn-submit" id="submit-btn">Send Message</button>
   </form>
 
-  <div id="success-msg" class="msg msg-success">Thanks! Your message has been sent. We'll get back to you soon.</div>
-  <div id="error-msg" class="msg msg-error"></div>
+  <div id="success-msg" role="status" class="msg msg-success">Thanks! Your message has been sent. We'll get back to you soon.</div>
+  <div id="error-msg" role="alert" class="msg msg-error"></div>
 </div>
 
 <script>

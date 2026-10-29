@@ -1,0 +1,4 @@
+Private bookmark/reload uses credential headers, retains opaque isolation, and delayed owned HTML cannot repaint after logout 375: passed
+Private bookmark/reload uses credential headers, retains opaque isolation, and delayed owned HTML cannot repaint after logout 1440: passed
+Real missing-base response remains isolated, fits mobile, and its retry recovers: passed
+Private transport regression passed; no provider call or real account data.

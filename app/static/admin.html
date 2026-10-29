@@ -6,8 +6,6 @@
 <title>Admin Panel - Open World Studio</title>
 <link rel="stylesheet" href="/static/css/styles.css">
 <link rel="stylesheet" href="/static/css/admin.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="admin-app">
@@ -26,6 +24,7 @@
     </div>
   </header>
 
+  <p id="admin-status" role="status"></p><p id="admin-action-error" role="alert"></p>
   <!-- Nav Tabs -->
   <div id="nav-tabs" style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg-secondary);padding:0 24px">
     <button class="nav-tab active" onclick="switchTab('versions',this)" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">Versions</button>
@@ -99,14 +98,8 @@
   </div>
 </div>
 
-<!-- Preview Modal -->
-<div id="preview-modal" class="modal-overlay" style="display:none">
-  <div class="modal modal-xl">
-    <button class="modal-close" onclick="closePreviewModal()">&times;</button>
-    <h3 id="preview-title">Version Preview</h3>
-    <iframe id="preview-iframe" class="preview-iframe"></iframe>
-  </div>
-</div>
+<dialog id="preview-modal" class="admin-dialog admin-preview" aria-labelledby="preview-title"><button class="admin-dialog-close" type="button" aria-label="Close preview" onclick="closePreviewModal()">×</button><h3 id="preview-title">Version Preview</h3><p id="preview-status" role="status"></p><iframe id="preview-iframe" class="preview-iframe" title="Submitted game preview" sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer" tabindex="-1"></iframe></dialog>
+<dialog id="review-modal" class="admin-dialog" aria-labelledby="review-title"><h3 id="review-title">Approve this contribution?</h3><p>This replaces the shared base game for all users. Preview the submitted version before approving it.</p><div class="suggestion-actions"><button class="btn btn-outline" id="review-cancel" type="button">Keep pending</button><button class="btn btn-approve" id="review-confirm" type="button">Approve and replace base game</button></div></dialog>
 
 <script src="/static/js/auth.js"></script>
 <script>
@@ -117,6 +110,9 @@
 let allVersions = [];
 let currentFilter = 'all';
 let contactMessages = [];
+let pendingReview=null,reviewBusy=false,previewRevision=0;
+const adminStatus=document.getElementById('admin-status'),adminError=document.getElementById('admin-action-error');
+function loadError(container,text,retry){const box=document.createElement('div');box.className='admin-error';box.setAttribute('role','alert');const message=document.createElement('p');message.textContent=text;box.append(message);if(retry){const button=document.createElement('button');button.className='btn btn-outline';button.textContent='Try again';button.onclick=retry;box.append(button);}container.replaceChildren(box);}
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAdminAuth();
@@ -158,8 +154,7 @@ async function loadVersions() {
     });
     if (res.status === 403) {
       document.getElementById('loading').style.display = 'none';
-      document.getElementById('suggestions-list').innerHTML =
-        '<div class="admin-error">Access denied. You are not an admin.</div>';
+      loadError(document.getElementById('suggestions-list'),'Access denied. This account is not an admin.');
       return;
     }
     if (!res.ok) throw new Error('Failed to load versions');
@@ -169,8 +164,7 @@ async function loadVersions() {
     renderVersions();
   } catch (err) {
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('suggestions-list').innerHTML =
-      `<div class="admin-error">Error: ${escapeHtml(err.message)}</div>`;
+    loadError(document.getElementById('suggestions-list'),'Versions could not load. Please try again.',loadVersions);
   }
 }
 
@@ -255,7 +249,7 @@ function renderVersions() {
             ${isSuggested && v.suggestion_status !== 'pending' ? `
               <span class="reviewed-info">${v.suggestion_status === 'approved' ? 'Approved' : 'Declined'}${reviewedTime ? ' on ' + reviewedTime : ''}</span>
             ` : ''}
-            <button class="btn btn-outline btn-sm" onclick="previewVersion('${v.id}', ${v.version_number})">Preview</button>
+            ${isSuggested ? `<button class="btn btn-outline btn-sm" onclick="previewVersion('${v.id}', ${v.version_number}, this)">Preview</button>` : '<span class="reviewed-info">Private version - not submitted for review</span>'}
             ${v.share_slug ? `<a class="btn btn-ghost btn-sm" href="/shared/${v.share_slug}" target="_blank">View Shared</a>` : ''}
           </div>
         </div>
@@ -264,59 +258,31 @@ function renderVersions() {
   }).join('');
 }
 
-async function approveVersion(versionId, btn) {
-  if (!confirm('Approve this suggestion? It will replace the base game for all users.')) return;
-
-  btn.disabled = true;
-  btn.textContent = 'Approving...';
-
-  try {
-    const res = await fetch(`/api/admin/approve/${versionId}`, {
-      method: 'POST',
-      headers: Auth.authHeaders(),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.detail || 'Approve failed');
-    }
-    await loadVersions();
-  } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = 'Approve & Merge';
-  }
+function approveVersion(versionId,button){
+  pendingReview={versionId,button};adminError.textContent='';const dialog=document.getElementById('review-modal');dialog.showModal();document.getElementById('review-cancel').focus();
 }
-
-async function declineVersion(versionId, btn) {
-  btn.disabled = true;
-  btn.textContent = 'Declining...';
-
-  try {
-    const res = await fetch(`/api/admin/decline/${versionId}`, {
-      method: 'POST',
-      headers: Auth.authHeaders(),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.detail || 'Decline failed');
-    }
-    await loadVersions();
-  } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = 'Decline';
-  }
+document.getElementById('review-cancel').onclick=()=>document.getElementById('review-modal').close();
+document.getElementById('review-modal').addEventListener('cancel',event=>{if(reviewBusy)event.preventDefault();});
+document.getElementById('review-confirm').onclick=async()=>{
+  if(!pendingReview||reviewBusy)return;reviewBusy=true;const {versionId,button}=pendingReview;const confirm=document.getElementById('review-confirm'),cancel=document.getElementById('review-cancel');confirm.disabled=true;cancel.disabled=true;button.disabled=true;adminStatus.textContent='Approving contribution…';
+  try{const response=await fetch('/api/admin/approve/'+encodeURIComponent(versionId),{method:'POST',headers:Auth.authHeaders()});if(!response.ok){const data=await response.json();throw new Error(data.detail||'Approval could not finish.');}document.getElementById('review-modal').close();await loadVersions();adminStatus.textContent='Contribution approved. The shared base game is updated.';}
+  catch(error){document.getElementById('review-modal').close();adminStatus.textContent='';adminError.textContent=error.message||'Approval could not finish. Please try again.';if(button.isConnected)button.disabled=false;}
+  finally{reviewBusy=false;confirm.disabled=false;cancel.disabled=false;}
+};
+async function declineVersion(versionId,button){
+  button.disabled=true;button.textContent='Declining…';adminError.textContent='';
+  try{const response=await fetch('/api/admin/decline/'+encodeURIComponent(versionId),{method:'POST',headers:Auth.authHeaders()});if(!response.ok){const data=await response.json();throw new Error(data.detail||'Decline could not finish.');}await loadVersions();adminStatus.textContent='Contribution declined.';}
+  catch(error){adminError.textContent=error.message||'Decline could not finish. Please try again.';if(button.isConnected){button.disabled=false;button.textContent='Decline';}}
 }
-
-function previewVersion(versionId, versionNumber) {
-  document.getElementById('preview-title').textContent = `Preview - v${versionNumber}`;
-  document.getElementById('preview-iframe').src = `/game/version/${versionId}`;
-  document.getElementById('preview-modal').style.display = 'flex';
+async function previewVersion(versionId,versionNumber,button){
+  const revision=++previewRevision;adminError.textContent='';const dialog=document.getElementById('preview-modal');dialog.returnTrigger=button;document.getElementById('preview-title').textContent='Preview - v'+versionNumber;document.getElementById('preview-status').textContent='Loading submitted game…';document.getElementById('preview-iframe').srcdoc='';dialog.showModal();dialog.querySelector('button').focus();
+  try{const response=await fetch('/api/admin/preview/'+encodeURIComponent(versionId),{headers:Auth.authHeaders(),cache:'no-store'});if(!response.ok)throw new Error('The submitted game could not load. Close this preview and try again.');const html=await response.text();if(!dialog.open||revision!==previewRevision)return;const policy="default-src 'none';script-src 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;style-src 'unsafe-inline';img-src data: blob:;connect-src https://cdn.jsdelivr.net https://unpkg.com;font-src data:;media-src blob:;worker-src blob:;base-uri 'none';form-action 'none'";document.getElementById('preview-iframe').srcdoc='<!doctype html><meta http-equiv="Content-Security-Policy" content="'+policy+'">'+html;document.getElementById('preview-status').textContent='Submitted game loaded. It is isolated from admin credentials.';}
+  catch(error){if(dialog.open&&revision===previewRevision)document.getElementById('preview-status').textContent=error.message;}
 }
-
-function closePreviewModal() {
-  document.getElementById('preview-modal').style.display = 'none';
-  document.getElementById('preview-iframe').src = '';
+function closePreviewModal(){document.getElementById('preview-modal').close();}
+for(const id of ['preview-modal','review-modal']){
+  const dialog=document.getElementById(id);dialog.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const list=[...dialog.querySelectorAll('button,a[href],input')].filter(el=>!el.disabled&&el.getClientRects().length),index=list.indexOf(document.activeElement);if(event.shiftKey&&index<=0){event.preventDefault();list.at(-1)?.focus();}else if(!event.shiftKey&&(index<0||index===list.length-1)){event.preventDefault();list[0]?.focus();}});
+  dialog.addEventListener('close',()=>{if(id==='preview-modal'){previewRevision++;document.getElementById('preview-iframe').srcdoc='';}const trigger=id==='review-modal'?pendingReview?.button:dialog.returnTrigger;if(id==='review-modal')pendingReview=null;(trigger?.isConnected?trigger:document.querySelector('.nav-tab.active')).focus();});
 }
 
 function handleLogout() {
@@ -345,8 +311,7 @@ async function loadContacts() {
     updateUnreadBadge();
   } catch (err) {
     document.getElementById('contacts-loading').style.display = 'none';
-    document.getElementById('contacts-list').innerHTML =
-      `<div class="admin-error">Error: ${escapeHtml(err.message)}</div>`;
+    loadError(document.getElementById('contacts-list'),'Messages could not load. Please try again.',loadContacts);
   }
 }
 
@@ -397,19 +362,10 @@ function renderContacts() {
   }).join('');
 }
 
-async function markRead(contactId, btn) {
-  btn.disabled = true;
-  btn.textContent = '...';
-  try {
-    await fetch(`/api/admin/contacts/${contactId}/read`, {
-      method: 'POST',
-      headers: Auth.authHeaders(),
-    });
-    await loadContacts();
-  } catch (err) {
-    btn.disabled = false;
-    btn.textContent = 'Mark as Read';
-  }
+async function markRead(contactId,button){
+  button.disabled=true;adminError.textContent='';
+  try{const response=await fetch('/api/admin/contacts/'+encodeURIComponent(contactId)+'/read',{method:'POST',headers:Auth.authHeaders()});if(!response.ok)throw new Error('The message could not be marked as read. Please try again.');await loadContacts();adminStatus.textContent='Message marked as read.';}
+  catch(error){adminError.textContent=error.message;if(button.isConnected)button.disabled=false;}
 }
 
 // Load unread count on page load

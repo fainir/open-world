@@ -1,0 +1,9 @@
+test_changed_or_missing_contract_forces_drill_on_unchanged_archive (test_mirror_contract.MirrorRestoreContract.test_changed_or_missing_contract_forces_drill_on_unchanged_archive) ... ok
+test_changed_snapshot_or_missing_encrypted_target_forces_drill (test_mirror_contract.MirrorRestoreContract.test_changed_snapshot_or_missing_encrypted_target_forces_drill) ... ok
+test_incomplete_prior_success_cannot_skip_drill (test_mirror_contract.MirrorRestoreContract.test_incomplete_prior_success_cannot_skip_drill) ... ok
+test_unchanged_verified_archive_and_contract_can_reuse_its_drill (test_mirror_contract.MirrorRestoreContract.test_unchanged_verified_archive_and_contract_can_reuse_its_drill) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK

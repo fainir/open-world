@@ -1,137 +1,54 @@
-# Open World Studio
+# OpenWorld Studio
 
-A web app that wraps the Open World 3D game with an AI-powered chat interface. Users describe changes in natural language, and Claude modifies the game code in real time.
+Describe a change to the existing browser game, preview a private saved version and explicitly share the game you choose. Live: https://open-world.gg.
 
-**Live:** https://open-world-studio-production.up.railway.app
+The studio uses FastAPI/Python, SQLite, static JavaScript and the existing Three.js game. Normal edits use the existing Sonnet 5.5 configuration with an explicit Opus override; no automatic expensive retry occurs. Users bring their own Anthropic key. Executable games run in an opaque sandbox and cannot read studio credentials, storage or private APIs.
 
-## Features
+## Run and verify
 
-- **AI Game Editor** — Describe changes in chat, Claude modifies the game code via SEARCH/REPLACE patches
-- **Instant Preview** — See your modified game version immediately in the iframe
-- **Version History** — Browse and switch between all versions created in a session
-- **Save & Share** — Sign in to save versions and generate public share links
-- **Auth System** — Email/username signup and login with JWT
-- **Bring Your Own Key** — Users provide their own Anthropic API key
+Use the existing Python environment and documented configuration from `app/.env.example`. Normal local development is `app/venv/bin/python app/run.py`; it may load your local app/.env. Do not use that entry point for offline QA with real provider configuration present.
 
-## Tech Stack
-
-- **Frontend:** Vanilla JS SPA with dark theme UI
-- **Backend:** Python / FastAPI
-- **AI Agent:** Anthropic Claude API (claude-sonnet-4-20250514)
-- **Database:** SQLite (persistent volume on Railway)
-- **Auth:** JWT + bcrypt
-- **Hosting:** Railway
-
-## Project Structure
-
-```
-open-world/
-├── index.html              # Original game (Three.js, ~4800 lines)
-├── zones/                  # Game zone modules
-├── app/
-│   ├── backend/
-│   │   ├── main.py         # FastAPI routes
-│   │   ├── agent.py        # Claude API agent
-│   │   ├── auth.py         # JWT auth
-│   │   ├── models.py       # SQLAlchemy models
-│   │   └── database.py     # SQLite setup
-│   ├── static/
-│   │   ├── index.html      # SPA entry point
-│   │   ├── css/styles.css  # UI styles
-│   │   └── js/             # auth.js, chat.js, app.js
-│   ├── requirements.txt    # Python dependencies
-│   └── run.py              # Local dev startup
-├── railway.toml            # Railway deploy config
-├── nixpacks.toml           # Build config
-└── Procfile                # Process definition
+```sh
+app/venv/bin/python -m unittest discover -s tests -v
+app/venv/bin/python -m compileall -q app/backend
 ```
 
-## Local Development
+The tests create disposable SQLite data and synthetic users; provider responses are mocked. For an isolated browser fixture that never loads app/.env:
 
-```bash
-# Create venv and install deps
-python3 -m venv app/venv
-app/venv/bin/pip install -r app/requirements.txt
-
-# Optionally copy and edit .env
-cp app/.env.example app/.env
-
-# Run the server
-app/venv/bin/python app/run.py
+```sh
+env -i HOME="$HOME" PATH=/usr/local/bin:/usr/bin:/bin TMPDIR=/tmp \
+  app/venv/bin/python qa/local.py --lightweight-game
 ```
 
-Open http://localhost:8000
+This lightweight mode verifies the real studio/account UI only, not gameplay or performance. Omit that flag for the unchanged real base game. The fixture prints its loopback URL and a private credential-file path, then removes its data on shutdown. Do not put that file in a repository or run QA against owner accounts.
 
-## Deploy to Railway
+## Existing production deployment
 
-### Prerequisites
+`railway up --detach` uploads this source to the already-linked OpenWorld service. Confirm the project/service with `railway status` first, keep one worker/replica, and preserve the DATA_DIR/VERSIONS_DIR persistent volume. This task does not create another service, volume, account, key or provider commitment.
 
-- [Railway CLI](https://docs.railway.com/guides/cli) installed (`brew install railway`)
-- Railway account — sign up at https://railway.com
+Run the changed-flow browser checks and read [READINESS.md](READINESS.md) before deployment. Production `/healthz` must report a healthy database, referenced game files and fresh verified recovery. Verify public studio/account/privacy/contact pages after the rollout. The coordinator owns deployment and the final public acceptance.
 
-### Steps
+Rollback means redeploy a compatible application build to this same service while preserving the volume. Never restore an old database over live user data for a deployment rollback. Account-removal evidence and the deletion-aware recovery helper must be retained; an older recovery command may not serve restored traffic. See [OPERATIONS.md](OPERATIONS.md).
 
-1. **Login to Railway**
-   ```bash
-   railway login
-   ```
+## Data controls
 
-2. **Create a new project**
-   ```bash
-   railway init --name open-world-studio
-   ```
+`/account` downloads a scoped ZIP with profile, chat, version metadata and owned game HTML. It excludes credential hashes and other users. Account closure requires the current password and typed DELETE, removes active account data and game files, and invalidates old sign-in tokens. Failure recovery protects the other accounts and restores the caller's files/rows when the transaction fails.
 
-3. **Link the project and create a service**
-   ```bash
-   railway link --project <PROJECT_ID>
-   railway up --detach
-   ```
-   The first `railway up` creates the service and triggers the initial build.
+The persistent account-ID-only deletion log is included in new snapshots. An older backup is restored only with current surviving deletion evidence, applied before traffic. Historical encrypted copies rotate separately; they are not claimed to disappear immediately. `/privacy` explains storage, providers, removal and operator contact. Anonymous contact messages are separate from unverified account emails.
 
-4. **Link the service**
-   ```bash
-   railway service link open-world-studio
-   ```
+## Configuration
 
-5. **Set environment variables**
-   ```bash
-   railway variables set \
-     JWT_SECRET=$(openssl rand -hex 32) \
-     DATA_DIR=/data/db \
-     VERSIONS_DIR=/data/versions
-   ```
+| Variable | Purpose |
+|---|---|
+| JWT_SECRET | Stable private production secret of at least 32 characters; retain during redeploy |
+| DATA_DIR | Persistent database, base game, deletion evidence and recovery snapshots |
+| VERSIONS_DIR | Persistent generated game files |
+| BASE_GAME_PATH | Optional explicit base game; default is the persistent copy |
+| STUDIO_ORIGINS | Existing allowed studio origin list; no widened scope is required |
+| OPENWORLD_MODEL | Existing Sonnet default or explicit supported Opus override |
+| SEED_DEMO_STORE | Keep disabled on production; no automatic reseeding |
+| PORT | Existing hosting listener port |
 
-6. **Add a persistent volume** (for SQLite DB + game version files)
-   ```bash
-   railway volume add --mount-path /data
-   ```
+No provider key belongs in source, public metadata, logs or account exports. The source-check workflow runs Python compile, dependency consistency and synthetic tests on pull requests/main changes. Its first hosted run still depends on the existing shared GitHub Actions allowance; no budget increase is made here. Local checks remain the recorded validation until that owner action is complete.
 
-7. **Generate a public domain**
-   ```bash
-   railway domain
-   ```
-
-8. **Redeploy** (picks up the new env vars and volume)
-   ```bash
-   railway up --detach
-   ```
-
-Your app will be live at the domain Railway generated.
-
-### Subsequent deploys
-
-After pushing changes to GitHub:
-```bash
-railway up --detach
-```
-
-Or connect your GitHub repo in the Railway dashboard for automatic deploys on push.
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `JWT_SECRET` | Yes | Secret key for JWT tokens. Generate with `openssl rand -hex 32` |
-| `DATA_DIR` | No | Directory for SQLite database. Default: `app/data/` |
-| `VERSIONS_DIR` | No | Directory for saved game versions. Default: `app/versions/` |
-| `PORT` | No | Server port. Railway sets this automatically |
+Current scope and evidence are in [PRODUCT.md](PRODUCT.md) and [READINESS.md](READINESS.md).

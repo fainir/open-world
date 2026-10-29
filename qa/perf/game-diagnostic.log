@@ -1,0 +1,50 @@
+Top page errors: []
+Failed requests: []
+Frames: [
+  {
+    url: 'http://127.0.0.1:55305/',
+    text: '🎲 Open World\n' +
+      'Edit Game\n' +
+      '🔑\n' +
+      'Versions\n' +
+      'Store\n' +
+      'Sign In\n' +
+      '×\n' +
+      'Make It Yours\n' +
+      '\n' +
+      'Tell AI what to change and it will modify the game in real time.\n' +
+      '\n' +
+      'Add a day/night c',
+    canvas: 0
+  },
+  {
+    url: 'about:blank',
+    text: 'OPEN WORLD\n' +
+      'Click or press anything to start\n' +
+      'WASD\n' +
+      '/\n' +
+      'Arrows\n' +
+      '🏃\n' +
+      'Move\n' +
+      'Space\n' +
+      '⬆️\n' +
+      'Jump\n' +
+      'Shift\n' +
+      '🚀\n' +
+      'Boost\n' +
+      'Mouse\n' +
+      '👀\n' +
+      'Look\n' +
+      'Click\n' +
+      '🎯\n' +
+      'Shoot\n' +
+      'E\n' +
+      '🚪\n' +
+      'Enter\n' +
+      'V\n' +
+      '🚗\n' +
+      'Vehicles\n' +
+      'B',
+    canvas: 1
+  }
+]

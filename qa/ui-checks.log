@@ -1,0 +1,7 @@
+Actual sign-in, loading/export retries, scoped ZIP and confirmed closure/busy/recovery 375: passed
+Privacy/contact, actual signup, empty history/store/key modal keyboard and44px UI 375: passed
+Actual sign-in, loading/export retries, scoped ZIP and confirmed closure/busy/recovery 1440: passed
+Privacy/contact, actual signup, empty history/store/key modal keyboard and44px UI 1440: passed
+All functional own-site UI checks passed. Lightweight game fixture; no gameplay/performance/provider verdict.
+Final modal targets do not overlap; Escape restores each trigger 375: passed
+Final modal targets do not overlap; Escape restores each trigger 1440: passed
