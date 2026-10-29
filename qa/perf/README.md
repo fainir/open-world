@@ -6,7 +6,7 @@ The public base now loads directly in its existing opaque iframe response instea
 
 [Actual-touch browser check](../game-startup.log), [scenario](../check-game-startup.mjs): the real engine initializes, Tap to play enters gameplay, the HUD/shoot control appears, and the vehicle selector opens. Studio storage remains inaccessible from the game. Page errors and console errors are zero. [Ready city](actual-game-ready.jpg), [actual vehicle selector](actual-game-vehicle.jpg). No provider call or customer data was used.
 
-The same default mobile audit settings and headless software-rendering flags were retained from the earlier69/98 CPU-warned result. Trace attribution identified startup style/layout work before the transport change; the final report has no CPU warning. The independent public PageSpeed API returned429 and provides no additional verdict. The accepted evidence is this complete local actual-game measurement plus its functional check. Coordinator public rollout/smoke remains G4.
+The same default mobile audit settings and headless software-rendering flags were retained from the earlier69/98 CPU-warned result. Trace attribution identified startup style/layout work before the transport change; the final report has no CPU warning. The independent public PageSpeed API returned429 and provides no additional verdict. The accepted evidence is this complete local actual-game measurement plus its functional check. Coordinator rollout/public smoke is accepted. The preserved production base differs from this source default; a separate actual-public96/100 report and gameplay acceptance are linked in [live release](../public-release.md).
 
 Reproduce with `qa/local.py` in its default real-game mode, then:
 

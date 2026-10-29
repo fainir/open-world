@@ -17,23 +17,24 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | U1 | Sign-in, store, history, key entry, account and contact at375/1440 | verified | [Actual UI](qa/account-acceptance.md):375/1440 sign-in/signup, account/data controls, contact/privacy, empty history/store and key dialog; lightweight game fixture, gameplay unchanged |
 | U2 | Modal focus/keyboard,44px controls and loading/error/empty states | verified | [Actual UI](qa/account-acceptance.md):44px controls, connected labels, loading/error retries, forward/backward focus wrapping, Escape/trigger return and no overlapping modal controls; zero page errors |
 | U3 | Owner admin suggestions/contacts and role-denied states at375/1440 | verified | [Actual admin acceptance](qa/account-acceptance.md), [log](qa/admin-checks.log): role denial, submitted-only opaque preview, in-page review/cancel, rollback/idempotence, contacts/read retries and safe logout; all44px and no overflow |
-| G1 | Main mobile Lighthouse performance/accessibility >=90 | verified | [Actual-base90/100 audit](qa/perf/README.md), no warnings, city/intro frame; real touch Start/HUD/vehicle and zero page/console errors. Direct public iframe preserves opaque policy; private bookmark/reload/logout race and mobile error/retry pass |
+| G1 | Main mobile Lighthouse performance/accessibility >=90 | verified | Actual public retained base96/100, warnings[],FCP/LCP1.4s,TBT10ms,CLS0; real city/intro visually reviewed. Local actual source game90/100 retained. [Public report](qa/perf/public-mobile.report.html), [release](qa/public-release.md) |
 | G2 | Current changed-source tests and dependency/security checks | verified | [29 source/ASGI checks](qa/account-checks.log), frontend syntax and Python compile pass; dependency versions unchanged from accepted zero-vulnerability audit A/openworld-dependencies-after.json |
 | G3 | Truthful deploy/rollback/CI and cost guide | verified | [Current README](README.md) and [operations](OPERATIONS.md): existing service only, no reseeding/new account, scoped limits and deletion-aware restore; shared hosted-CI/provider-budget owner actions retained |
-| G4 | Verified public changed release | building (coordinator) | Source candidate is pushed and compiled/UI accepted; production remains unchanged. Deploy this existing service/volume, public smoke account/privacy/admin/base/private routes, then verify a fresh deletion-aware snapshot with the already-updated mirror |
+| G4 | Verified public changed release | verified | Existing rollout SUCCESS; exact public HTML/health/access guards, actual375/1440 game/start/vehicle/account/privacy/contact/sign-in and new-format independent snapshot/restore pass. No writes/provider/owner data. [Live release/rollback](qa/public-release.md) |
 | G5 | Existing independent mirror uses the deletion-aware helper and current-snapshot drill | verified | Coordinator atomic two-helper update and owned foreground sync succeeded at2026-10-29T17:06:57Z; encryptedCopyVerified/restoreDrillPassed/restoreDrillRanThisCheck true, contract2; key/config/CLI/runtime preserved. [Selected evidence](qa/account-acceptance.md) |
 | G6 | Hosted source checks | owner | New bounded workflow is configured and local29 tests/compile pass. Existing portfolio Actions allowance must be restored within an owner-chosen cap before hosted CI; no new budget authorized |
 
 ## Remaining buildable work
 
-- Existing mirror helper rollout is verified in G5. After the application rollout creates its first new-format snapshot, G4 requires one owned foreground sync of that archive; preserve the existing key/config/runtime/schedule.
-- G4: coordinator deploys the candidate to the existing OpenWorld service/volume and performs public smoke.
+None. Existing public release and new-format independent mirror acceptance pass. Preserve the accepted engine, private data and recovery.
 
 ## Owner / waiting
 
 Shared inherited credential, hosted-CI allowance and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+-2026-10-29 - Existing public rollout accepted. Retained public base96/100, actual375/1440 game/UI/access/source checks and current deletion-aware encrypted-copy/restore drill pass. No real account/provider/message operation; only hosted-CI owner row remains.
 
 - 2026-10-29 - Actual-base mobile90/100 has no warnings and paints the real city/intro. Direct opaque public startup, actual touch Start/vehicle, private bookmark/logout race and mobile missing-base retry pass;29 source cases/compile/syntax pass. Existing mirror contract2 rollout/drill verified. Coordinator owns public rollout/new-format snapshot sync.
 
