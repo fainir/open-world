@@ -970,16 +970,23 @@ $('ow-nv-dismiss').onclick=()=>{
 
 // Panel closes only via × button or Escape key — clicking the game does NOT close it
 
+let gameLoadRevision=0;
 async function loadGame(){
-  const frame=$('ow-game');
+  const frame=$('ow-game'),revision=++gameLoadRevision;
+  // The public base already has the opaque sandbox response policy. Let the browser
+  // stream/parse it directly instead of buffering the entire game in the parent.
+  frame.removeAttribute('src');frame.removeAttribute('srcdoc');
+  if(!currentVersionId){frame.src='/game/base';return;}
   try{
-    const url=currentVersionId?'/game/version/'+encodeURIComponent(currentVersionId):'/game/base';
+    // Private versions still require the caller's bearer/guest proof and never put it in a URL.
+    const url='/game/version/'+encodeURIComponent(currentVersionId);
     const r=await fetch(url,{headers:Auth.headers(),cache:'no-store'});
     if(!r.ok)throw new Error('This game is private or unavailable. Sign in as its owner, or open a shared game.');
     const html=await r.text();
+    if(revision!==gameLoadRevision)return;
     const policy="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'unsafe-inline'; img-src data: blob:; connect-src https://cdn.jsdelivr.net https://unpkg.com; font-src data:; media-src blob:; worker-src blob:; base-uri 'none'; form-action 'none'";
     frame.srcdoc='<!doctype html><meta http-equiv="Content-Security-Policy" content="'+policy+'">'+html;
-  }catch(e){showToast(e.message)}
+  }catch(e){if(revision===gameLoadRevision)showToast(e.message)}
 }
 
 // The game may open only the public store UI. No URL, credential or editing command is accepted.

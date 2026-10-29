@@ -351,4 +351,21 @@ class AdminReviews(unittest.IsolatedAsyncioTestCase):
         base.write_text('<!doctype html><html><body>Recovered synthetic base</body></html>')
 
 
+class PublicBaseTransport(unittest.IsolatedAsyncioTestCase):
+    async def test_public_base_keeps_opaque_policy_and_missing_file_offers_retry(self):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='https://test.invalid') as client:
+            response=await client.get('/game/base')
+            self.assertEqual(response.status_code,200)
+            self.assertIn('sandbox allow-scripts allow-pointer-lock',response.headers['content-security-policy'])
+            self.assertNotIn('allow-same-origin',response.headers['content-security-policy'])
+            self.assertNotIn('ow_token',response.text)
+            missing=Path(_TEST_ROOT.name)/'missing-public-base.html'
+            with patch('app.backend.main.get_base_game_path',return_value=str(missing)):
+                failed=await client.get('/game/base')
+            self.assertEqual(failed.status_code,404)
+            self.assertIn('Try loading the game again',failed.text)
+            self.assertIn('sandbox allow-scripts allow-pointer-lock',failed.headers['content-security-policy'])
+            self.assertEqual(failed.headers['cache-control'],'no-store')
+
+
 if __name__=='__main__':unittest.main(verbosity=2)

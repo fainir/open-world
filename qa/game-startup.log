@@ -1,0 +1,3 @@
+Public game uses a direct opaque iframe with no parent credential headers.
+Real mobile engine initialized and intro is visible.
+Actual Tap to play, HUD and vehicle selector passed; studio storage blocked; pageErrors0; baseRequests1.

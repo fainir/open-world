@@ -1,7 +1,17 @@
-# Actual-base mobile measurement
+# Actual-base mobile acceptance
 
-The October29 standard mobile Lighthouse13.6 run used the real unchanged source base game in a fresh isolated server, with headless Chrome and `--enable-unsafe-swiftshader`. It scored **69 performance /98 accessibility**, LCP1.6s,TBT2.62s,CLS0, and warned that the host CPU was slower than the calibration expects. This is **not a performance pass**. [Report](studio.html), [frame](studio.jpg).
+The October29 final standard mobile Lighthouse13.6 run scores **90 performance /100 accessibility**, FCP/LCP1.1s,TBT180ms,CLS0, with **no run warnings**. It used the unchanged real source base game in a fresh isolated server. The [report](studio.html) and visually reviewed [final frame](studio.jpg) show the actual city and OPEN WORLD intro. This is not a lightweight or fallback scene.
 
-The reported frame was captured before the game intro finished painting, so it does not establish completed game readiness. A separate actual-game diagnostic reached the OPEN WORLD intro and a game canvas with zero page errors or failed requests, using the same real source game; [diagnostic](game-diagnostic.log), [frame](game-diagnostic.jpg), [probe](../probe-game.mjs). It is not a Lighthouse pass. No provider calls or saved customer data were used.
+The public base now loads directly in its existing opaque iframe response instead of buffering and reparsing the whole game as parent `srcdoc`. Private versions still use authenticated fetch and isolated `srcdoc`; no stored game HTML, game engine, generated version or provider configuration changed. The explicit mobile Start action can request fullscreen without a policy error. A missing base has an isolated, readable retry page.
 
-The missing main landmark was subsequently fixed in the studio shell; two focused private-shell/isolation tests pass. The actual game's heavy initialization/rendering remains the measured unresolved startup work. Do not use the lightweight functional fixture or a blank/fallback game to close G1. An independent public mobile measurement can distinguish current host contention from product CPU work before rewriting the accepted game engine.
+[Actual-touch browser check](../game-startup.log), [scenario](../check-game-startup.mjs): the real engine initializes, Tap to play enters gameplay, the HUD/shoot control appears, and the vehicle selector opens. Studio storage remains inaccessible from the game. Page errors and console errors are zero. [Ready city](actual-game-ready.jpg), [actual vehicle selector](actual-game-vehicle.jpg). No provider call or customer data was used.
+
+The same default mobile audit settings and headless software-rendering flags were retained from the earlier69/98 CPU-warned result. Trace attribution identified startup style/layout work before the transport change; the final report has no CPU warning. The independent public PageSpeed API returned429 and provides no additional verdict. The accepted evidence is this complete local actual-game measurement plus its functional check. Coordinator public rollout/smoke remains G4.
+
+Reproduce with `qa/local.py` in its default real-game mode, then:
+
+```sh
+CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' lighthouse "$OWNED_LOOPBACK_URL" --only-categories=performance,accessibility --chrome-flags='--headless=new --enable-unsafe-swiftshader' --output=html --output-path=qa/perf/studio.html --quiet --no-enable-error-reporting
+```
+
+Use Lighthouse13.6 and Node24, serialize the measurement with other audits, and close the audit browser afterward. `--lightweight-game` proves only account/editor functionality and is never a game/performance pass.

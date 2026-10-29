@@ -36,7 +36,7 @@ from app.backend.auth import (
     verify_password,
 )
 from app.backend.access import guest_hash, require_session, require_version, claim_session
-from app.backend.game_security import game_response, studio_shell
+from app.backend.game_security import game_response, studio_shell, game_error_response
 from app.backend.request_limits import boundaries
 from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK, reconcile_deleted_accounts
 from app.backend.accounts import export_account, delete_account, account_action
@@ -1017,7 +1017,7 @@ def api_admin_mark_read(
 def serve_base_game():
     path = get_base_game_path()
     if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Base game not found")
+        return game_error_response()
     return game_response(path)
 
 
