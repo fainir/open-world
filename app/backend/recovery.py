@@ -18,6 +18,90 @@ import zipfile
 PUBLICATION_LOCK = threading.RLock()
 
 
+DELETIONS_FILE = 'deleted-accounts.json'
+
+
+def _validate_deleted_accounts(value):
+    if not isinstance(value, dict) or value.get('format') != 1 or not isinstance(value.get('accounts'), list):
+        raise RuntimeError('Invalid account-deletion evidence')
+    ids = value['accounts']
+    if len(ids) > 1_000_000 or any(not isinstance(item, str) or not 1 <= len(item) <= 100 for item in ids):
+        raise RuntimeError('Invalid account-deletion evidence')
+    return set(ids)
+
+
+def write_deleted_accounts(data_dir, ids):
+    """Private durable intent, independent of the SQLite transaction being removed."""
+    directory = Path(data_dir);directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    target = directory / DELETIONS_FILE
+    if target.is_symlink():raise RuntimeError('Invalid account-deletion evidence path')
+    payload = json.dumps({'format': 1, 'accounts': sorted(set(ids))})
+    _validate_deleted_accounts(json.loads(payload))
+    handle, temporary = tempfile.mkstemp(prefix='.deletions-', dir=directory)
+    try:
+        with os.fdopen(handle, 'w') as output:
+            output.write(payload);output.flush();os.fsync(output.fileno())
+        os.chmod(temporary, 0o600);os.replace(temporary, target)
+        descriptor=os.open(directory,os.O_RDONLY)
+        try:os.fsync(descriptor)
+        finally:os.close(descriptor)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def read_deleted_accounts(data_dir, create=False):
+    target = Path(data_dir) / DELETIONS_FILE
+    if not target.exists() and create:write_deleted_accounts(data_dir, set())
+    if target.is_symlink() or target.stat().st_size > 128 * 1024**2:
+        raise RuntimeError('Invalid account-deletion evidence path or size')
+    return _validate_deleted_accounts(json.loads(target.read_text()))
+
+
+def snapshot_deleted_accounts(archive_path):
+    """The current-snapshot mirror drill carries that snapshot's deletion evidence."""
+    with zipfile.ZipFile(archive_path) as archive:
+        if DELETIONS_FILE not in archive.namelist():return set() # Before account closure existed.
+        return _validate_deleted_accounts(json.loads(archive.read(DELETIONS_FILE)))
+
+
+def purge_account(connection, user_id):
+    """Delete only this account's rows; returns its now-unreferenced game filenames."""
+    owned = 'SELECT id FROM game_versions WHERE session_id IN (SELECT id FROM chat_sessions WHERE user_id=?)'
+    args=(user_id,)
+    names=[row[0] for row in connection.execute('SELECT DISTINCT file_path FROM game_versions WHERE id IN ('+owned+')',args)]
+    if any(Path(name).name != name or not name.endswith('.html') for name in names):
+        raise RuntimeError('Invalid owned game path')
+    columns={row[1] for row in connection.execute('PRAGMA table_info(game_versions)')}
+    if 'parent_version_id' in columns:
+        connection.execute('UPDATE game_versions SET parent_version_id=NULL WHERE parent_version_id IN ('+owned+')',args)
+    if 'reviewed_by' in columns:
+        connection.execute('UPDATE game_versions SET reviewed_by=NULL WHERE reviewed_by=?',(user_id,))
+    connection.execute('UPDATE game_versions SET user_id=(SELECT user_id FROM chat_sessions WHERE chat_sessions.id=game_versions.session_id) WHERE user_id=? AND id NOT IN ('+owned+')',(user_id,*args))
+    connection.execute('DELETE FROM stars WHERE user_id=? OR version_id IN ('+owned+')',(user_id,*args))
+    connection.execute('DELETE FROM game_versions WHERE id IN ('+owned+')',args)
+    connection.execute('DELETE FROM chat_messages WHERE session_id IN (SELECT id FROM chat_sessions WHERE user_id=?)',(user_id,))
+    connection.execute('DELETE FROM chat_sessions WHERE user_id=?',(user_id,))
+    connection.execute('DELETE FROM users WHERE id=?',(user_id,))
+    return [name for name in names if not connection.execute('SELECT 1 FROM game_versions WHERE file_path=? LIMIT 1',(name,)).fetchone()]
+
+
+def reconcile_deleted_accounts(data_dir, versions_dir, ids=None):
+    """Apply surviving intent before startup snapshots or any restored service traffic."""
+    data_dir,versions_dir=Path(data_dir),Path(versions_dir)
+    ids=read_deleted_accounts(data_dir,create=True) if ids is None else set(ids)
+    database=data_dir/'openworld.db'
+    if not database.exists():return
+    with PUBLICATION_LOCK, closing(sqlite3.connect(database)) as connection:
+        connection.execute('BEGIN IMMEDIATE')
+        names=set()
+        for user_id in ids:names.update(purge_account(connection,user_id))
+        connection.commit()
+        for name in names:(versions_dir/name).unlink(missing_ok=True)
+        for user_id in ids:
+            directory=data_dir/'account-removals'/hashlib.sha256(user_id.encode()).hexdigest()
+            if directory.is_dir() and not directory.is_symlink():shutil.rmtree(directory)
+
+
 def _digest(path):
     with path.open('rb') as source:
         return hashlib.file_digest(source, 'sha256').hexdigest()
@@ -40,7 +124,8 @@ def snapshot(data_dir, versions_dir, base_path):
                 raise RuntimeError('Database snapshot failed verification')
             files = [row[0] for row in db.execute('SELECT DISTINCT file_path FROM game_versions')]
         manifest = {'format': 1, 'createdAt': time.time(), 'files': {}}
-        staged = {'openworld.db': backup_path, 'base.html': base_path}
+        read_deleted_accounts(data_dir,create=True)
+        staged = {'openworld.db': backup_path, 'base.html': base_path, DELETIONS_FILE: data_dir/DELETIONS_FILE}
         for name in files:
             if Path(name).name != name or not name.endswith('.html'):
                 raise RuntimeError('Invalid game path in database')
@@ -72,7 +157,7 @@ def verify(archive_path):
             raise RuntimeError('Snapshot manifest mismatch')
         total = 0
         for name, record in manifest['files'].items():
-            if name not in ['openworld.db', 'base.html'] and not (name.startswith('versions/') and len(Path(name).parts) == 2 and name.endswith('.html') and '..' not in Path(name).parts):
+            if name not in ['openworld.db', 'base.html', DELETIONS_FILE] and not (name.startswith('versions/') and len(Path(name).parts) == 2 and name.endswith('.html') and '..' not in Path(name).parts):
                 raise RuntimeError('Invalid snapshot path')
             info = archive.getinfo(name);total += info.file_size
             if info.file_size != record['bytes'] or total > 2 * 1024**3:
@@ -85,9 +170,11 @@ def verify(archive_path):
         return manifest
 
 
-def restore(archive_path, destination):
+def restore(archive_path, destination, *, deletions=None):
     """Restore into a NEW private directory, with all old sessions invalidated."""
+    if deletions is None:raise RuntimeError('Current account-deletion evidence is required for restore')
     manifest = verify(archive_path)
+    deletions=set(deletions) | snapshot_deleted_accounts(archive_path)
     destination = Path(destination)
     destination.mkdir(mode=0o700, parents=False, exist_ok=False)
     try:
@@ -97,6 +184,8 @@ def restore(archive_path, destination):
                 with archive.open(name) as source, path.open('wb') as output:
                     shutil.copyfileobj(source, output, length=1024*1024)
                 os.chmod(path, 0o600)
+        write_deleted_accounts(destination,deletions)
+        reconcile_deleted_accounts(destination,destination/'versions',deletions)
         with closing(sqlite3.connect(destination / 'openworld.db')) as db:
             if db.execute('PRAGMA quick_check').fetchone()[0] != 'ok':raise RuntimeError('Restore verification failed')
             columns = {row[1] for row in db.execute('PRAGMA table_info(users)')}
@@ -119,7 +208,9 @@ def health(data_dir):
     files = sorted(directory.glob('snapshot-*.zip'))
     if not files:return {'ok': False, 'ageSeconds': None}
     age = time.time() - files[-1].stat().st_mtime
-    return {'ok': age < 48 * 3600, 'ageSeconds': round(age)}
+    evidence=Path(data_dir)/DELETIONS_FILE
+    reconciled=not evidence.exists() or evidence.stat().st_mtime <= files[-1].stat().st_mtime
+    return {'ok': age < 48 * 3600 and reconciled, 'ageSeconds': round(age), 'deletionsBackedUp': reconciled}
 
 
 if __name__ == '__main__':
@@ -128,9 +219,13 @@ if __name__ == '__main__':
     parser.add_argument('action', choices=['verify', 'restore'])
     parser.add_argument('snapshot')
     parser.add_argument('--destination')
+    parser.add_argument('--deletions',help='Current surviving deleted-accounts.json, not an older snapshot copy')
     args = parser.parse_args()
     if args.action == 'restore':
         if not args.destination:parser.error('--destination is required')
-        restore(args.snapshot, args.destination)
+        if not args.deletions:parser.error('--deletions with current surviving evidence is required')
+        evidence=Path(args.deletions)
+        if evidence.name!=DELETIONS_FILE:parser.error('--deletions must name the current deleted-accounts.json file')
+        restore(args.snapshot, args.destination,deletions=read_deleted_accounts(evidence.parent))
     else:verify(args.snapshot)
     print(json.dumps({'ok': True, 'action': args.action}))

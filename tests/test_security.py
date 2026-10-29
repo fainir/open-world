@@ -145,7 +145,7 @@ class PrivateAccess(unittest.IsolatedAsyncioTestCase):
         saved=snapshot(os.environ['DATA_DIR'],os.environ['VERSIONS_DIR'],get_base_game_path())
         self.assertEqual(saved.stat().st_mode & 0o777,0o600)
         dest=Path(_TEST_ROOT.name)/('restored-'+secrets.token_hex(5))
-        restore(saved,dest)
+        restore(saved,dest,deletions=set())
         self.assertEqual((dest/'versions'/self.file.name).read_bytes(),self.file.read_bytes())
         engine=create_engine('sqlite:///'+str(dest/'openworld.db'),connect_args={'check_same_thread':False})
         with engine.begin() as conn:conn.execute(text('ALTER TABLE users ADD COLUMN representative_upgrade TEXT'))
@@ -171,13 +171,137 @@ class PrivateAccess(unittest.IsolatedAsyncioTestCase):
         with zipfile.ZipFile(saved) as original,zipfile.ZipFile(corrupt,'w') as altered:
             for name in original.namelist():altered.writestr(name,b'corrupted' if name=='base.html' else original.read(name))
         dest=Path(_TEST_ROOT.name)/('bad-restore-'+secrets.token_hex(5))
-        with self.assertRaises(RuntimeError):restore(corrupt,dest)
+        with self.assertRaises(RuntimeError):restore(corrupt,dest,deletions=set())
         self.assertFalse(dest.exists())
         content=self.file.read_bytes();self.file.unlink()
         try:
             with self.assertRaises(RuntimeError):snapshot(os.environ['DATA_DIR'],os.environ['VERSIONS_DIR'],get_base_game_path())
             self.assertEqual((await self.client.get('/healthz')).status_code,503)
         finally:self.file.write_bytes(content)
+
+
+
+
+class AccountRights(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        await PrivateAccess.asyncSetUp(self)
+        from app.backend.auth import hash_password
+        self.password='Synthetic-account-password-2026'
+        self.owner.password_hash=hash_password(self.password)
+        self.foreign_session=ChatSession(user_id=self.other.id)
+        self.db.add(self.foreign_session);self.db.flush()
+        self.foreign_file=Path(os.environ['VERSIONS_DIR'])/('foreign-'+secrets.token_hex(8)+'.html')
+        self.foreign_file.write_text('<!doctype html><html>OTHER_PRIVATE_GAME</html>')
+        self.foreign_version=GameVersion(session_id=self.foreign_session.id,user_id=self.other.id,version_number=1,description='OTHER_PRIVATE_DESCRIPTION',file_path=self.foreign_file.name,parent_version_id=self.version.id)
+        self.db.add(self.foreign_version);self.db.commit()
+        from app.backend.request_limits import _buckets
+        _buckets.clear()
+        from app.backend.accounts import _ACCOUNT_BUCKETS
+        _ACCOUNT_BUCKETS.clear()
+
+    async def asyncTearDown(self):
+        await PrivateAccess.asyncTearDown(self)
+
+    async def close_account(self,**changes):
+        return await self.client.post('/api/account/delete',headers=self.owner_headers,json={'password':self.password,'confirm':'DELETE',**changes})
+
+    async def test_export_contains_only_account_owned_data_and_real_game_files(self):
+        import io,json,zipfile
+        # A stale denormalized user field does not grant access to another session.
+        self.foreign_version.user_id=self.owner.id;self.db.commit()
+        for headers in [{},self.other_headers]:
+            response=await self.client.get('/api/account/export',headers=headers)
+            if not headers:self.assertEqual(response.status_code,401)
+            else:self.assertNotIn('PRIVATE_SYNTHETIC_CHAT',response.text)
+        response=await self.client.get('/api/account/export',headers=self.owner_headers)
+        self.assertEqual(response.status_code,200);self.assertEqual(response.headers['cache-control'],'no-store')
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            payload=json.loads(archive.read('account.json'))
+            self.assertEqual(payload['profile']['email'],self.owner.email)
+            self.assertEqual(len(payload['sessions']),1);self.assertEqual(len(payload['versions']),1)
+            self.assertEqual(archive.read('games/'+self.version.id+'.html'),self.file.read_bytes())
+            self.assertNotIn('games/'+self.foreign_version.id+'.html',archive.namelist())
+            text=json.dumps(payload)
+            for forbidden in ['password_hash','auth_revision','api_key_hash','guest_access_hash','OTHER_PRIVATE','access_token']:
+                self.assertNotIn(forbidden,text)
+        self.assertEqual(list((Path(os.environ['DATA_DIR'])/'exports').glob('export-*.zip')),[])
+
+    async def test_closure_requires_current_password_exact_confirmation_and_same_origin(self):
+        self.assertEqual((await self.close_account(password='wrong')).status_code,400)
+        self.assertEqual((await self.close_account(confirm='delete')).status_code,400)
+        self.assertEqual((await self.client.post('/api/account/delete',headers={**self.owner_headers,'Origin':'https://unrelated.invalid'},json={'password':self.password,'confirm':'DELETE'})).status_code,403)
+        self.assertEqual((await self.client.post('/api/account/delete',json={'password':self.password,'confirm':'DELETE'})).status_code,401)
+        self.assertTrue(self.file.exists());self.assertIsNotNone(self.db.get(User,self.owner.id))
+
+    async def test_closure_removes_active_owned_records_and_preserves_other_account(self):
+        from app.backend.models import Star
+        self.db.add(Star(user_id=self.other.id,version_id=self.version.id));self.db.commit()
+        user_id=self.owner.id;session_id=self.session.id;version_id=self.version.id;other_id=self.other.id
+        response=await self.close_account();self.assertEqual(response.status_code,200)
+        self.db.expire_all()
+        self.assertIsNone(self.db.get(User,user_id));self.assertIsNone(self.db.get(ChatSession,session_id));self.assertIsNone(self.db.get(GameVersion,version_id))
+        self.assertEqual(self.db.query(ChatMessage).filter_by(session_id=session_id).count(),0)
+        self.assertIsNotNone(self.db.get(User,other_id));self.assertTrue(self.foreign_file.exists());self.assertFalse(self.file.exists())
+        self.db.refresh(self.foreign_version);self.assertIsNone(self.foreign_version.parent_version_id)
+        self.assertEqual((await self.client.get('/api/auth/me',headers=self.owner_headers)).status_code,401)
+        self.assertEqual((await self.client.get('/api/auth/me',headers=self.other_headers)).status_code,200)
+
+    async def test_failed_database_commit_restores_rows_files_and_deletion_evidence(self):
+        from app.backend.recovery import read_deleted_accounts
+        with patch('app.backend.accounts._commit_deletion',side_effect=RuntimeError('synthetic database failure')):
+            response=await self.close_account()
+        self.assertEqual(response.status_code,503);self.assertTrue(self.file.exists());self.db.expire_all()
+        self.assertIsNotNone(self.db.get(User,self.owner.id));self.assertIsNotNone(self.db.get(GameVersion,self.version.id))
+        self.assertNotIn(self.owner.id,read_deleted_accounts(os.environ['DATA_DIR']))
+        self.assertEqual((await self.client.get('/api/auth/me',headers=self.owner_headers)).status_code,200)
+
+    async def test_failed_game_move_preserves_account_and_files(self):
+        import app.backend.accounts as accounts
+        original=accounts.os.replace
+        def refuse_game_move(source,destination):
+            if Path(source).parent==Path(os.environ['VERSIONS_DIR']):raise OSError('synthetic file failure')
+            return original(source,destination)
+        with patch('app.backend.accounts.os.replace',side_effect=refuse_game_move):
+            response=await self.close_account()
+        self.assertEqual(response.status_code,503);self.assertTrue(self.file.exists());self.db.expire_all()
+        self.assertIsNotNone(self.db.get(User,self.owner.id))
+
+    async def test_surviving_deletion_evidence_is_mandatory_and_applies_to_an_older_restore(self):
+        import sqlite3
+        from app.backend.recovery import snapshot,restore,read_deleted_accounts
+        from app.backend.agent import get_base_game_path
+        saved=snapshot(os.environ['DATA_DIR'],os.environ['VERSIONS_DIR'],get_base_game_path())
+        user_id=self.owner.id;other_id=self.other.id
+        response=await self.close_account();self.assertEqual(response.status_code,200)
+        destination=Path(_TEST_ROOT.name)/('closed-restore-'+secrets.token_hex(6))
+        with self.assertRaisesRegex(RuntimeError,'deletion evidence'):
+            restore(saved,destination)
+        self.assertFalse(destination.exists())
+        restore(saved,destination,deletions=read_deleted_accounts(os.environ['DATA_DIR']))
+        from contextlib import closing
+        with closing(sqlite3.connect(destination/'openworld.db')) as database:
+            self.assertEqual(database.execute('SELECT count(*) FROM users WHERE id=?',(user_id,)).fetchone()[0],0)
+            self.assertEqual(database.execute('SELECT count(*) FROM users WHERE id=?',(other_id,)).fetchone()[0],1)
+            self.assertEqual(database.execute('SELECT count(*) FROM chat_sessions WHERE user_id=?',(user_id,)).fetchone()[0],0)
+        self.assertFalse((destination/'versions'/self.file.name).exists());self.assertTrue((destination/'versions'/self.foreign_file.name).exists())
+
+    async def test_startup_reconciles_a_crash_after_durable_closure_intent(self):
+        from app.backend.recovery import read_deleted_accounts,write_deleted_accounts,reconcile_deleted_accounts
+        user_id=self.owner.id;other_id=self.other.id
+        previous=read_deleted_accounts(os.environ['DATA_DIR'],create=True)
+        write_deleted_accounts(os.environ['DATA_DIR'],previous|{user_id})
+        reconcile_deleted_accounts(os.environ['DATA_DIR'],os.environ['VERSIONS_DIR'])
+        self.db.expire_all();self.assertIsNone(self.db.get(User,user_id));self.assertIsNotNone(self.db.get(User,other_id))
+        self.assertFalse(self.file.exists());self.assertTrue(self.foreign_file.exists())
+
+
+    async def test_account_action_limit_does_not_block_another_account(self):
+        from app.backend.accounts import account_action
+        from fastapi import HTTPException
+        for _ in range(8):account_action(self.owner.id)
+        with self.assertRaises(HTTPException) as raised:account_action(self.owner.id)
+        self.assertEqual(raised.exception.status_code,429)
+        account_action(self.other.id)
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

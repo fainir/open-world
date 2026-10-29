@@ -33,7 +33,7 @@ def game_response(path):
 
 def studio_shell(overlay):
     # No game-controlled bytes are ever interpolated into the credential-bearing parent.
-    return '''<!doctype html><html><head><meta charset="utf-8">
+    return '''<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Open World Studio</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;color:#eee;font-family:system-ui}#ow-game{width:100%;height:100%;border:0}#ow-game-error{position:fixed;left:20px;bottom:20px;z-index:99999;padding:15px;background:#222}</style></head>
 <body><iframe id="ow-game" title="Game preview" sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer"></iframe>''' + overlay + '''</body></html>'''

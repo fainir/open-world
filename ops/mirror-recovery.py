@@ -108,7 +108,7 @@ with p.open('rb') as f:
             previous = json.loads((ROOT / 'status.json').read_text()) if (ROOT / 'status.json').exists() else {}
             drill = previous.get('sha256') != metadata['sha256'] or not target.exists()
             if drill:
-                recovery.restore(archive, Path(temporary) / 'restored')
+                recovery.restore(archive, Path(temporary) / 'restored', deletions=recovery.snapshot_deleted_accounts(archive))
                 db = sqlite3.connect(Path(temporary) / 'restored/openworld.db')
                 try:
                     if db.execute('SELECT count(*) FROM users WHERE auth_revision < 1').fetchone()[0]:

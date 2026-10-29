@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse, Response
+from starlette.background import BackgroundTask
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
@@ -32,11 +33,13 @@ from app.backend.auth import (
     login,
     get_current_user_optional,
     get_current_user_required,
+    verify_password,
 )
 from app.backend.access import guest_hash, require_session, require_version, claim_session
 from app.backend.game_security import game_response, studio_shell
 from app.backend.request_limits import boundaries
-from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK
+from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK, reconcile_deleted_accounts
+from app.backend.accounts import export_account, delete_account, account_action
 from app.backend.agent import (
     run_agent,
     GAME_MODEL,
@@ -338,8 +341,10 @@ def on_startup():
         raise RuntimeError('Persistent production DATA_DIR and VERSIONS_DIR are required')
     database = os.path.join(DATA_DIR, 'openworld.db')
     if os.path.exists(database):
+        reconcile_deleted_accounts(DATA_DIR,VERSIONS_DIR)
         snapshot(DATA_DIR, VERSIONS_DIR, get_base_game_path())
     init_db()
+    reconcile_deleted_accounts(DATA_DIR,VERSIONS_DIR)
     if os.environ.get("SEED_DEMO_STORE") == "1":
         _seed_store()
     snapshot(DATA_DIR, VERSIONS_DIR, get_base_game_path())
@@ -448,6 +453,40 @@ def api_me(user: User = Depends(get_current_user_required)):
 
 _generation_slots = asyncio.Semaphore(2)
 _active_generations = set()
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1,max_length=256)
+    confirm: str = Field(max_length=6)
+
+
+@app.get('/api/account/export')
+def api_export_account(db: Session=Depends(get_db),user: User=Depends(get_current_user_required)):
+    account_action(user.id)
+    try:
+        path=export_account(db,user,DATA_DIR,VERSIONS_DIR)
+        return FileResponse(path,media_type='application/zip',filename='openworld-account.zip',
+                            headers={'Cache-Control':'no-store'},background=BackgroundTask(path.unlink,missing_ok=True))
+    except HTTPException:raise
+    except Exception:raise HTTPException(503,'Your export could not be prepared. Your data is unchanged; please try again.')
+
+
+def _refresh_account_recovery():
+    try:snapshot(DATA_DIR,VERSIONS_DIR,get_base_game_path())
+    except Exception:print('[Recovery] Account-deletion snapshot pending; see health endpoint')
+
+
+@app.post('/api/account/delete')
+def api_delete_account(req: DeleteAccountRequest,db: Session=Depends(get_db),user: User=Depends(get_current_user_required)):
+    account_action(user.id)
+    if req.confirm!='DELETE':raise HTTPException(400,'Type DELETE to confirm account closure.')
+    if not verify_password(req.password,user.password_hash):raise HTTPException(400,'The password did not match. Your account is unchanged.')
+    user_id=user.id;db.rollback()
+    try:
+        delete_account(user_id,DATA_DIR,VERSIONS_DIR)
+        return JSONResponse({'ok':True},headers={'Cache-Control':'no-store'},background=BackgroundTask(_refresh_account_recovery))
+    except HTTPException:raise
+    except Exception:raise HTTPException(503,'Account closure could not complete. Refresh to check its status, or try again. No other account is affected.')
 
 
 @app.post("/api/chat")
@@ -1117,6 +1156,16 @@ def contact_page():
     """Serve the contact page."""
     contact_path = os.path.join(STATIC_DIR, "contact.html")
     return FileResponse(contact_path, media_type="text/html")
+
+
+@app.get('/account')
+def account_page():
+    return FileResponse(os.path.join(STATIC_DIR,'account.html'),media_type='text/html',headers={'Cache-Control':'no-store'})
+
+
+@app.get('/privacy')
+def privacy_page():
+    return FileResponse(os.path.join(STATIC_DIR,'privacy.html'),media_type='text/html')
 
 
 @app.get("/shared/{share_slug}")
