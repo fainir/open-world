@@ -304,4 +304,51 @@ class AccountRights(unittest.IsolatedAsyncioTestCase):
         account_action(self.other.id)
 
 
+
+
+
+class AdminReviews(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        await PrivateAccess.asyncSetUp(self)
+        self.admin=User(email=secrets.token_hex(5)+'@admin.invalid',username='admin'+secrets.token_hex(5),password_hash='unused',is_admin=True)
+        self.db.add(self.admin);self.db.commit()
+        self.admin_headers={'Authorization':'Bearer '+create_access_token(self.admin.id)}
+        from app.backend.request_limits import _buckets
+        _buckets.clear()
+
+    async def asyncTearDown(self):await PrivateAccess.asyncTearDown(self)
+
+    async def test_review_requires_admin_and_explicit_owner_submission(self):
+        for headers in [{},self.owner_headers]:
+            self.assertIn((await self.client.get('/api/admin/preview/'+self.version.id,headers=headers)).status_code,[401,403])
+        self.assertEqual((await self.client.get('/api/admin/preview/'+self.version.id,headers=self.admin_headers)).status_code,404)
+        for action in ['approve','decline']:
+            self.assertEqual((await self.client.post('/api/admin/'+action+'/'+self.version.id,headers=self.admin_headers)).status_code,400)
+        self.version.is_suggested=True;self.version.suggestion_status='pending';self.db.commit()
+        response=await self.client.get('/api/admin/preview/'+self.version.id,headers=self.admin_headers)
+        self.assertEqual(response.status_code,200);self.assertIn('PRIVATE_SYNTHETIC_GAME',response.text)
+        self.assertIn('sandbox allow-scripts allow-pointer-lock',response.headers['content-security-policy'])
+        self.assertEqual((await self.client.get('/game/version/'+self.version.id,headers=self.admin_headers)).status_code,404)
+
+    async def test_approval_commit_failure_restores_the_previous_base_game(self):
+        from app.backend.agent import get_base_game_path
+        self.version.is_suggested=True;self.version.suggestion_status='pending';self.db.commit()
+        base=Path(get_base_game_path());previous=base.read_bytes()
+        with patch('sqlalchemy.orm.Session.commit',side_effect=RuntimeError('synthetic review failure')):
+            response=await self.client.post('/api/admin/approve/'+self.version.id,headers=self.admin_headers)
+        self.assertEqual(response.status_code,503);self.assertEqual(base.read_bytes(),previous)
+        self.db.expire_all();self.assertEqual(self.db.get(GameVersion,self.version.id).suggestion_status,'pending')
+
+    async def test_completed_review_is_idempotent_and_cannot_reverse_another_decision(self):
+        from app.backend.agent import get_base_game_path
+        self.version.is_suggested=True;self.version.suggestion_status='pending';self.db.commit()
+        self.assertEqual((await self.client.post('/api/admin/approve/'+self.version.id,headers=self.admin_headers)).status_code,200)
+        base=Path(get_base_game_path());base.write_text('Later independent base game')
+        self.assertEqual((await self.client.post('/api/admin/approve/'+self.version.id,headers=self.admin_headers)).status_code,200)
+        self.assertEqual(base.read_text(),'Later independent base game')
+        self.assertEqual((await self.client.post('/api/admin/decline/'+self.version.id,headers=self.admin_headers)).status_code,409)
+        # Keep the synthetic recovery fixture's base as a valid game for later cases.
+        base.write_text('<!doctype html><html><body>Recovered synthetic base</body></html>')
+
+
 if __name__=='__main__':unittest.main(verbosity=2)

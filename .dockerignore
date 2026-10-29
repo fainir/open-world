@@ -10,3 +10,7 @@ app/venv
 app/data
 app/versions
 **/__pycache__
+qa/
+.runtime/
+.github/
+.claude/

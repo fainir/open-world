@@ -915,54 +915,52 @@ def api_admin_all_versions(
     ]
 
 
-@app.post("/api/admin/approve/{version_id}")
-def api_admin_approve(
-    version_id: str,
-    db: Session = Depends(get_db),
-    admin: User = Depends(get_admin_user),
-):
-    version = db.query(GameVersion).filter(GameVersion.id == version_id).first()
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
-
+@app.get('/api/admin/preview/{version_id}')
+def api_admin_preview(version_id: str,db: Session=Depends(get_db),admin: User=Depends(get_admin_user)):
     with PUBLICATION_LOCK:
-        # Copy version file to replace the base game
+        version=db.query(GameVersion).filter(GameVersion.id==version_id,GameVersion.is_suggested==True).first()
+        if not version:raise HTTPException(404,'Submitted version not found')
+        path=os.path.join(VERSIONS_DIR,version.file_path)
+        if os.path.basename(version.file_path)!=version.file_path or not os.path.isfile(path):raise HTTPException(404,'Version file not found')
+        return game_response(path)
+
+
+@app.post('/api/admin/approve/{version_id}')
+def api_admin_approve(version_id: str,db: Session=Depends(get_db),admin: User=Depends(get_admin_user)):
+    with PUBLICATION_LOCK:
+        version=db.query(GameVersion).filter(GameVersion.id==version_id).first()
+        if not version:raise HTTPException(404,'Version not found')
+        if not version.is_suggested:raise HTTPException(400,'Only a version submitted by its owner can be reviewed')
+        if version.suggestion_status=='approved':return {'status':'approved','version_id':version.id}
+        if version.suggestion_status!='pending':raise HTTPException(409,'This suggestion is not awaiting review')
         from app.backend.agent import _atomic_game_write
+        version_path=os.path.join(VERSIONS_DIR,version.file_path)
+        if os.path.basename(version.file_path)!=version.file_path or not os.path.isfile(version_path):raise HTTPException(404,'Version file not found')
+        base_path=get_base_game_path()
+        with open(base_path,'r',encoding='utf-8') as source:previous=source.read()
+        try:
+            with open(version_path,'r',encoding='utf-8') as source:_atomic_game_write(base_path,source.read())
+            version.suggestion_status='approved';version.reviewed_at=datetime.now(timezone.utc);version.reviewed_by=admin.id
+            db.commit()
+        except Exception:
+            db.rollback()
+            try:_atomic_game_write(base_path,previous)
+            except Exception:raise HTTPException(503,'Approval could not finish. The operator must check the base game before retrying.')
+            raise HTTPException(503,'Approval was not saved; the previous base game is restored. Please try again.')
+    return {'status':'approved','version_id':version.id}
 
-        version_path = os.path.join(VERSIONS_DIR, version.file_path)
-        if not os.path.exists(version_path):
-            raise HTTPException(status_code=404, detail="Version file not found")
 
-        base_path = get_base_game_path()
-        with open(version_path, "r", encoding="utf-8") as source:
-            _atomic_game_write(base_path, source.read())
-
-        from datetime import datetime, timezone
-
-        version.suggestion_status = "approved"
-        version.reviewed_at = datetime.now(timezone.utc)
-        version.reviewed_by = admin.id
+@app.post('/api/admin/decline/{version_id}')
+def api_admin_decline(version_id: str,db: Session=Depends(get_db),admin: User=Depends(get_admin_user)):
+    with PUBLICATION_LOCK:
+        version=db.query(GameVersion).filter(GameVersion.id==version_id).first()
+        if not version:raise HTTPException(404,'Version not found')
+        if not version.is_suggested:raise HTTPException(400,'Only a version submitted by its owner can be reviewed')
+        if version.suggestion_status=='declined':return {'status':'declined','version_id':version.id}
+        if version.suggestion_status!='pending':raise HTTPException(409,'This suggestion is not awaiting review')
+        version.suggestion_status='declined';version.reviewed_at=datetime.now(timezone.utc);version.reviewed_by=admin.id
         db.commit()
-    return {"status": "approved", "version_id": version.id}
-
-
-@app.post("/api/admin/decline/{version_id}")
-def api_admin_decline(
-    version_id: str,
-    db: Session = Depends(get_db),
-    admin: User = Depends(get_admin_user),
-):
-    version = db.query(GameVersion).filter(GameVersion.id == version_id).first()
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
-
-    from datetime import datetime, timezone
-
-    version.suggestion_status = "declined"
-    version.reviewed_at = datetime.now(timezone.utc)
-    version.reviewed_by = admin.id
-    db.commit()
-    return {"status": "declined", "version_id": version.id}
+    return {'status':'declined','version_id':version.id}
 
 
 # ── Contact routes ──

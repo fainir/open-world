@@ -14,3 +14,7 @@ app/data/
 app/versions/
 **/__pycache__/
 tests/
+qa/
+.runtime/
+.github/
+.claude/

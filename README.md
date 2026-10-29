@@ -49,4 +49,6 @@ The persistent account-ID-only deletion log is included in new snapshots. An old
 | SEED_DEMO_STORE | Keep disabled on production; no automatic reseeding |
 | PORT | Existing hosting listener port |
 
-No provider key belongs in source, public metadata, logs or account exports. Current scope and evidence are in [PRODUCT.md](PRODUCT.md) and [READINESS.md](READINESS.md).
+No provider key belongs in source, public metadata, logs or account exports. The source-check workflow runs Python compile, dependency consistency and synthetic tests on pull requests/main changes. Its first hosted run still depends on the existing shared GitHub Actions allowance; no budget increase is made here. Local checks remain the recorded validation until that owner action is complete.
+
+Current scope and evidence are in [PRODUCT.md](PRODUCT.md) and [READINESS.md](READINESS.md).

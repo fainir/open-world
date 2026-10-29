@@ -224,9 +224,10 @@
 .ow-header{flex-direction:column;align-items:flex-start;gap:10px}.ow-hdr-btns{flex-wrap:wrap}.ow-hdr-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 .ow-footer-links{display:flex;flex-wrap:wrap;gap:12px;padding:0 16px 10px;flex-shrink:0;font-size:12px}.ow-footer-links a{display:inline-flex;align-items:center;color:#a9c6ff;text-underline-offset:3px}
 .ow-store-header{padding-right:50px;flex-wrap:wrap;gap:12px}.ow-store-header h3{padding-right:0}.ow-tabs{padding-right:44px}
-.ow-modal{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow-y:auto}.ow-modal h3{padding-right:42px}.ow-modal-close{width:44px;height:44px}.ow-form-group input{min-width:0;width:100%}
+.ow-modal{box-sizing:border-box;width:min(420px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow-y:auto}.ow-modal h3{padding-right:42px}#ow-store-modal .ow-modal{width:min(540px,calc(100vw - 24px))}.ow-modal-close{width:44px;height:44px}.ow-form-group input{min-width:0;width:100%}
 #ow-panel button:focus-visible,#ow-overlay-root a:focus-visible,#ow-overlay-root input:focus-visible,#ow-overlay-root textarea:focus-visible,#ow-overlay-root button:focus-visible{outline:3px solid #a9c6ff;outline-offset:2px}
 .ow-welcome,.ow-welcome p,.ow-form-group label,.ow-store-empty,.ow-input-footer{color:#a4afc1}
+@media(max-width:600px){#ow-panel.ow-open{padding-top:56px;box-sizing:border-box}}
 </style>
 
 <div id="ow-overlay-root">

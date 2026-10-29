@@ -1,0 +1,10 @@
+test_studio_document_never_contains_game_code (test_security.PrivateAccess.test_studio_document_never_contains_game_code) ... Executing <Task finished name='Task-1' coro=<PrivateAccess.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:27> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.490 seconds
+Executing <Task pending name='Task-2' coro=<PrivateAccess.test_studio_document_never_contains_game_code() running at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:84> cb=[_run_until_complete_cb() at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py:181] created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.339 seconds
+ok
+test_opaque_or_cross_origin_cannot_call_editor (test_security.PrivateAccess.test_opaque_or_cross_origin_cannot_call_editor) ... Executing <Task finished name='Task-6' coro=<PrivateAccess.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:27> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.323 seconds
+ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.909s
+
+OK
