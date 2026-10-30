@@ -37,7 +37,7 @@ from app.backend.auth import (
     verify_password,
 )
 from app.backend.access import guest_hash, require_session, require_version, claim_session
-from app.backend.game_security import game_response, studio_shell, game_error_response, shared_game_head
+from app.backend.game_security import game_response, studio_shell, game_error_response, shared_game_head, PUBLIC_ORIGIN
 from app.backend.request_limits import boundaries
 from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK, reconcile_deleted_accounts
 from app.backend.accounts import export_account, delete_account, account_action
@@ -61,7 +61,14 @@ app.add_middleware(
 )
 
 
-# ── Redirect www → bare domain ──
+# ── Redirect www and the default Railway host → bare domain ──
+# The *.up.railway.app host serves the same pages; search engines must only see
+# open-world.gg. API, health, static and game documents keep working there.
+RAILWAY_HOST_SUFFIX = ".up.railway.app"
+RAILWAY_HOST_KEEP_PREFIXES = ("/api/", "/static/", "/game/")
+RAILWAY_HOST_KEEP_PATHS = {"/healthz", "/analytics-config.js"}
+
+
 @app.middleware("http")
 async def redirect_www(request: Request, call_next):
     host = request.headers.get("host", "")
@@ -69,6 +76,17 @@ async def redirect_www(request: Request, call_next):
         bare = host[4:]
         url = request.url.replace(scheme="https").replace(netloc=bare)
         return RedirectResponse(url=str(url), status_code=301)
+    if host.split(":")[0].lower().endswith(RAILWAY_HOST_SUFFIX):
+        path = request.url.path
+        if (os.environ.get("RAILWAY_ENVIRONMENT_NAME") == "production"
+                and request.method in ("GET", "HEAD")
+                and path not in RAILWAY_HOST_KEEP_PATHS
+                and not path.startswith(RAILWAY_HOST_KEEP_PREFIXES)):
+            url = request.url.replace(scheme="https", netloc=PUBLIC_ORIGIN.split("//", 1)[1])
+            return RedirectResponse(url=str(url), status_code=301)
+        response = await call_next(request)
+        response.headers["X-Robots-Tag"] = "noindex"
+        return response
     return await call_next(request)
 
 
