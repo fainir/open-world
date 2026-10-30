@@ -1,0 +1,4 @@
+/static/analytics.js:200, exact accepted source bytes
+/privacy:200, exact accepted source bytes
+/analytics-config.js:200/no-store, exact matching three public IDs only
+/healthz:200; existing database/game/recovery health accepted

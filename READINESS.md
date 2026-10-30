@@ -2,7 +2,7 @@
 
 Every row serves [GOAL.md](GOAL.md) and portfolio PT08. Prior valid evidence root: `/Users/nirfeinstein/Documents/ChatGPT/almost finished projects + marketing/artifacts/production-readiness-2026-10-26` (A). Existing accepted game/provider/recovery tests are not repeated without a changed concern.
 
-Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/deploy/recovery commands in [PRODUCT.md](PRODUCT.md) and [OPERATIONS.md](OPERATIONS.md). One writer: openworld_finish on codex/production-readiness. No production deployment by this worker.
+Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/deploy/recovery commands in [PRODUCT.md](PRODUCT.md) and [OPERATIONS.md](OPERATIONS.md). Current accepted analytics release branch is codex/website-analytics; source and existing-service deployment are accepted below.
 
 | ID | Flow or gate | Status | Evidence / next action |
 |---|---|---|---|
@@ -25,17 +25,19 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | G6 | Hosted source checks | owner | New bounded workflow is configured and local29 tests/compile pass. Existing portfolio Actions allowance must be restored within an owner-chosen cap before hosted CI; no new budget authorized |
 
 | T1 | Optional public studio analytics, explicit device choice and safe payload/route boundaries | verified | [Source and actual375/1440 acceptance](qa/analytics.md):30 ASGI and8 analytics cases, all three transports intercepted, withdrawal/races and memory lock pass. No real provider receipt is claimed |
-| T2 | Existing analytics project configuration and public rollout/receipt | building (OpenWorld release) | Coordinator matched/configured public IDs with skip-deploys and verified GA enhanced measurement off. Existing accepted deployment and/data volume independently confirmed unchanged; [release preparation](qa/analytics.md). Wait for coordinator SDK-ready signal, then existing-service rollout and actual375/1440 consent/Store receipt/withdrawal/private-route acceptance |
+| T2 | Existing analytics project configuration and public rollout/receipt | verified | [Actual public release](qa/analytics.md), [live375/1440](qa/analytics-live.log), [exact public config/source/health](qa/analytics-public-http.log). Genuine Google204, Mixpanel200/body1 and cross-origin Betterloop200/bodyok; actual Store action to all3, no pre-consent requests, sanitized context, withdrawal, private account/contact exclusion and GPC pass. Same existing service/data volume; dashboard visibility is not inferred from HTTP proof |
 
 ## Remaining buildable work
 
-Earlier release and recovery acceptance are preserved. T1 local analytics behavior is verified; the coordinator continues T2 provider setup and public rollout. The accepted engine, private data and recovery remain unchanged.
+Earlier release and recovery acceptance are preserved. T1/T2 analytics are accepted locally and on the actual public site, including genuine provider receipts. The accepted engine, private data and recovery remain unchanged. No buildable OpenWorld row remains; shared owner/provider actions stay in the portfolio ledger.
 
 ## Owner / waiting
 
 Shared inherited credential, hosted-CI allowance and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+-2026-10-30 - Existing-service analytics deployment SUCCESS; exact public source/config/health and actual375/1440 consent/Store actions to Google/Mixpanel/Betterloop pass, including cross-origin ingest200, withdrawal/private-route/GPC exclusion and zero page errors. Same/data volume; no generation/signup/send/payment. Dashboard visibility is a separate coordinator observation.
 
 -2026-10-30 - Public studio/privacy analytics source passes30 ASGI+8 focused cases and actual375/1440 intercepted-provider controls, payloads, withdrawal and failed-write memory lock. Configuration/real receipt/public rollout remain T2; no real provider/game/data/recovery change.
 

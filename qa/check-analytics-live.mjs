@@ -47,9 +47,19 @@ async function openChoices(page){
 const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
 try{
  for(const width of [375,1440]){
-  const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'}),requests=[],receipts=[],failures=[],errors=[];
+  const context=await browser.newContext({viewport:{width,height:900}}),requests=[],receipts=[],failures=[],errors=[];
+  await context.addInitScript(()=>{
+   const original=window.fetch;window.__analyticsReceipts=[];
+   window.fetch=async function(...args){
+    const response=await original.apply(this,args),u=new URL(typeof args[0]==='string'?args[0]:args[0].url,location.href);
+    if(u.hostname==='api.mixpanel.com'||u.hostname==='betterloopai.com'&&u.pathname==='/api/ingest'){
+     response.clone().text().then(body=>window.__analyticsReceipts.push({host:u.hostname,status:response.status,body})).catch(()=>{});
+    }
+    return response;
+   };
+  });
   context.on('request',request=>{if(collection(request.url())){try{requests.push(validate(request));}catch(error){failures.push(error.message);}}else if(asset(request.url()))requests.push({kind:'SDK',events:[]});});
-  context.on('response',async response=>{const kind=collection(response.url());if(kind){const item={kind,status:response.status()};try{if(kind!=='Google')item.body=(await response.text()).slice(0,200);}catch{}receipts.push(item);}});
+  context.on('response',response=>{const kind=collection(response.url());if(kind){const item={kind,status:response.status()};if(!receipts.some(receipt=>receipt.kind===kind)&&item.status>=200&&item.status<300)console.log(`${width}: actual ${kind} collection response ${item.status}`);receipts.push(item);}});
   const page=await context.newPage();page.setDefaultTimeout(30_000);page.setDefaultNavigationTimeout(120_000);page.on('pageerror',error=>errors.push(error.message));
   await page.goto(`${origin}/?private=${sentinel}#${sentinel}`,{waitUntil:'domcontentloaded'});
   await page.locator('[data-analytics-open]').waitFor({state:'attached'});
@@ -62,8 +72,10 @@ try{
   await page.locator('#ow-store-modal').waitFor({state:'visible'});
   await page.waitForTimeout(7000);
   assert.ok(receipts.some(item=>item.kind==='Google'&&item.status>=200&&item.status<300),'Google successful receipt missing');
-  assert.ok(receipts.some(item=>item.kind==='Mixpanel'&&item.status===200&&item.body==='1'),'Mixpanel successful receipt missing');
-  assert.ok(receipts.some(item=>item.kind==='Betterloop'&&item.status===200&&item.body.includes('"ok":true')),'Betterloop successful receipt missing');
+  const bodies=await page.evaluate(()=>window.__analyticsReceipts);
+  console.log(`${width}: browser-fetch receipt bodies`,JSON.stringify(bodies));
+  assert.ok(bodies.some(item=>item.host==='api.mixpanel.com'&&item.status===200&&item.body.trim()==='1'),'Mixpanel successful receipt missing');
+  assert.ok(bodies.some(item=>item.host==='betterloopai.com'&&item.status===200&&item.body.includes('"ok":true')),'Betterloop successful receipt missing');
   for(const kind of ['Google','Mixpanel','Betterloop'])assert.ok(requests.some(item=>item.kind===kind&&item.events.includes('store_opened')),kind+' fixed Store action missing');
   await page.locator('#ow-store-close').click();await openChoices(page);await dialog.getByRole('button',{name:'Keep analytics off',exact:true}).click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('openworld.analytics.v1.device')),null);
@@ -79,7 +91,7 @@ try{
   lines.push(`${width}: no analytics before choice; genuine Google2xx/Mixpanel1/Betterloop200 accepted; real Store click emitted fixed store_opened to all3; sensitive query/hash absent; withdrawal removed identifiers and stayed quiet after navigation; account/contact with saved allow stayed quiet; no page errors or policy-page overflow.`);
   await context.close();
  }
- const context=await browser.newContext({viewport:{width:375,height:900},serviceWorkers:'block'});let sent=0;
+ const context=await browser.newContext({viewport:{width:375,height:900}});let sent=0;
  context.on('request',request=>{if(collection(request.url())||asset(request.url()))sent++;});
  await context.addInitScript(()=>{localStorage.setItem('openworld.analytics.v1','allowed');Object.defineProperty(navigator,'globalPrivacyControl',{value:true});});
  const page=await context.newPage();await page.goto(origin+'/privacy',{waitUntil:'domcontentloaded'});await page.getByText('Optional analytics is off because this browser requests privacy.').waitFor();await page.waitForTimeout(1000);assert.equal(sent,0);await context.close();
