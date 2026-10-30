@@ -39,5 +39,23 @@ def studio_shell(overlay):
     # No game-controlled bytes are ever interpolated into the credential-bearing parent.
     return '''<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Open World Studio</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;color:#eee;font-family:system-ui}#ow-game-view{width:100%;height:100%}#ow-game{width:100%;height:100%;border:0}#ow-game-error{position:fixed;left:20px;bottom:20px;z-index:99999;padding:15px;background:#222}</style></head>
+<title>Open World - a 3D browser game you can change with AI</title>
+<meta name="description" content="Play a 3D open world in your browser: drive, glide and explore a city, beach and mountains. Describe a change, AI edits the game, and share your version.">
+<link rel="canonical" href="https://open-world.gg/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Open World">
+<meta property="og:title" content="Open World - a 3D browser game you can change with AI">
+<meta property="og:description" content="Play a 3D open world in your browser: drive, glide and explore a city, beach and mountains. Describe a change, AI edits the game, and share your version.">
+<meta property="og:url" content="https://open-world.gg/">
+<meta property="og:image" content="https://open-world.gg/static/og-card.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Open World gameplay: gliding over a 3D city toward snowy mountains">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Open World - a 3D browser game you can change with AI">
+<meta name="twitter:description" content="Play a 3D open world in your browser: drive, glide and explore a city, beach and mountains. Describe a change, AI edits the game, and share your version.">
+<meta name="twitter:image" content="https://open-world.gg/static/og-card.png">
+<meta name="twitter:image:alt" content="Open World gameplay: gliding over a 3D city toward snowy mountains">
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;color:#eee;font-family:system-ui}#ow-game-view{width:100%;height:100%}#ow-game{width:100%;height:100%;border:0}#ow-game-error{position:fixed;left:20px;bottom:20px;z-index:99999;padding:15px;background:#222}</style></head>
 <body><main id="ow-game-view" aria-label="Game preview"><iframe id="ow-game" title="Game preview" allowfullscreen sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer"></iframe></main>''' + overlay + '''</body></html>'''
