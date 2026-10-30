@@ -58,11 +58,11 @@ try {
   assert.deepEqual(f.errors,[]);await f.context.close();console.log(JSON.stringify(options)+': no provider requests');
  }
  const race=await fixture(375,{delay:true});await open(race.page);await race.page.getByRole('button',{name:'Allow analytics',exact:true}).click();
- await race.page.waitForFunction(()=>Array.from(document.scripts).some(s=>s.src==='https://betterloopai.com/sdk.js'));
+ await race.page.waitForFunction(()=>Array.from(document.scripts).some(s=>s.src==='https://betterloopai.com/sdk.js?v=20261030'));
  await open(race.page);await race.page.getByRole('button',{name:'Keep analytics off',exact:true}).click();race.release();
  await race.page.waitForFunction(()=>window.__sdkCalls!=null);assert.equal(await race.page.evaluate(()=>window.__sdkCalls.some(c=>c[0]==='init')),false);assert.deepEqual(race.errors,[]);await race.context.close();console.log('Delayed SDK withdrawal: no later initialization');
  const failed=await fixture(375,{delay:true});await open(failed.page);await failed.page.getByRole('button',{name:'Allow analytics',exact:true}).click();
- await failed.page.waitForFunction(()=>Array.from(document.scripts).some(s=>s.src==='https://betterloopai.com/sdk.js'));
+ await failed.page.waitForFunction(()=>Array.from(document.scripts).some(s=>s.src==='https://betterloopai.com/sdk.js?v=20261030'));
  await failed.page.evaluate(()=>{const write=Storage.prototype.setItem;window.__writesBlocked=true;Storage.prototype.setItem=function(k,v){if(window.__writesBlocked)throw Error('Synthetic write unavailable');return write.call(this,k,v);};});
  await open(failed.page);await failed.page.getByRole('button',{name:'Keep analytics off',exact:true}).click();
  await failed.page.getByRole('status').filter({hasText:'Analytics remains off'}).waitFor();failed.release();

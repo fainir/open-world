@@ -7,3 +7,5 @@ The generated public studio overlay and public privacy page now support Google A
 - The storage-denial analytics UI check uses the actual `/privacy` page to isolate analytics: the existing studio bootstrap itself requires localStorage and throws when the browser wholly denies it. Normal studio375/1440 passes; this run does not claim the studio works without storage.
 
 All vendor responses were intercepted, so production receipt remains unverified. The coordinator must configure matching public `GA_ID`, `MIXPANEL_TOKEN`, `BETTERLOOP_KEY`, disable GA enhanced measurement, deploy the new Betterloop exact-path/discard SDK first, then roll out this existing service and verify public consent/receipt. Preserve the SQLite/game volume and independent mirror.
+
+New integrations request `sdk.js?v=20261030` so an older cached SDK cannot bypass the new exact-path and discard controls. Eight focused transport/privacy cases pass with an explicit cache-version assertion; previous full consent UI acceptance remains linked.

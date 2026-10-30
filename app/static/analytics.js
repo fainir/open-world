@@ -52,7 +52,7 @@
             betterloopLoading = true;
             const script = document.createElement('script'); script.async = true;
             // No data-key: loading must not auto-initialize after withdrawal.
-            script.src = 'https://betterloopai.com/sdk.js'; script.referrerPolicy = 'no-referrer';
+            script.src = 'https://betterloopai.com/sdk.js?v=20261030'; script.referrerPolicy = 'no-referrer';
             script.onload = () => { betterloopReady = true; betterloopLoading = false; if (permitted()) startBetterloop(); };
             script.onerror = () => { betterloopLoading = false; };
             document.head.appendChild(script);
