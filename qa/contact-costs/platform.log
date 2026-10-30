@@ -1,0 +1,4 @@
+project 0715cb1d-44c0-48c3-94e7-bedc0de00ede service f913ee3a-6dee-4891-8dd1-80dd849e6681
+latest f00a3b34-adc3-4580-bc23-19b5185b7521 SUCCESS
+volumes [('fb7f3ec8-79cc-4ac9-8c13-c59ecef8168f', '/data', 'READY')]
+source None

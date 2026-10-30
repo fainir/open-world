@@ -9,3 +9,14 @@ New submissions preserve the durable private inbox and queue a notification. Add
 Privacy discloses OpenWorld's separate inbox, relay hashes/metadata retention, Resend/Gmail copies and account-deletion limits. No legal entity/address, compliance guarantee, earnings or support SLA is invented. Accepted analytics/private boundaries, engine/models, export/closure and independent recovery are preserved.
 
 44 source/ASGI/security/recovery cases pass in `qa/contact-costs/source.log`, including legacy schema migration, payload-bound duplicates, atomic concurrent claim, interrupted recovery, retry delay, receipt review and private admin denial. Actual functional UI at 375/1440 passes contact validation/503/429/network retention/same-key retry/new-message reset/crypto fallback, truthful queued status, Terms/costs and synthetic admin states/retry in `qa/contact-costs/local-ui.log`; screenshots are alongside. Lightweight game is only a functional studio fixture, not new gameplay/performance proof. Python compile and JS syntax pass. Existing-service deployment is next. All worker provider responses are mocked; source proof is separate from Root's genuine inbox/header check.
+
+
+## Public release
+
+Final application source `569d1d2` is live on the existing service, deployment `f00a3b34-adc3-4580-bc23-19b5185b7521` SUCCESS. [Exact public files and health](../qa/contact-costs/release.log) match; `/data` volume `fb7f3ec8-79cc-4ac9-8c13-c59ecef8168f` remains READY in [platform.log](../qa/contact-costs/platform.log). Health confirms database, referenced game files and deletion-aware recovery; optional analytics identifiers and current BYOK model are unchanged.
+
+[Public 375/1440 UI](../qa/contact-costs/public-ui.log) verifies real changed pages, contact field retention/retry and current costs. Every write/mail response is intercepted, admin identity is synthetic, and the unchanged game iframe is a functional double. This is changed-screen proof, not a repeated real-account, game-generation, game-performance or provider-receipt claim. Contact link/button/error contrast is measured at least 4.5:1 and final screenshots were visually inspected. Python compile and JS syntax pass. No fresh vendor events were sent because tracking was unchanged.
+
+Root has the live `/contact` URL for its one separately approved real notification check. A `stored/queued` API result is not proof of Gmail arrival; C3 remains waiting until root records actual provider/inbox/header evidence. No worker sent a message or created an account/key/service.
+
+The current `railway.toml` remains unchanged. The CLI surfaced a dated Config-as-Code warning; coordinator owns verifying official guidance and a separate maintenance row. No infrastructure migration was inferred during this contact rollout. The reviewed remote SEO/share/maker/README changes were preserved; divergent local main and unrelated untracked `video/`/analytics cache remain untouched.
