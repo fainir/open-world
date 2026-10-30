@@ -475,4 +475,30 @@ class PublicBaseTransport(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(failed.headers['cache-control'],'no-store')
 
 
+class RailwayHost(unittest.IsolatedAsyncioTestCase):
+    async def test_production_railway_host_pages_move_to_the_real_domain(self):
+        init_db()
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='https://open-world-studio-production.up.railway.app') as client:
+            with patch.dict(os.environ,{'RAILWAY_ENVIRONMENT_NAME':'production'}):
+                for method in ('GET','HEAD'):
+                    page=await client.request(method,'/privacy?x=1')
+                    self.assertEqual(page.status_code,301)
+                    self.assertEqual(page.headers['location'],'https://open-world.gg/privacy?x=1')
+                self.assertEqual((await client.get('/')).headers['location'],'https://open-world.gg/')
+                for path in ('/healthz','/api/store/random-slug','/static/og-card.png','/game/base','/analytics-config.js'):
+                    kept=await client.get(path)
+                    self.assertNotEqual(kept.status_code,301,path)
+                    self.assertEqual(kept.headers['x-robots-tag'],'noindex',path)
+                self.assertNotEqual((await client.post('/api/contact',json={})).status_code,301)
+            with patch.dict(os.environ,{'RAILWAY_ENVIRONMENT_NAME':'staging'}):
+                staging=await client.get('/privacy')
+                self.assertEqual(staging.status_code,200)
+                self.assertEqual(staging.headers['x-robots-tag'],'noindex')
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='https://open-world.gg') as client:
+            with patch.dict(os.environ,{'RAILWAY_ENVIRONMENT_NAME':'production'}):
+                real=await client.get('/privacy')
+            self.assertEqual(real.status_code,200)
+            self.assertNotIn('x-robots-tag',real.headers)
+
+
 if __name__=='__main__':unittest.main(verbosity=2)
