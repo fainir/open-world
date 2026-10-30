@@ -25,7 +25,7 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | G6 | Hosted source checks | owner | New bounded workflow is configured and local29 tests/compile pass. Existing portfolio Actions allowance must be restored within an owner-chosen cap before hosted CI; no new budget authorized |
 
 | T1 | Optional public studio analytics, explicit device choice and safe payload/route boundaries | verified | [Source and actual375/1440 acceptance](qa/analytics.md):30 ASGI and8 analytics cases, all three transports intercepted, withdrawal/races and memory lock pass. No real provider receipt is claimed |
-| T2 | Existing analytics project configuration and public rollout/receipt | building (coordinator) | Matching public IDs, GA enhanced measurement off, new Betterloop SDK public, existing-service deployment and actual consent/receipt verification; root owns this work |
+| T2 | Existing analytics project configuration and public rollout/receipt | building (OpenWorld release) | Coordinator matched/configured public IDs with skip-deploys and verified GA enhanced measurement off. Existing accepted deployment and/data volume independently confirmed unchanged; [release preparation](qa/analytics.md). Wait for coordinator SDK-ready signal, then existing-service rollout and actual375/1440 consent/Store receipt/withdrawal/private-route acceptance |
 
 ## Remaining buildable work
 
