@@ -15,6 +15,7 @@ from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, Redirect
 from starlette.background import BackgroundTask
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
+from email_validator import validate_email, EmailNotValidError
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -998,11 +999,16 @@ def api_admin_decline(version_id: str,db: Session=Depends(get_db),admin: User=De
 def api_contact(req: ContactRequest, db: Session = Depends(get_db), idempotency_key: Optional[str] = Header(default=None)):
     if not req.name.strip() or not req.email.strip() or not req.message.strip():
         raise HTTPException(status_code=400, detail="All fields are required")
-    if req.website or not re.fullmatch(r'[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+', req.email.strip()) or '\r' in req.name or '\n' in req.name:
+    if req.website or '\r' in req.name or '\n' in req.name:
         raise HTTPException(status_code=400, detail='Enter a valid name and reply email')
+    try:
+        # Existing pydantic[email] dependency; syntax only, no DNS or mail probe.
+        reply_email = validate_email(req.email.strip(), check_deliverability=False, test_environment=True).normalized
+    except EmailNotValidError:
+        raise HTTPException(400, 'Enter a valid reply email')
     try:key = str(uuid.UUID(idempotency_key)) if idempotency_key else str(uuid.uuid4())
     except (ValueError, TypeError):raise HTTPException(400, 'Invalid request reference')
-    payload = (req.name.strip(), req.email.strip(), req.message.strip())
+    payload = (req.name.strip(), reply_email, req.message.strip())
     if len(json.dumps({'product': 'openworld', 'name': payload[0], 'email': payload[1], 'message': payload[2], 'website': ''}, ensure_ascii=False, separators=(',', ':')).encode()) > 32768:
         raise HTTPException(413, 'Message is too large. Shorten it before retrying.')
     def existing_result(existing):

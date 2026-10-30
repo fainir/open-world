@@ -343,7 +343,7 @@ function renderContacts() {
         <div class="suggestion-header">
           <div class="suggestion-meta">
             <span class="suggestion-user">${escapeHtml(m.name)}</span>
-            <a href="mailto:${escapeHtml(m.email)}" style="color:var(--accent);text-decoration:none;font-size:13px">${escapeHtml(m.email)}</a>
+            <a href="mailto:${encodeURIComponent(m.email)}" style="color:var(--accent);text-decoration:none;font-size:13px">${escapeHtml(m.email)}</a>
             ${!m.is_read ? '<span class="suggestion-status status-pending">new</span>' : ''}
           </div>
           <span class="suggestion-time">${time}</span>

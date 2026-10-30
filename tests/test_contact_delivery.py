@@ -105,7 +105,7 @@ class ContactOutbox(unittest.TestCase):
                     send.assert_not_called()
                 with SessionLocal() as db:self.assertEqual(db.query(ContactMessage).count(),1)
                 conflict=await client.post('/api/contact',json={**payload,'message':'changed'},headers=headers);self.assertEqual(conflict.status_code,409)
-                invalid=await client.post('/api/contact',json={**payload,'email':'bad\r\naddress'});self.assertEqual(invalid.status_code,400)
+                invalid=await client.post('/api/contact',json={**payload,'email':'a@b.com?subject=unsafe'});self.assertEqual(invalid.status_code,400)
                 self.assertEqual((await client.post('/api/contact',content='x'*32769)).status_code,413)
                 self.assertEqual((await client.get('/api/admin/contacts')).status_code,401)
                 response=await client.post('/contact',content='message=PRIVATE_DRAFT');self.assertEqual(response.status_code,503);self.assertNotIn('PRIVATE_DRAFT',response.text)
