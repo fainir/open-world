@@ -17,6 +17,11 @@ Final application source `569d1d2` is live on the existing service, deployment `
 
 [Public 375/1440 UI](../qa/contact-costs/public-ui.log) verifies real changed pages, contact field retention/retry and current costs. Every write/mail response is intercepted, admin identity is synthetic, and the unchanged game iframe is a functional double. This is changed-screen proof, not a repeated real-account, game-generation, game-performance or provider-receipt claim. Contact link/button/error contrast is measured at least 4.5:1 and final screenshots were visually inspected. Python compile and JS syntax pass. No fresh vendor events were sent because tracking was unchanged.
 
-Root has the live `/contact` URL for its one separately approved real notification check. A `stored/queued` API result is not proof of Gmail arrival; C3 remains waiting until root records actual provider/inbox/header evidence. No worker sent a message or created an account/key/service.
+Root has the live `/contact` URL for its one separately approved real notification check. A `stored/queued` API result is not proof of Gmail arrival; root subsequently independently verified actual Gmail arrival and Reply-To as recorded below. No worker sent a message or created an account/key/service.
 
 The current `railway.toml` remains unchanged. The CLI surfaced a dated Config-as-Code warning; coordinator owns verifying official guidance and a separate maintenance row. No infrastructure migration was inferred during this contact rollout. The reviewed remote SEO/share/maker/README changes were preserved; divergent local main and unrelated untracked `video/`/analytics cache remain untouched.
+
+
+## Independent real mail acceptance (coordinator only)
+
+Root's one approved real phone form submission returned HTTP 200 `stored/queued` at 2026-10-30T23:39:58Z. Its notification reached Gmail INBOX at 23:39:59Z, message `1a18f2f3b2794f12`, with the exact `fainir2006+contactqa-openworld@gmail.com` Reply-To. Relay reference `7e95ff84-ab88-4274-8b89-a4e9ef74661e`. This is actual automatic notification/incoming-header proof, separate from the worker's mocked UI. The final CSS-only release retains the same accepted backend/transport and requires no duplicate email. Root's coordinator artifacts/contact-email-costs.md owns message evidence and the batch counter (13/14 after this check). The common operator mailbox reply path was independently accepted through Gramfix/Small Living; no separate OpenWorld visitor-reply email was sent or claimed. C3 is verified on that precise basis.

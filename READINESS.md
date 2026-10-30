@@ -33,11 +33,11 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 |---|---|---|---|
 | C1 | New contacts remain durable and notify the operator; failures are visible and bounded | verified | [44 source/ASGI/security/recovery cases](qa/contact-costs/source.log), [real public375/1440 changed screens](qa/contact-costs/public-ui.log) and [exact source/health](qa/contact-costs/release.log) pass. Existing-service f00a3b34 SUCCESS; legacy-safe migration, duplicate/atomic claim/retry/review boundaries tested with mocked transport. Genuine notification proof remains C3. [Handoff](readiness/contact-email-costs.md) |
 | C2 | Read accurate Contact, Privacy, Terms and Free / Bring your own key / Paid labels | verified | Free play/account; own Anthropic key billed by provider; no paid OpenWorld plan. No verification/recovery email promise. |
-| C3 | Actual new contact notification reaches Gmail with correct reply address | waiting | Root alone owns the approved 14-message real contact/receipt/reply batch. Worker submits no real message. |
+| C3 | Actual new contact notification reaches Gmail with correct reply address | verified | Root's approved real phone submission returned stored/queued at23:39:58Z and Gmail INBOX received it at23:39:59Z on October30 UTC; exact visitor Reply-To preserved. [Handoff](readiness/contact-email-costs.md) and coordinator artifacts/contact-email-costs.md. No worker sends, label manipulation or separate OpenWorld reply is claimed. |
 
 ## Remaining buildable work
 
-Earlier release and recovery acceptance are preserved. T1/T2 analytics are accepted locally and on the actual public site, including genuine provider receipts. The accepted engine, private data and recovery remain unchanged. C1/C2 source, real changed-screen acceptance and existing-service rollout pass. C3 is the coordinator's separately approved genuine contact receipt check; no worker sends. Unchanged gameplay, private data, analytics and recovery proofs remain accepted. Shared owner/provider actions stay in the portfolio ledger.
+Earlier release and recovery acceptance are preserved. T1/T2 analytics are accepted locally and on the actual public site, including genuine provider receipts. The accepted engine, private data and recovery remain unchanged. C1/C2 source, real changed-screen acceptance and existing-service rollout pass. C3 passed through the coordinator's separately approved genuine phone submission and Gmail receipt check; no worker sends. Unchanged gameplay, private data, analytics and recovery proofs remain accepted. Shared owner/provider actions stay in the portfolio ledger.
 
 ## Owner / waiting
 
@@ -45,7 +45,7 @@ Shared inherited credential, hosted-CI allowance and provider-budget actions sta
 
 ## Log (last10)
 
-- 2026-10-31 - Released durable new-contact notifications, honest failure/retry/admin status, Terms and visible costs.44 source/ASGI cases and actual375/1440 changed UI/contrast pass; public source/health and existing/data volume verified. All worker writes/mail mocked; root owns genuine receipt proof. Existing analytics, game/model, recovery and unrelated main/video files preserved.
+- 2026-10-31 - Released durable new-contact notifications, honest failure/retry/admin status, Terms and visible costs.44 source/ASGI cases and actual375/1440 changed UI/contrast pass; public source/health and existing/data volume verified. All worker writes/mail mocked; root independently verified genuine Gmail receipt/Reply-To. Existing analytics, game/model, recovery and unrelated main/video files preserved.
 
 -2026-10-30 - Existing-service analytics deployment SUCCESS; exact public source/config/health and actual375/1440 consent/Store actions to Google/Mixpanel/Betterloop pass, including cross-origin ingest200, withdrawal/private-route/GPC exclusion and zero page errors. Same/data volume; no generation/signup/send/payment. Dashboard visibility is a separate coordinator observation.
 
