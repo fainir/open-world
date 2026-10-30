@@ -1,4 +1,21 @@
-# OpenWorld Studio
+# OpenWorld
+
+**A 3D open world in your browser that you change by describing it.** Drive, glide and explore a city, a beach and mountains, then type a change ("add a day and night cycle", "put ramps on the beach") and AI edits the game. Every change is a new private version you can try, keep or throw away; share only the one you like.
+
+**Play it now: [open-world.gg](https://open-world.gg)** (no install, runs in the browser)
+
+<p align="center">
+  <a href="https://open-world.gg"><img src="app/static/og-card.png" width="800" alt="OpenWorld: a 3D browser game you can change with AI"></a>
+</p>
+
+- **Play first.** The game runs without an account.
+- **Change it in plain words.** Each request becomes a new version, private until you share it.
+- **Share and play others' games.** Public games can be played and starred without exposing your chat.
+- **Your own key.** Editing uses your own Anthropic API key, so there is no subscription.
+
+Made by [Nir Feinstein](https://nirfeinste.in). Feedback and bug reports are welcome in [Issues](https://github.com/fainir/open-world/issues).
+
+## For developers
 
 Describe a change to the existing browser game, preview a private saved version and explicitly share the game you choose. Live: https://open-world.gg.
 
