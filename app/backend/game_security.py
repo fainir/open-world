@@ -1,6 +1,15 @@
 """Executable game documents always run with an opaque origin."""
+from html import escape
 from pathlib import Path
+from urllib.parse import quote
 from fastapi.responses import HTMLResponse
+
+PUBLIC_ORIGIN = 'https://open-world.gg'
+# No per-game screenshot is stored yet, so every shared game uses the landing card.
+SHARE_IMAGE = PUBLIC_ORIGIN + '/static/og-card.png'
+SHARE_IMAGE_ALT = 'Open World gameplay: gliding over a 3D city toward snowy mountains'
+SHARED_TITLE_FALLBACK = 'A game made in OpenWorld'
+SHARED_DESCRIPTION_FALLBACK = 'Play this 3D browser game made with AI in OpenWorld, then describe your own change.'
 
 # Legacy games use Web Storage for cosmetic preferences. Opaque documents cannot
 # access origin storage; give each document an empty, bounded, in-memory substitute.
@@ -16,14 +25,36 @@ GAME_CSP = (
 )
 
 
-def game_response(path):
+def _share_text(value, limit):
+    text = ' '.join(''.join(c for c in str(value or '') if c.isprintable() or c.isspace()).split())
+    return text if len(text) <= limit else text[:limit - 3].rstrip() + '...'
+
+
+def shared_game_head(share_slug, title, description):
+    """Share-card tags for one explicitly shared game. Titles and descriptions come from users."""
+    title = _share_text(title, 90) or SHARED_TITLE_FALLBACK
+    description = _share_text(description, 200) or SHARED_DESCRIPTION_FALLBACK
+    values = [('property', 'og:type', 'website'), ('property', 'og:site_name', 'Open World'),
+              ('property', 'og:title', title), ('property', 'og:description', description),
+              ('property', 'og:url', PUBLIC_ORIGIN + '/shared/' + quote(str(share_slug), safe='')),
+              ('property', 'og:image', SHARE_IMAGE), ('property', 'og:image:type', 'image/png'),
+              ('property', 'og:image:width', '1200'), ('property', 'og:image:height', '630'),
+              ('property', 'og:image:alt', SHARE_IMAGE_ALT), ('name', 'description', description),
+              ('name', 'twitter:card', 'summary_large_image'), ('name', 'twitter:title', title),
+              ('name', 'twitter:description', description), ('name', 'twitter:image', SHARE_IMAGE),
+              ('name', 'twitter:image:alt', SHARE_IMAGE_ALT)]
+    return '<meta charset="utf-8">' + ''.join(
+        '<meta %s="%s" content="%s">' % (kind, key, escape(value, quote=True)) for kind, key, value in values)
+
+
+def game_response(path, head=''):
     html = Path(path).read_text(encoding='utf-8')
     legacy_store = """fetch('/api/store/random-slug').then(r=>r.json()).then(d=>{
           if(d.share_slug)window.location.href='/shared/'+d.share_slug;
           else showTip('No published games yet!');
         }).catch(()=>showTip('No published games yet!'));"""
     html = html.replace(legacy_store, "if(parent===window)location.href='/';else parent.postMessage({type:'ow-open-store'},'*');")
-    return HTMLResponse('<!doctype html>' + EPHEMERAL_STORAGE + html, headers={
+    return HTMLResponse('<!doctype html>' + head + EPHEMERAL_STORAGE + html, headers={
         "Content-Security-Policy": GAME_CSP,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
