@@ -37,7 +37,7 @@ from app.backend.auth import (
     verify_password,
 )
 from app.backend.access import guest_hash, require_session, require_version, claim_session
-from app.backend.game_security import game_response, studio_shell, game_error_response
+from app.backend.game_security import game_response, studio_shell, game_error_response, shared_game_head
 from app.backend.request_limits import boundaries
 from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK, reconcile_deleted_accounts
 from app.backend.accounts import export_account, delete_account, account_action
@@ -1195,7 +1195,8 @@ def shared_page(share_slug: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Game file not found")
     with open(path, "r", encoding="utf-8") as f:
         game_html = f.read()
-    return game_response(path)
+    # Only this explicitly shared version's public title and description reach the share card.
+    return game_response(path, shared_game_head(version.share_slug, version.publish_title, version.description))
 
 
 @app.get("/{path:path}")

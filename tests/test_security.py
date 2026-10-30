@@ -1,6 +1,7 @@
 """Synthetic SQLite/ASGI regressions. No startup seeding, credentials or provider requests."""
 import asyncio
 import hashlib
+from html.parser import HTMLParser
 import os
 from pathlib import Path
 import secrets
@@ -364,6 +365,97 @@ class AdminReviews(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post('/api/admin/decline/'+self.version.id,headers=self.admin_headers)).status_code,409)
         # Keep the synthetic recovery fixture's base as a valid game for later cases.
         base.write_text('<!doctype html><html><body>Recovered synthetic base</body></html>')
+
+
+class _Document(HTMLParser):
+    def __init__(self, text):
+        super().__init__(); self.tags = []; self.feed(text)
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append((tag, dict(attrs)))
+
+    def meta(self, key):
+        return [a.get('content') for t, a in self.tags if t == 'meta' and key in (a.get('property'), a.get('name'))]
+
+
+class SharedGameCards(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        await PrivateAccess.asyncSetUp(self)
+        self.version.user_prompt = 'PRIVATE_SYNTHETIC_PROMPT'; self.db.commit()
+        from app.backend.request_limits import _buckets
+        _buckets.clear()
+
+    async def asyncTearDown(self): await PrivateAccess.asyncTearDown(self)
+
+    def share_directly(self, title=None, description=None):
+        self.version.is_shared = True; self.version.share_slug = secrets.token_hex(16)
+        if title is not None: self.version.publish_title = title
+        if description is not None: self.version.description = description
+        self.db.commit()
+        return self.version.share_slug
+
+    async def test_published_game_card_has_its_own_title_description_url_and_image(self):
+        r = await self.client.post('/api/versions/publish', json={'version_id': self.version.id, 'title': 'Synthetic Lava Run'}, headers=self.owner_headers)
+        self.assertEqual(r.status_code, 200); slug = r.json()['share_slug']
+        r = await self.client.get('/shared/' + slug)
+        self.assertEqual(r.status_code, 200); doc = _Document(r.text)
+        expected = {'og:title': 'Synthetic Lava Run', 'twitter:title': 'Synthetic Lava Run',
+                    'og:description': 'PRIVATE_SYNTHETIC_DESCRIPTION', 'twitter:description': 'PRIVATE_SYNTHETIC_DESCRIPTION',
+                    'og:url': 'https://open-world.gg/shared/' + slug, 'og:type': 'website',
+                    'og:image': 'https://open-world.gg/static/og-card.png', 'twitter:image': 'https://open-world.gg/static/og-card.png',
+                    'twitter:card': 'summary_large_image'}
+        for key, value in expected.items():
+            self.assertEqual(doc.meta(key), [value], key)
+        self.assertIn('PRIVATE_SYNTHETIC_GAME', r.text)
+        self.assertLess(r.text.index('og:title'), r.text.index('PRIVATE_SYNTHETIC_GAME'))
+        for private in ['PRIVATE_SYNTHETIC_CHAT', 'PRIVATE_SYNTHETIC_PROMPT', self.session.id, self.owner.username]:
+            self.assertNotIn(private, r.text)
+        self.assertIn('sandbox allow-scripts allow-pointer-lock', r.headers['content-security-policy'])
+        self.assertNotIn('og:title', (await self.client.get('/game/shared/' + slug)).text)
+        landing = _Document((await self.client.get('/')).text)
+        self.assertEqual(landing.meta('og:title'), ['Open World - a 3D browser game you can change with AI'])
+
+    async def test_hostile_title_and_description_render_inert(self):
+        title = '"\'><script>alert(1)</script><meta property="og:title" content="pwned">'
+        description = '</title><img src=x onerror=alert(2)> & "quoted" <script>alert(3)</script>'
+        slug = self.share_directly(title, description)
+        r = await self.client.get('/shared/' + slug)
+        self.assertEqual(r.status_code, 200)
+        for raw in ['<script>alert', '<img src=x', 'content="pwned"', '"quoted"']:
+            self.assertNotIn(raw, r.text)
+        self.assertIn('&quot;&#x27;&gt;&lt;script&gt;alert(1)&lt;/script&gt;', r.text)
+        doc = _Document(r.text)
+        self.assertEqual(doc.meta('og:title'), [title]); self.assertEqual(doc.meta('twitter:title'), [title])
+        self.assertEqual(doc.meta('og:description'), [description])
+        self.assertEqual([t for t, _ in doc.tags if t in ('script', 'img')], ['script', 'script'])
+        self.assertFalse([a for _, a in doc.tags if 'onerror' in a])
+
+    async def test_shared_game_without_title_uses_fallback_and_trims_description(self):
+        r = await self.client.post('/api/versions/share', json={'version_id': self.version.id}, headers=self.owner_headers)
+        slug = r.json()['share_slug']
+        doc = _Document((await self.client.get('/shared/' + slug)).text)
+        self.assertEqual(doc.meta('og:title'), ['A game made in OpenWorld'])
+        self.version.description = 'Faster cars\n\n' + 'and brighter neon ' * 40; self.db.commit()
+        description = _Document((await self.client.get('/shared/' + slug)).text).meta('og:description')[0]
+        self.assertLessEqual(len(description), 200); self.assertTrue(description.startswith('Faster cars and brighter neon'))
+        self.assertTrue(description.endswith('...')); self.assertNotIn('\n', description)
+
+    async def test_private_unshared_or_missing_games_show_no_card(self):
+        self.version.share_slug = secrets.token_hex(16); self.db.commit()
+        paths = ['/shared/' + self.version.share_slug, '/shared/' + secrets.token_hex(16), '/shared/%22%3E%3Cscript%3E']
+        missing = GameVersion(session_id=self.session.id, version_number=2, description='PRIVATE_SYNTHETIC_MISSING',
+                              file_path='missing-' + secrets.token_hex(5) + '.html', is_shared=True, share_slug=secrets.token_hex(16))
+        self.db.add(missing); self.db.commit(); paths.append('/shared/' + missing.share_slug)
+        try:
+            for path in paths:
+                with self.subTest(path=path):
+                    r = await self.client.get(path)
+                    self.assertEqual(r.status_code, 404)
+                    for leaked in ['og:', 'twitter:', 'PRIVATE_SYNTHETIC', '<script']:
+                        self.assertNotIn(leaked, r.text)
+        finally:
+            # Later recovery cases require every referenced game file to exist.
+            self.db.delete(missing); self.db.commit()
 
 
 class PublicBaseTransport(unittest.IsolatedAsyncioTestCase):
