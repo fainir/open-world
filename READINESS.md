@@ -27,9 +27,17 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | T1 | Optional public studio analytics, explicit device choice and safe payload/route boundaries | verified | [Source and actual375/1440 acceptance](qa/analytics.md):30 ASGI and8 analytics cases, all three transports intercepted, withdrawal/races and memory lock pass. No real provider receipt is claimed |
 | T2 | Existing analytics project configuration and public rollout/receipt | verified | [Actual public release](qa/analytics.md), [live375/1440](qa/analytics-live.log), [exact public config/source/health](qa/analytics-public-http.log). Genuine Google204, Mixpanel200/body1 and cross-origin Betterloop200/bodyok; actual Store action to all3, no pre-consent requests, sanitized context, withdrawal, private account/contact exclusion and GPC pass. Same existing service/data volume; dashboard visibility is not inferred from HTTP proof |
 
+## Contact, email and current costs - October 31
+
+| ID | Flow or gate | Status | Evidence / next action |
+|---|---|---|---|
+| C1 | New contacts remain durable and notify the operator; failures are visible and bounded | building | Additive legacy-safe outbox, shared relay, same-reference retries and private admin status/review. Old inbox records never backfilled. Source and real UI acceptance in progress. |
+| C2 | Read accurate Contact, Privacy, Terms and Free / Bring your own key / Paid labels | building | Free play/account; own Anthropic key billed by provider; no paid OpenWorld plan. No verification/recovery email promise. |
+| C3 | Actual new contact notification reaches Gmail with correct reply address | waiting | Root alone owns the approved 14-message real contact/receipt/reply batch. Worker submits no real message. |
+
 ## Remaining buildable work
 
-Earlier release and recovery acceptance are preserved. T1/T2 analytics are accepted locally and on the actual public site, including genuine provider receipts. The accepted engine, private data and recovery remain unchanged. No buildable OpenWorld row remains; shared owner/provider actions stay in the portfolio ledger.
+Earlier release and recovery acceptance are preserved. T1/T2 analytics are accepted locally and on the actual public site, including genuine provider receipts. The accepted engine, private data and recovery remain unchanged. The scoped contact/email/cost rows above are active; unchanged gameplay, private data, analytics and recovery proofs remain accepted. Shared owner/provider actions stay in the portfolio ledger.
 
 ## Owner / waiting
 

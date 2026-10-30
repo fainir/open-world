@@ -7,15 +7,16 @@ import random
 import asyncio
 import threading
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
-from fastapi import FastAPI, Depends, HTTPException, Query, Request
+from fastapi import FastAPI, Depends, HTTPException, Query, Request, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.backend.database import get_db, init_db, DATA_DIR
 from app.backend.models import (
@@ -41,6 +42,7 @@ from app.backend.game_security import game_response, studio_shell, game_error_re
 from app.backend.request_limits import boundaries
 from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK, reconcile_deleted_accounts
 from app.backend.accounts import export_account, delete_account, account_action
+from app.backend import contact_delivery
 from app.backend.agent import (
     run_agent,
     GAME_MODEL,
@@ -368,6 +370,12 @@ def on_startup():
         _seed_store()
     snapshot(DATA_DIR, VERSIONS_DIR, get_base_game_path())
     threading.Thread(target=_recovery_loop, daemon=True, name='openworld-recovery').start()
+    contact_delivery.start()
+
+
+@app.on_event('shutdown')
+def on_shutdown():
+    contact_delivery.stop()
 
 
 def _recovery_loop():
@@ -439,9 +447,10 @@ class VersionIdRequest(BaseModel):
 
 
 class ContactRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=120)
+    name: str = Field(min_length=1, max_length=100)
     email: str = Field(min_length=3, max_length=254)
-    message: str = Field(min_length=1, max_length=8000)
+    message: str = Field(min_length=1, max_length=8192)
+    website: str = Field(default='', max_length=200)
 
 
 class PublishRequest(BaseModel):
@@ -986,15 +995,35 @@ def api_admin_decline(version_id: str,db: Session=Depends(get_db),admin: User=De
 
 
 @app.post("/api/contact")
-def api_contact(req: ContactRequest, db: Session = Depends(get_db)):
+def api_contact(req: ContactRequest, db: Session = Depends(get_db), idempotency_key: Optional[str] = Header(default=None)):
     if not req.name.strip() or not req.email.strip() or not req.message.strip():
         raise HTTPException(status_code=400, detail="All fields are required")
+    if req.website or not re.fullmatch(r'[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+', req.email.strip()) or '\r' in req.name or '\n' in req.name:
+        raise HTTPException(status_code=400, detail='Enter a valid name and reply email')
+    try:key = str(uuid.UUID(idempotency_key)) if idempotency_key else str(uuid.uuid4())
+    except (ValueError, TypeError):raise HTTPException(400, 'Invalid request reference')
+    payload = (req.name.strip(), req.email.strip(), req.message.strip())
+    if len(json.dumps({'product': 'openworld', 'name': payload[0], 'email': payload[1], 'message': payload[2], 'website': ''}, ensure_ascii=False, separators=(',', ':')).encode()) > 32768:
+        raise HTTPException(413, 'Message is too large. Shorten it before retrying.')
+    def existing_result(existing):
+        if (existing.name, existing.email, existing.message) != payload:
+            raise HTTPException(409, 'This reference belongs to a different message. Refresh before sending a new message.')
+        return {'status': 'stored', 'notification': existing.notification_status}
+    existing = db.query(ContactMessage).filter(ContactMessage.notification_key == key).first()
+    if existing:return existing_result(existing)
     msg = ContactMessage(
-        name=req.name.strip(), email=req.email.strip(), message=req.message.strip()
+        name=payload[0], email=payload[1], message=payload[2],
+        notification_key=key, notification_status='queued', notification_attempts=0,
     )
     db.add(msg)
-    db.commit()
-    return {"status": "ok"}
+    try:db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = db.query(ContactMessage).filter(ContactMessage.notification_key == key).first()
+        if existing:return existing_result(existing)
+        raise HTTPException(503, 'Message could not be saved. Your text has not been cleared.')
+    contact_delivery.wake()
+    return {'status': 'stored', 'notification': 'queued'}
 
 
 @app.get("/api/admin/contacts")
@@ -1010,6 +1039,11 @@ def api_admin_contacts(
             "message": m.message,
             "is_read": m.is_read,
             "created_at": m.created_at.isoformat() if m.created_at else None,
+            'notification_status': m.notification_status,
+            'notification_attempts': m.notification_attempts,
+            'notification_error': m.notification_error,
+            'notification_reference': m.notification_reference,
+            'notification_next_at': m.notification_next_at.isoformat() if m.notification_next_at else None,
         }
         for m in messages
     ]
@@ -1027,6 +1061,18 @@ def api_admin_mark_read(
     msg.is_read = True
     db.commit()
     return {"status": "ok"}
+
+
+@app.post('/api/admin/contacts/{contact_id}/retry')
+def api_admin_retry_contact(contact_id: str, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    message = db.get(ContactMessage, contact_id)
+    if not message:raise HTTPException(404, 'Message not found')
+    if message.notification_status not in ('queued', 'retry'):
+        raise HTTPException(409, 'This message is not safe for automatic retry; inspect its existing receipt first.')
+    if message.notification_attempts >= contact_delivery.MAX_ATTEMPTS or (message.notification_attempts and datetime.utcnow() - message.created_at > timedelta(hours=20)):
+        raise HTTPException(409, 'Check the existing receipt; the automatic retry window has closed.')
+    message.notification_next_at = datetime.utcnow();db.commit();contact_delivery.wake()
+    return {'status': 'queued'}
 
 
 # ── Game file serving ──
@@ -1186,6 +1232,16 @@ def contact_page():
     """Serve the contact page."""
     contact_path = os.path.join(STATIC_DIR, "contact.html")
     return FileResponse(contact_path, media_type="text/html")
+
+
+@app.post('/contact')
+def contact_without_script():
+    return JSONResponse({'detail': 'No message was sent. Use the current contact page with JavaScript or its direct email link.'}, status_code=503)
+
+
+@app.get('/terms')
+def terms_page():
+    return FileResponse(os.path.join(STATIC_DIR, 'terms.html'), media_type='text/html')
 
 
 @app.get('/account')

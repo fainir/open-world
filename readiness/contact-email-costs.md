@@ -1,0 +1,11 @@
+# OpenWorld contact, email and current costs - October 31
+
+Existing `/api/contact` stored name/email/message in the private SQLite admin inbox without sending email, while the page incorrectly claimed delivery and a quick reply. Privacy already provided the existing operator Gmail; there was no Terms page. No Resend/SMTP/mail command was configured. The approved relay provides owner-only notification without a new key/account. Root owns all real messages.
+
+Current costs: base/public play, accounts and browsing are free. Editing is bring your own Anthropic key and provider billing; OpenWorld sells no paid plan. Account-email verification/recovery remains outside this release; no new promise is made.
+
+New submissions preserve the durable private inbox and queue a notification. Additive columns default historical rows to legacy, never mail them. A UUID is bound to the stored payload and reused across bounded retries/restarts; unknown/old attempts park for review. Only the fixed existing operator is notified through the relay; no visitor acknowledgment. Operator status distinguishes queued/retry/provider-accepted/review/historical storage, and accepted means provider acceptance only. The existing read/unread/reply channel remains.
+
+Privacy discloses OpenWorld's separate inbox, relay hashes/metadata retention, Resend/Gmail copies and account-deletion limits. No legal entity/address, compliance guarantee, earnings or support SLA is invented. Accepted analytics/private boundaries, engine/models, export/closure and independent recovery are preserved.
+
+44 source/ASGI/security/recovery cases pass in `qa/contact-costs/source.log`, including legacy schema migration, payload-bound duplicates, atomic concurrent claim, interrupted recovery, retry delay, receipt review and private admin denial. Actual functional UI at 375/1440 passes contact validation/503/429/network retention/same-key retry/new-message reset/crypto fallback, truthful queued status, Terms/costs and synthetic admin states/retry in `qa/contact-costs/local-ui.log`; screenshots are alongside. Lightweight game is only a functional studio fixture, not new gameplay/performance proof. Python compile and JS syntax pass. Existing-service deployment is next. All worker provider responses are mocked; source proof is separate from Root's genuine inbox/header check.

@@ -31,6 +31,15 @@ def _migrate(eng):
 
     # Map of table -> list of (column_name, column_ddl)
     migrations = {
+        "contact_messages": [
+            ("notification_key", "VARCHAR"),
+            ("notification_status", "VARCHAR NOT NULL DEFAULT 'legacy'"),
+            ("notification_attempts", "INTEGER NOT NULL DEFAULT 0"),
+            ("notification_next_at", "DATETIME"),
+            ("notification_last_at", "DATETIME"),
+            ("notification_error", "VARCHAR"),
+            ("notification_reference", "VARCHAR"),
+        ],
         "chat_sessions": [
             ("guest_access_hash", "VARCHAR"),
         ],
@@ -58,4 +67,6 @@ def _migrate(eng):
             for col_name, col_ddl in columns:
                 if col_name not in existing:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_ddl}"))
+        conn.commit()
+        conn.execute(text('CREATE UNIQUE INDEX IF NOT EXISTS ix_contact_notification_key ON contact_messages(notification_key)'))
         conn.commit()

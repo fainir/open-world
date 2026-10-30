@@ -134,65 +134,28 @@ button,input,textarea,a{min-height:44px;min-width:44px}a{display:inline-flex;ali
 <div class="page">
   <a href="/" class="back-link">&larr; Back to Open World</a>
   <h1>Contact Us</h1>
-  <a class="back-link" href="/privacy">Privacy and data controls</a>
-  <p class="subtitle">Got feedback, ideas, or questions? We'd love to hear from you.</p>
+  <nav><a class="back-link" href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</a> · <a class="back-link" href="/terms" target="_blank" rel="noopener noreferrer">Terms &amp; costs</a></nav>
+  <p class="subtitle">Feedback, partnerships or a privacy request? Your message is saved in the operator's private inbox and queued for an email notification. No automatic confirmation email or reply deadline is promised. Do not send passwords, API keys or private game content.</p>
 
-  <form id="contact-form" onsubmit="submitForm(event)">
+  <form id="contact-form" method="post" action="/contact">
     <div class="form-group">
       <label for="name">Name</label>
-      <input type="text" id="name" name="name" required placeholder="Your name">
+      <input type="text" id="name" name="name" maxlength="100" required placeholder="Your name">
     </div>
     <div class="form-group">
       <label for="email">Email</label>
-      <input type="email" id="email" name="email" required placeholder="you@example.com">
+      <input type="email" id="email" name="email" maxlength="254" required placeholder="you@example.com">
     </div>
     <div class="form-group">
       <label for="message">Message</label>
-      <textarea id="message" name="message" required placeholder="What's on your mind?"></textarea>
+      <textarea id="message" name="message" maxlength="8192" required placeholder="What's on your mind?"></textarea>
     </div>
-    <button type="submit" class="btn-submit" id="submit-btn">Send Message</button>
+    <div hidden aria-hidden="true"><label for="website">Leave this blank</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div><button type="submit" class="btn-submit" id="submit-btn" disabled>Send message</button>
   </form>
 
-  <div id="success-msg" role="status" class="msg msg-success">Thanks! Your message has been sent. We'll get back to you soon.</div>
-  <div id="error-msg" role="alert" class="msg msg-error"></div>
+  <div id="success-msg" role="status" class="msg msg-success"></div>
+  <div id="error-msg" role="alert" class="msg msg-error"></div><noscript><p>JavaScript is needed for the safe form handler. No message has been sent.</p></noscript><p style="margin-top:24px;line-height:1.7">You can also email <a class="email-link" href="mailto:fainir2006@gmail.com">fainir2006@gmail.com</a>. The form uses the shared Betterloop relay and Resend for its operator notification. <a href="/privacy#contact" target="_blank" rel="noopener noreferrer">Contact data details</a>.</p>
 </div>
 
-<script>
-async function submitForm(e) {
-  e.preventDefault();
-  const btn = document.getElementById('submit-btn');
-  const successMsg = document.getElementById('success-msg');
-  const errorMsg = document.getElementById('error-msg');
-  successMsg.style.display = 'none';
-  errorMsg.style.display = 'none';
-
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
-
-  try {
-    const res = await fetch('/api/contact', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        message: document.getElementById('message').value,
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.detail || 'Something went wrong');
-    }
-    successMsg.style.display = 'block';
-    document.getElementById('contact-form').reset();
-  } catch (err) {
-    errorMsg.textContent = err.message;
-    errorMsg.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Send Message';
-  }
-}
-</script>
-</body>
-</html>
+<script src="/static/contact.js" defer></script>
+</body></html>

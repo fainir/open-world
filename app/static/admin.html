@@ -351,6 +351,8 @@ function renderContacts() {
         <div class="suggestion-desc">
           <div class="prompt-text">${escapeHtml(m.message)}</div>
         </div>
+        <p style="font-size:13px;line-height:1.6;overflow-wrap:anywhere">Notification: ${escapeHtml(notificationLabel(m.notification_status))}${m.notification_attempts ? ' · Attempts: '+Number(m.notification_attempts) : ''}${m.notification_reference ? ' · Reference: '+escapeHtml(m.notification_reference) : ''}${m.notification_error ? ' · '+escapeHtml(m.notification_error) : ''}</p>
+        ${m.notification_status==='retry' ? `<button class="btn btn-outline btn-sm" onclick="retryContact('${m.id}',this)">Retry notification</button>` : ''}
         ${!m.is_read ? `
         <div class="suggestion-footer">
           <div class="suggestion-actions">
@@ -360,6 +362,13 @@ function renderContacts() {
       </div>
     `;
   }).join('');
+}
+
+function notificationLabel(status){return {legacy:'Stored only (historical message; no backfill)',queued:'Queued for email',sending:'Email attempt in progress',retry:'Delivery failed or unknown; bounded retry queued',accepted:'Email service accepted (inbox arrival not confirmed)',review:'Operator review needed; automatic sends stopped'}[status]||'Stored only';}
+async function retryContact(id,button){
+  button.disabled=true;adminError.textContent='';
+  try{const response=await fetch('/api/admin/contacts/'+encodeURIComponent(id)+'/retry',{method:'POST',headers:Auth.authHeaders()});if(!response.ok)throw Error('The retry could not be queued. Check the existing receipt before another attempt.');await loadContacts();adminStatus.textContent='Notification retry queued with the existing reference.';}
+  catch(error){adminError.textContent=error.message;if(button.isConnected)button.disabled=false;}
 }
 
 async function markRead(contactId,button){

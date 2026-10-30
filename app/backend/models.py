@@ -102,3 +102,11 @@ class ContactMessage(Base):
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=_now)
+    # Legacy rows deliberately never become email jobs during migration/restore.
+    notification_key = Column(String, nullable=True, unique=True)
+    notification_status = Column(String, nullable=False, default='legacy')
+    notification_attempts = Column(Integer, nullable=False, default=0)
+    notification_next_at = Column(DateTime, nullable=True)
+    notification_last_at = Column(DateTime, nullable=True)
+    notification_error = Column(String, nullable=True)
+    notification_reference = Column(String, nullable=True)

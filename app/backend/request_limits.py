@@ -47,7 +47,7 @@ async def boundaries(request, call_next):
                 async with asyncio.timeout(15):
                     async for chunk in request.stream():
                         size += len(chunk)
-                        if size > 8 * 1024 * 1024:
+                        if size > (32 * 1024 if path == '/api/contact' else 8 * 1024 * 1024):
                             return JSONResponse({'detail': 'Request too large'}, status_code=413)
                         chunks.append(chunk)
                 request._body = b''.join(chunks)
