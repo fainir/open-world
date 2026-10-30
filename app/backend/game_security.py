@@ -73,6 +73,7 @@ def studio_shell(overlay):
 <title>Open World - a 3D browser game you can change with AI</title>
 <meta name="description" content="Play a 3D open world in your browser: drive, glide and explore a city, beach and mountains. Describe a change, AI edits the game, and share your version.">
 <link rel="canonical" href="https://open-world.gg/">
+<meta name="google-site-verification" content="2_cyzqDDncUndfZBOwHOEn7slsNsTk2tu-ZAgeeGxd0">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Open World">
 <meta property="og:title" content="Open World - a 3D browser game you can change with AI">
