@@ -46,6 +46,21 @@ class PrivateAccess(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.client.aclose();self.db.close()
 
+    async def test_analytics_config_exposes_only_valid_public_identifiers(self):
+        import json
+        for values, expected in [({}, {'gaId': '', 'mixpanelToken': '', 'betterloopKey': ''}),
+                                 ({'GA_ID': 'G-SYNTHETIC', 'MIXPANEL_TOKEN': 'a'*32, 'BETTERLOOP_KEY': 'bl_synthetic_public_key'}, {'gaId': 'G-SYNTHETIC', 'mixpanelToken': 'a'*32, 'betterloopKey': 'bl_synthetic_public_key'}),
+                                 ({'GA_ID': 'private-secret', 'MIXPANEL_TOKEN': '<private-secret>', 'BETTERLOOP_KEY': 'private-secret'}, {'gaId': '', 'mixpanelToken': '', 'betterloopKey': ''})]:
+            with patch.dict(os.environ, {'GA_ID': '', 'MIXPANEL_TOKEN': '', 'BETTERLOOP_KEY': '', 'ANTHROPIC_API_KEY': 'PRIVATE_SYNTHETIC_KEY', **values}):
+                response = await self.client.get('/analytics-config.js')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.headers['cache-control'], 'no-store')
+            self.assertNotIn('PRIVATE_SYNTHETIC', response.text)
+            self.assertEqual(json.loads(response.text.removeprefix('window.SiteAnalyticsConfig=').removesuffix(';')), expected)
+        for path in ['/account', '/admin', '/contact']:
+            response = await self.client.get(path)
+            self.assertNotIn('/static/analytics.js', response.text)
+
     async def test_all_private_reads_require_owner(self):
         for path in ['/api/chat/history/'+self.session.id, '/api/versions/'+self.session.id,
                      '/api/versions/info/'+self.version.id, '/game/version/'+self.version.id]:

@@ -1,0 +1,43 @@
+test_changed_or_missing_contract_forces_drill_on_unchanged_archive (test_mirror_contract.MirrorRestoreContract.test_changed_or_missing_contract_forces_drill_on_unchanged_archive) ... ok
+test_changed_snapshot_or_missing_encrypted_target_forces_drill (test_mirror_contract.MirrorRestoreContract.test_changed_snapshot_or_missing_encrypted_target_forces_drill) ... ok
+test_incomplete_prior_success_cannot_skip_drill (test_mirror_contract.MirrorRestoreContract.test_incomplete_prior_success_cannot_skip_drill) ... ok
+test_unchanged_verified_archive_and_contract_can_reuse_its_drill (test_mirror_contract.MirrorRestoreContract.test_unchanged_verified_archive_and_contract_can_reuse_its_drill) ... ok
+test_account_action_limit_does_not_block_another_account (test_security.AccountRights.test_account_action_limit_does_not_block_another_account) ... Executing <Task finished name='Task-1' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.411 seconds
+ok
+test_closure_removes_active_owned_records_and_preserves_other_account (test_security.AccountRights.test_closure_removes_active_owned_records_and_preserves_other_account) ... Executing <Task finished name='Task-6' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.327 seconds
+ok
+test_closure_requires_current_password_exact_confirmation_and_same_origin (test_security.AccountRights.test_closure_requires_current_password_exact_confirmation_and_same_origin) ... Executing <Task finished name='Task-14' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.321 seconds
+ok
+test_export_contains_only_account_owned_data_and_real_game_files (test_security.AccountRights.test_export_contains_only_account_owned_data_and_real_game_files) ... Executing <Task finished name='Task-28' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.323 seconds
+ok
+test_failed_database_commit_restores_rows_files_and_deletion_evidence (test_security.AccountRights.test_failed_database_commit_restores_rows_files_and_deletion_evidence) ... Executing <Task finished name='Task-33' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.316 seconds
+ok
+test_failed_game_move_preserves_account_and_files (test_security.AccountRights.test_failed_game_move_preserves_account_and_files) ... Executing <Task finished name='Task-41' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.314 seconds
+ok
+test_startup_reconciles_a_crash_after_durable_closure_intent (test_security.AccountRights.test_startup_reconciles_a_crash_after_durable_closure_intent) ... Executing <Task finished name='Task-49' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.321 seconds
+ok
+test_surviving_deletion_evidence_is_mandatory_and_applies_to_an_older_restore (test_security.AccountRights.test_surviving_deletion_evidence_is_mandatory_and_applies_to_an_older_restore) ... Executing <Task finished name='Task-54' coro=<AccountRights.asyncSetUp() done, defined at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_security.py:201> result=None created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.326 seconds
+ok
+test_approval_commit_failure_restores_the_previous_base_game (test_security.AdminReviews.test_approval_commit_failure_restores_the_previous_base_game) ... ok
+test_completed_review_is_idempotent_and_cannot_reverse_another_decision (test_security.AdminReviews.test_completed_review_is_idempotent_and_cannot_reverse_another_decision) ... ok
+test_review_requires_admin_and_explicit_owner_submission (test_security.AdminReviews.test_review_requires_admin_and_explicit_owner_submission) ... ok
+test_all_private_mutations_require_owner (test_security.PrivateAccess.test_all_private_mutations_require_owner) ... ok
+test_all_private_reads_require_owner (test_security.PrivateAccess.test_all_private_reads_require_owner) ... ok
+test_analytics_config_exposes_only_valid_public_identifiers (test_security.PrivateAccess.test_analytics_config_exposes_only_valid_public_identifiers) ... ok
+test_body_and_model_bounds (test_security.PrivateAccess.test_body_and_model_bounds) ... ok
+test_cannot_chat_or_branch_private_session (test_security.PrivateAccess.test_cannot_chat_or_branch_private_session) ... ok
+test_guest_capability_not_public_id_or_other_guest (test_security.PrivateAccess.test_guest_capability_not_public_id_or_other_guest) ... ok
+test_legacy_guest_requires_original_key (test_security.PrivateAccess.test_legacy_guest_requires_original_key) ... ok
+test_opaque_or_cross_origin_cannot_call_editor (test_security.PrivateAccess.test_opaque_or_cross_origin_cannot_call_editor) ... ok
+test_provider_failure_or_partial_edit_does_not_write_version (test_security.PrivateAccess.test_provider_failure_or_partial_edit_does_not_write_version) ... ok
+test_recovery_rejects_corruption_and_missing_game (test_security.PrivateAccess.test_recovery_rejects_corruption_and_missing_game) ... ok
+test_recovery_retains_game_files_and_invalidates_old_sessions (test_security.PrivateAccess.test_recovery_retains_game_files_and_invalidates_old_sessions) ... ok
+test_sharing_exposes_only_game_and_public_metadata (test_security.PrivateAccess.test_sharing_exposes_only_game_and_public_metadata) ... ok
+test_studio_document_never_contains_game_code (test_security.PrivateAccess.test_studio_document_never_contains_game_code) ... ok
+test_success_preserves_previous_version (test_security.PrivateAccess.test_success_preserves_previous_version) ... ok
+test_public_base_keeps_opaque_policy_and_missing_file_offers_retry (test_security.PublicBaseTransport.test_public_base_keeps_opaque_policy_and_missing_file_offers_retry) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 5.254s
+
+OK

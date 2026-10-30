@@ -1,0 +1,23 @@
+Fixture browser ready 375 {}
+Fixture page ready 375 {}
+Allowed at width 375 {"ga":true,"sdk":[["init",{"key":"bl_synthetic_public_key","endpoint":"https://betterloopai.com/api/ingest","captureText":false,"includePaths":["/","/index","/index.html","/privacy","/privacy.html"],"excludePaths":["/contact","/account","/admin","/owner","/owner.html","/auth","/login","/signup","/reset","/v","/game","/shared"],"excludeSelectors":["form","[role=\"dialog\"]","[data-private]","[data-betterloop-ignore]"]}]],"choice":"allowed","scripts":["https://www.googletagmanager.com/gtag/js?id=G-SYNTHETIC","https://betterloopai.com/sdk.js","","http://127.0.0.1:50045/analytics-config.js","http://127.0.0.1:50045/static/analytics.js"]}
+375: actual consent/focus/fit; all3 mock providers; fixed sanitized event; one pageview; withdrawal/identifier cleanup/reload pass
+Fixture browser ready 1440 {}
+Fixture page ready 1440 {}
+Allowed at width 1440 {"choice":"allowed","scripts":["https://www.googletagmanager.com/gtag/js?id=G-SYNTHETIC","https://betterloopai.com/sdk.js","","http://127.0.0.1:50045/analytics-config.js","http://127.0.0.1:50045/static/analytics.js"]}
+1440: actual consent/focus/fit; all3 mock providers; fixed sanitized event; one pageview; withdrawal/identifier cleanup/reload pass
+Fixture browser ready 375 { blocked: true }
+Fixture page ready 375 { blocked: true }
+{"blocked":true}: no provider requests
+Fixture browser ready 375 { gpc: true }
+Fixture page ready 375 { gpc: true }
+{"gpc":true}: no provider requests
+Fixture browser ready 375 { dnt: true }
+Fixture page ready 375 { dnt: true }
+{"dnt":true}: no provider requests
+Fixture browser ready 375 { delay: true }
+Fixture page ready 375 { delay: true }
+Delayed SDK withdrawal: no later initialization
+Fixture browser ready 375 { delay: true }
+Fixture page ready 375 { delay: true }
+Failed withdrawal remains off across late SDK/focus/pageshow; successful fresh choice restores optional tracking

@@ -52,3 +52,9 @@ The persistent account-ID-only deletion log is included in new snapshots. An old
 No provider key belongs in source, public metadata, logs or account exports. The source-check workflow runs Python compile, dependency consistency and synthetic tests on pull requests/main changes. Its first hosted run still depends on the existing shared GitHub Actions allowance; no budget increase is made here. Local checks remain the recorded validation until that owner action is complete.
 
 Current scope and evidence are in [PRODUCT.md](PRODUCT.md) and [READINESS.md](READINESS.md).
+
+## Optional public analytics
+
+Public `/` and `/privacy` have an accessible Analytics choices dialog, off by default, honoring DNT/GPC and clearing accessible identifiers on withdrawal. Only configured providers load: `GA_ID` (public GA4 measurement ID), `MIXPANEL_TOKEN` (public US Mixpanel project token), `BETTERLOOP_KEY` (public browser write key). `/analytics-config.js` validates/exposes only those public identifiers; private API tokens must never be used there. Blank/invalid values disable that provider. Disable GA enhanced measurement on the stream; the site uses manual sanitized pageviews and fixed events.
+
+The analytics script is never included in admin/account/contact or standalone games. Version-editor paths also suppress analytics. `node --test qa/analytics.test.cjs` checks consent, routes, withdrawal and pending-script races without real provider calls. `node qa/check-analytics.mjs <loopback-origin> <installed-playwright-entry>` checks the real public shell with synthetic vendor responses. The coordinator owns public identifier configuration and existing-service rollout; preserve volume, stored games and mirror configuration.

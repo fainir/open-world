@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: all providers and device ids stay absent before explicit permission
+ok 1 - all providers and device ids stay absent before explicit permission
+  ---
+  duration_ms: 7.595291
+  type: 'test'
+  ...
+# Subtest: configured providers receive fixed events only after consent, without text or URL context
+ok 2 - configured providers receive fixed events only after consent, without text or URL context
+  ---
+  duration_ms: 3.697709
+  type: 'test'
+  ...
+# Subtest: withdrawal discards queues, clears identifiers and blocks later/custom events
+ok 3 - withdrawal discards queues, clears identifiers and blocks later/custom events
+  ---
+  duration_ms: 1.375375
+  type: 'test'
+  ...
+# Subtest: a delayed SDK cannot initialize after withdrawal or movement to a sensitive route
+ok 4 - a delayed SDK cannot initialize after withdrawal or movement to a sensitive route
+  ---
+  duration_ms: 1.625667
+  type: 'test'
+  ...
+# Subtest: sensitive, unknown, identity-bearing and contact routes never load vendors despite saved consent
+ok 5 - sensitive, unknown, identity-bearing and contact routes never load vendors despite saved consent
+  ---
+  duration_ms: 5.351166
+  type: 'test'
+  ...
+# Subtest: Do Not Track, GPC and storage failures stay closed
+ok 6 - Do Not Track, GPC and storage failures stay closed
+  ---
+  duration_ms: 3.286875
+  type: 'test'
+  ...
+# Subtest: missing configuration makes no vendor requests and repeat pageshow never duplicates a pageview
+ok 7 - missing configuration makes no vendor requests and repeat pageshow never duplicates a pageview
+  ---
+  duration_ms: 3.342375
+  type: 'test'
+  ...
+# Subtest: a failed withdrawal stays off through late SDK, focus and pageshow until a successful fresh choice
+ok 8 - a failed withdrawal stays off through late SDK, focus and pageshow until a successful fresh choice
+  ---
+  duration_ms: 2.570417
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.3965

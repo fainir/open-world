@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import re
 import uuid
@@ -1140,6 +1141,19 @@ def serve_home(request: Request):
 def serve_version_with_overlay(version_id: str, request: Request):
     # The shell contains no private game or metadata; the owner-authenticated fetch loads it.
     return _revalidated_html(request, studio_shell(_load_overlay_html()))
+
+
+@app.get('/analytics-config.js')
+def analytics_config():
+    # Only public browser write identifiers are exposed; never private provider keys.
+    def public(name, pattern):
+        value = os.environ.get(name, '')
+        return value if re.fullmatch(pattern, value) else ''
+    config = {'gaId': public('GA_ID', r'G-[A-Z0-9]+'),
+              'mixpanelToken': public('MIXPANEL_TOKEN', r'[a-fA-F0-9]{32}'),
+              'betterloopKey': public('BETTERLOOP_KEY', r'bl_[a-zA-Z0-9_-]{8,200}')}
+    return Response('window.SiteAnalyticsConfig=' + json.dumps(config) + ';', media_type='application/javascript',
+                    headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
 
 
 @app.get("/admin")

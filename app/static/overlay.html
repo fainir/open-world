@@ -279,7 +279,7 @@
         <span id="ow-status" role="status"></span>
       </div>
     </div>
-    <nav class="ow-footer-links" aria-label="Account and information"><a href="/account">Account</a><a href="/privacy">Privacy</a><a href="/contact">Contact</a></nav>
+    <nav class="ow-footer-links" aria-label="Account and information"><button type="button" class="site-analytics-choice" data-analytics-open>Analytics choices</button><a href="/account">Account</a><a href="/privacy">Privacy</a><a href="/contact">Contact</a></nav>
   </div>
 
   <!-- API Key Modal -->
@@ -441,7 +441,7 @@ const Auth={
 };
 
 // ── Analytics helper ──
-function mp(event,props){try{if(window.mixpanel)mixpanel.track(event,props)}catch(e){}}
+function mp(event){window.SiteAnalytics?.track(event)}
 
 // ── Panel toggle ──
 function openPanel(){
@@ -597,15 +597,15 @@ async function sendMessage(){
     if(data.session_id)sessionId=data.session_id;
     localStorage.setItem(SK.SESSION,sessionId);
 
-    mp('Chat Message Sent',{has_image:!!imgB64});
+    mp('chat_message_sent');
     if(data.message&&!data.version_id){
       addMsg('assistant',data.message||data.description);
-      mp('Chat Response',{type:'text'});
+      mp('chat_response');
     }else{
       const desc=data.description||'Changes applied!';
       addAssistantMsg(desc,data.version_id,data.version_number);
       if(data.version_id){
-        mp('Version Created',{version_number:data.version_number});
+        mp('version_created');
         currentVersionId=data.version_id;
         localStorage.setItem(SK.VERSION,currentVersionId);
         showSuggestions(data.suggestions||[]);
@@ -649,7 +649,7 @@ apikeyModalInput.addEventListener('keydown',(e)=>{
 
 // ── Example prompts ──
 document.querySelectorAll('.ow-example').forEach(btn=>{
-  btn.onclick=()=>{mp('Example Prompt Clicked',{prompt:btn.textContent});input.value=btn.textContent;sendMessage()};
+  btn.onclick=()=>{mp('example_prompt_clicked');input.value=btn.textContent;sendMessage()};
 });
 
 // ── Message rendering ──
@@ -717,7 +717,7 @@ async function handleShare(versionId,btn){
     const r=await fetch('/api/versions/share',{method:'POST',headers:{'Content-Type':'application/json',...Auth.headers()},
       body:JSON.stringify({version_id:versionId})});
     const d=await r.json();if(!r.ok)throw new Error(d.detail||'Share failed');
-    btn.textContent='Shared!';btn.style.color='#34d399';mp('Version Shared');
+    btn.textContent='Shared!';btn.style.color='#34d399';mp('version_shared');
     $('ow-share-link').value=location.origin+'/shared/'+d.share_slug;
     $('ow-share-modal').classList.add('ow-show');
   }catch(e){showToast('Error: '+e.message)}
@@ -731,7 +731,7 @@ async function handleSuggest(versionId,btn){
       body:JSON.stringify({version_id:versionId})});
     const d=await r.json();if(!r.ok)throw new Error(d.detail||'Suggest failed');
     if(d.status==='already_suggested'){btn.textContent='Already Suggested';btn.disabled=true;btn.style.color='#fbbf24'}
-    else{btn.textContent='Suggested!';btn.disabled=true;btn.style.color='#34d399';showToast('Suggestion submitted!');mp('Version Suggested')}
+    else{btn.textContent='Suggested!';btn.disabled=true;btn.style.color='#34d399';showToast('Suggestion submitted!');mp('version_suggested')}
   }catch(e){showToast('Error: '+e.message)}
 }
 
@@ -746,7 +746,7 @@ async function handlePublish(versionId,btn){
     const d=await r.json();if(!r.ok)throw new Error(d.detail||'Publish failed');
     if(d.status==='already_published'){btn.textContent='Published';btn.disabled=true;btn.style.color='#a78bfa'}
     else{btn.textContent='Published!';btn.disabled=true;btn.style.color='#a78bfa';
-      showToast('Published to Store!');mp('Version Published')}
+      showToast('Published to Store!');mp('version_published')}
   }catch(e){showToast('Error: '+e.message)}
 }
 
@@ -818,13 +818,13 @@ $('ow-tab-signup').onclick=()=>{
 $('ow-login-form').onsubmit=async(e)=>{
   e.preventDefault();
   try{await Auth.login($('ow-login-id').value.trim(),$('ow-login-pw').value);
-    $('ow-auth-modal').classList.remove('ow-show');updateAuthUI();loadGame();showToast('Signed in!');mp('User Login')}
+    $('ow-auth-modal').classList.remove('ow-show');updateAuthUI();loadGame();showToast('Signed in!');mp('user_login')}
   catch(err){$('ow-login-err').textContent=err.message}
 };
 $('ow-signup-form').onsubmit=async(e)=>{
   e.preventDefault();
   try{await Auth.signup($('ow-signup-email').value.trim(),$('ow-signup-user').value.trim(),$('ow-signup-pw').value);
-    $('ow-auth-modal').classList.remove('ow-show');updateAuthUI();loadGame();showToast('Account created!');mp('User Signup')}
+    $('ow-auth-modal').classList.remove('ow-show');updateAuthUI();loadGame();showToast('Account created!');mp('user_signup')}
   catch(err){$('ow-signup-err').textContent=err.message}
 };
 
@@ -850,7 +850,7 @@ storeSortBtns.forEach(btn=>{
 });
 
 $('ow-store-random').onclick=()=>{
-  mp('Store Random Click');
+  mp('store_random_clicked');
   window.location.href='/api/store/random';
 };
 
@@ -860,7 +860,7 @@ async function openStore(){
   storePage=0;
   $('ow-store-modal').classList.add('ow-show');
   loadStore(true);
-  mp('Store Opened');
+  mp('store_opened');
 }
 
 async function loadStore(clear){
@@ -894,12 +894,12 @@ async function loadStore(clear){
           const sr=await fetch('/api/store/star/'+v.id,{method:'POST',headers:{'Content-Type':'application/json',...Auth.headers()}});
           const sd=await sr.json();if(!sr.ok)throw new Error(sd.detail||'Star failed');
           starBtn.querySelector('span').textContent=sd.star_count;
-          if(sd.status==='starred'){starBtn.classList.add('ow-starred');starBtn.innerHTML='&#9733; <span>'+sd.star_count+'</span>';mp('Version Starred')}
-          else{starBtn.classList.remove('ow-starred');starBtn.innerHTML='&#9734; <span>'+sd.star_count+'</span>';mp('Version Unstarred')}
+          if(sd.status==='starred'){starBtn.classList.add('ow-starred');starBtn.innerHTML='&#9733; <span>'+sd.star_count+'</span>';mp('version_starred')}
+          else{starBtn.classList.remove('ow-starred');starBtn.innerHTML='&#9734; <span>'+sd.star_count+'</span>';mp('version_unstarred')}
         }catch(e){showToast('Error: '+e.message)}
       };
       card.querySelector('.ow-store-play').onclick=()=>{
-        mp('Store Play Click',{id:v.id});
+        mp('store_play_clicked');
         setDropLabel(v.title||v.description);
         $('ow-store-modal').classList.remove('ow-show');
         localStorage.removeItem(SK.SESSION);
@@ -1013,3 +1013,6 @@ if(!('ontouchstart' in window&&navigator.maxTouchPoints>0)){openPanel()}
 
 })();
 </script>
+
+<style>.site-analytics-choice{min-height:44px;padding:8px 12px;border:1px solid currentColor;border-radius:8px;background:transparent;color:inherit;cursor:pointer;font:inherit}#analytics-dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box;overflow:auto;padding:24px;border:1px solid #65758b;border-radius:14px;background:#fff;color:#18212f;font:16px/1.55 system-ui,sans-serif;pointer-events:auto}#analytics-dialog::backdrop{background:#0009}#analytics-dialog h2{font-size:24px;line-height:1.2;margin:0 0 16px}#analytics-dialog a{color:#1855c1}#analytics-dialog .choice-actions{display:flex;gap:10px;flex-wrap:wrap}#analytics-dialog button{min-height:44px;padding:10px 14px;border:1px solid #65758b;background:#f7fafc;color:#173d68;border-radius:8px;font:inherit;cursor:pointer}#analytics-dialog a:focus-visible,#analytics-dialog button:focus-visible,.site-analytics-choice:focus-visible{outline:3px solid #175da1;outline-offset:3px}</style>
+<dialog id="analytics-dialog" aria-labelledby="analytics-title"><h2 id="analytics-title">Optional website analytics</h2><p>Analytics is off unless you allow it on this device. If configured and enabled, Google Analytics, Mixpanel and Betterloop receive basic page, device and fixed interaction events. Prompts, chat text, keys, account details and game/version identifiers are not sent. Private versions, account, contact and admin pages are excluded. Do Not Track and Global Privacy Control keep it off.</p><p>Withdraw here at any time to stop new measurements and clear accessible identifiers. Already-sent data is not recalled. <a href="/privacy">Privacy details</a>.</p><div class="choice-actions"><button type="button" data-analytics-off>Keep analytics off</button><button type="button" data-analytics-allow>Allow analytics</button><button type="button" data-analytics-close>Close</button></div><p role="status" data-analytics-status></p></dialog><script src="/analytics-config.js" defer></script><script src="/static/analytics.js" defer></script>

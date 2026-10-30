@@ -1,0 +1,9 @@
+# Public studio analytics acceptance - October30
+
+The generated public studio overlay and public privacy page now support Google Analytics, Mixpanel and Betterloop with device opt-in, withdrawal and fixed content-free event names. Version/account/admin/contact/game surfaces do not collect. Existing game, private data and recovery behavior are preserved.
+
+- Thirty disposable SQLite/ASGI cases pass, including public-only validated configuration and no trackers on account/admin/contact. Eight focused analytics cases cover initial consent, missing values, DNT/GPC/storage denial, exact routes, sensitive payload omission, late SDK and failed-withdrawal memory lock. [ASGI](analytics-asgi.log), [analytics cases](analytics-source.log).
+- Actual public shell375/1440 passes consent off/allow, three intercepted transports, fixed sanitized events, exactly one pageview, withdrawal/identifier cleanup/reload, modal focus/Tab/fit, DNT/GPC, late SDK and failed-write/focus/pageshow recovery. [Browser log](analytics-browser.log), [phone](analytics-choices-375.jpg), [desktop](analytics-choices-1440.jpg). The existing lightweight fixture establishes studio/analytics UI only; no game or performance verdict is inferred.
+- The storage-denial analytics UI check uses the actual `/privacy` page to isolate analytics: the existing studio bootstrap itself requires localStorage and throws when the browser wholly denies it. Normal studio375/1440 passes; this run does not claim the studio works without storage.
+
+All vendor responses were intercepted, so production receipt remains unverified. The coordinator must configure matching public `GA_ID`, `MIXPANEL_TOKEN`, `BETTERLOOP_KEY`, disable GA enhanced measurement, deploy the new Betterloop exact-path/discard SDK first, then roll out this existing service and verify public consent/receipt. Preserve the SQLite/game volume and independent mirror.

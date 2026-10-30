@@ -19,7 +19,7 @@ A creator brings an Anthropic key, edits the existing 3D game in a chat, checks 
 
 ## Non-goals
 
-New gameplay, new model/provider choices, new analytics, paid launches, marketing, account-email verification/recovery service, or a new recovery service. Existing real provider/gameplay/recovery acceptance is retained.
+New gameplay, new model/provider choices, paid launches, marketing, account-email verification/recovery service, or a new recovery service. Existing real provider/gameplay/recovery acceptance is retained.
 
 ## Success metric
 
@@ -50,3 +50,7 @@ No provider key belongs in server records, exports or logs. The existing studio 
 ## Open questions
 
 None required for offline implementation. Provider/account configuration is unchanged.
+
+## Optional analytics (owner-requested October30)
+
+Public studio and privacy usage may be measured only after the device explicitly allows it. GA4, Mixpanel and Betterloop receive sanitized page/fixed-event data, never prompts, account details, version IDs, API keys or contact content. Private versions, games, admin, account and contact pages remain excluded.
