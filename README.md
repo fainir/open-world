@@ -78,3 +78,7 @@ The analytics script is never included in admin/account/contact or standalone ga
 
 
 Contact, Privacy and Terms/current costs are available from the studio. Play and account features are free; AI edits are bring your own Anthropic key and provider billing, with no OpenWorld paid plan. New contact forms are saved and queued for an operator email; notification state is visible in the existing admin inbox. [Delivery/retry operation](OPERATIONS.md#contact-notifications) keeps historical inbox messages separate and never treats storage as email delivery.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
