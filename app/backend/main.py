@@ -6,7 +6,7 @@ import uuid
 import random
 import asyncio
 import threading
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime, timezone, timedelta
 
 from fastapi import FastAPI, Depends, HTTPException, Query, Request, Header
@@ -19,7 +19,7 @@ from email_validator import validate_email, EmailNotValidError
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from app.backend.database import get_db, init_db, DATA_DIR
+from app.backend.database import get_db, init_db, DATA_DIR, SessionLocal
 from app.backend.models import (
     User,
     ChatSession,
@@ -44,6 +44,7 @@ from app.backend.request_limits import boundaries
 from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK, reconcile_deleted_accounts
 from app.backend.accounts import export_account, delete_account, account_action
 from app.backend import contact_delivery
+from app.backend import included_ai
 from app.backend.agent import (
     run_agent,
     GAME_MODEL,
@@ -401,7 +402,9 @@ def healthz(db: Session = Depends(get_db)):
         recovery = recovery_health(DATA_DIR)
         ok = files_ok and recovery['ok']
         return JSONResponse({'status': 'ok' if ok else 'degraded', 'database': 'ok',
-                             'gameFiles': files_ok, 'recovery': recovery, 'providerMode': 'user-supplied-key', 'model': GAME_MODEL},
+                             'gameFiles': files_ok, 'recovery': recovery,
+                             'providerMode': 'limited-included-and-user-key' if included_ai.ready() else 'user-supplied-key',
+                             'model': GAME_MODEL, **({'includedModel': included_ai.MODEL} if included_ai.ready() else {})},
                             status_code=200 if ok else 503, headers={'Cache-Control':'no-store'})
     except Exception:
         return JSONResponse({'status':'degraded','database':'unavailable'}, status_code=503,
@@ -439,7 +442,9 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=8000)
     session_id: Optional[str] = Field(default=None, max_length=36)
     current_version_id: Optional[str] = Field(default=None, max_length=36)
-    api_key: str = Field(min_length=10, max_length=256)
+    api_key: Optional[str] = Field(default=None, min_length=10, max_length=256)
+    funding: Literal['byok', 'included'] = 'byok'
+    request_id: Optional[str] = Field(default=None, max_length=36)
     image: Optional[ImageData] = None
 
 
@@ -482,6 +487,7 @@ def api_me(user: User = Depends(get_current_user_required)):
 
 _generation_slots = asyncio.Semaphore(2)
 _active_generations = set()
+_included_tasks = set()
 
 
 class DeleteAccountRequest(BaseModel):
@@ -524,12 +530,55 @@ async def api_chat(req: ChatRequest, request: Request, db: Session = Depends(get
     identity = (user.id if user else guest_hash(request)) or request.client.host
     if _generation_slots.locked() or identity in _active_generations:
         raise HTTPException(429, "A generation is already running; please try again shortly")
-    async with _generation_slots:
+    async def run_with_session(owned_db, owned_user):
+        if _generation_slots.locked() or identity in _active_generations:
+            return JSONResponse({'detail': 'A generation is already running; please try again shortly'}, status_code=429)
         _active_generations.add(identity)
         try:
-            return await _api_chat_impl(req, request, db, user)
+            async with _generation_slots:
+                return await _api_chat_impl(req, request, owned_db, owned_user)
+        except included_ai.IncludedError as error:
+            try:
+                actor, network = included_ai.identities(request, owned_user, guest_hash(request) or 'unsecured')
+                remaining = included_ai.allowance(owned_db, actor, network)
+            except included_ai.IncludedError:remaining = 0
+            return JSONResponse({'detail': str(error), 'code': error.code,
+                'dispatched': error.dispatched, 'included_remaining': remaining}, status_code=error.status)
+        except HTTPException as error:
+            if req.funding != 'included':raise
+            return JSONResponse({'detail': error.detail}, status_code=error.status_code)
+        except Exception:
+            if req.funding != 'included':raise
+            owned_db.rollback()
+            return JSONResponse({'detail': 'Included creation could not complete safely. Check saved versions before a new attempt.',
+                'code': 'outcome_unknown', 'dispatched': None}, status_code=503)
         finally:
             _active_generations.discard(identity)
+
+    if req.funding == 'included':
+        user_id = user.id if user else None
+        async def owned_job():
+            # This session belongs to the funded job, not to an HTTP connection
+            # that the browser can abandon. Its outcome remains recoverable.
+            with SessionLocal() as owned_db:
+                owned_user = owned_db.get(User, user_id) if user_id else None
+                if user_id and not owned_user:return JSONResponse({'detail': 'Sign in again before creating.'}, status_code=401)
+                return await run_with_session(owned_db, owned_user)
+        work = asyncio.create_task(owned_job())
+        _included_tasks.add(work);work.add_done_callback(_included_tasks.discard)
+        return await asyncio.shield(work)
+    return await run_with_session(db, user)
+
+
+@app.get('/api/creation-allowance')
+def creation_allowance(request: Request, db: Session = Depends(get_db), user: Optional[User] = Depends(get_current_user_optional)):
+    try:
+        actor, network = included_ai.identities(request, user, guest_hash(request) or 'unsecured')
+        enabled, remaining = included_ai.ready(), included_ai.allowance(db, actor, network)
+    except included_ai.IncludedError:enabled, remaining = False, 0
+    return JSONResponse({'enabled': enabled, 'remaining': remaining,
+        'daily_limit': included_ai.ACTOR_LIMIT, 'shared_availability': True, 'text_only': True},
+        headers={'Cache-Control': 'no-store'})
 
 
 async def _api_chat_impl(
@@ -538,7 +587,12 @@ async def _api_chat_impl(
     db: Session = Depends(get_db),
     user: Optional[User] = Depends(get_current_user_optional),
 ):
-    if not req.api_key or len(req.api_key) < 10:
+    included = req.funding == 'included'
+    if included and not included_ai.ready():
+        raise included_ai.IncludedError('unavailable', 'Included Claude creation is temporarily unavailable. Play stays free; your own key is optional.', dispatched=False)
+    if included and req.image:
+        raise included_ai.IncludedError('image_limit', 'The included beta supports text requests. Use your own key for an image edit.', dispatched=False, status=400)
+    if not included and (not req.api_key or len(req.api_key) < 10):
         raise HTTPException(
             status_code=400, detail="Please provide a valid Anthropic API key"
         )
@@ -553,6 +607,29 @@ async def _api_chat_impl(
         selected = require_version(db, req.current_version_id, request, user, allow_shared=True)
         if session and selected.session_id != session.id:
             raise HTTPException(400, "Start a new chat to branch another game")
+    record = None
+    if included:
+        proof = guest_hash(request)
+        if not user and not proof:raise HTTPException(400, 'Reload the studio to secure this guest creation')
+        try:
+            request_uuid = uuid.UUID(req.request_id or '')
+            if request_uuid.version != 4:raise ValueError()
+            request_id = str(request_uuid)
+        except ValueError:raise HTTPException(400, 'A valid creation reference is required')
+        actor, network = included_ai.identities(request, user, proof)
+        record, fresh = included_ai.reserve(db, request_id, actor, network,
+            {'message': req.message, 'session': req.session_id, 'version': req.current_version_id})
+        if not fresh:
+            if record.status == 'complete':
+                version = db.get(GameVersion, record.version_id) if record.version_id else None
+                return {'session_id': record.session_id, 'version_id': version.id if version else None,
+                    'version_number': version.version_number if version else None,
+                    'description': version.description if version else None, 'suggestions': [],
+                    'message': None if version else 'This creation already completed without a saved change.',
+                    'included_remaining': included_ai.allowance(db, actor, network)}
+            raise included_ai.IncludedError('request_pending' if record.status == 'reserved' else 'request_held',
+                'This creation was already attempted. Check saved versions; it will not be charged or sent again.',
+                dispatched=False if record.status == 'rejected' else None, status=409)
     if session:
         claim_session(db, session, user, request)
         if not session.user_id and not session.guest_access_hash:
@@ -575,6 +652,8 @@ async def _api_chat_impl(
         initial = create_initial_version(session.id, db, source_path=branch_path)
         initial.user_id = session.user_id
         db.commit()
+    if record:
+        record.session_id = session.id;db.commit()
 
     # Save user message
     user_msg = ChatMessage(
@@ -607,28 +686,42 @@ async def _api_chat_impl(
     if req.image:
         image_data = {"data": req.image.data, "media_type": req.image.media_type}
 
+    saved_session_id = session.id
     # Run agent in thread to not block the event loop
-    result = await asyncio.to_thread(
-        run_agent,
-        req.api_key,
-        req.message,
-        session,
-        db,
-        current_path,
-        parent_version_id,
-        image_data,
-    )
+    provider = (lambda system, messages: included_ai.generate(system, messages,
+        request_id=record.id, actor=actor, network=network)) if included else None
+    try:
+        operation = asyncio.to_thread(run_agent, req.api_key, req.message, session, db,
+            current_path, parent_version_id, image_data, provider)
+        if included:
+            work = asyncio.create_task(operation)
+            try:result = await asyncio.shield(work)
+            except asyncio.CancelledError:
+                # Stopping a browser's wait cannot cancel an already-funded
+                # request or close its DB session while the writer still runs.
+                result = await work
+        else:result = await operation
+    except included_ai.IncludedError as error:
+        included_ai.finish(db, record, 'rejected' if error.dispatched is False else 'unknown', saved_session_id)
+        raise
+    except Exception:
+        if not included:raise
+        included_ai.finish(db, record, 'unknown', saved_session_id)
+        raise included_ai.IncludedError('request_unknown', 'We could not confirm the creation result. Check saved versions; this reference will not be sent again.')
 
     if result.get("error"):
+        if record:included_ai.finish(db, record, 'rejected' if result.get('not_dispatched') else 'failed', saved_session_id)
         raise HTTPException(status_code=400, detail=result["error"])
+    if record:included_ai.finish(db, record, 'complete', saved_session_id, result.get('version_id'))
 
     return {
-        "session_id": session.id,
+        "session_id": saved_session_id,
         "version_id": result.get("version_id"),
         "version_number": result.get("version_number"),
         "description": result.get("description"),
         "suggestions": result.get("suggestions", []),
         "message": result.get("message"),
+        **({'included_remaining': included_ai.allowance(db, actor, network)} if included else {}),
     }
 
 

@@ -110,3 +110,15 @@ class ContactMessage(Base):
     notification_last_at = Column(DateTime, nullable=True)
     notification_error = Column(String, nullable=True)
     notification_reference = Column(String, nullable=True)
+
+
+class IncludedCreation(Base):
+    __tablename__ = 'included_creations'
+    id = Column(String, primary_key=True)
+    actor = Column(String, nullable=False, index=True)
+    network = Column(String, nullable=False, index=True)
+    payload_hash = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    session_id = Column(String, nullable=True)
+    version_id = Column(String, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=_now)

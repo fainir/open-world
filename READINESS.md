@@ -35,6 +35,14 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | C2 | Read accurate Contact, Privacy, Terms and Free / Bring your own key / Paid labels | verified | Free play/account; own Anthropic key billed by provider; no paid OpenWorld plan. No verification/recovery email promise. |
 | C3 | Actual new contact notification reaches Gmail with correct reply address | verified | Root's approved real phone submission returned stored/queued at23:39:58Z and Gmail INBOX received it at23:39:59Z on October30 UTC; exact visitor Reply-To preserved. [Handoff](readiness/contact-email-costs.md) and coordinator artifacts/contact-email-costs.md. No worker sends, label manipulation or separate OpenWorld reply is claimed. |
 
+## Limited included Claude beta - October 31
+
+| ID | Flow or gate | Status | Evidence / next action |
+|---|---|---|---|
+| B1 | Prepare a bounded Claude edit without signup or key, with optional BYOK | verified | [Offline candidate acceptance](qa/claude-beta/acceptance.md): actual375/1440 functional UI, current15 focused cases, guest quotas, stop-waiting/reload/replay, private result and unchanged BYOK. Provider/game doubles are explicit; no genuine model quality or public release claimed. [Track](readiness/claude-beta.md) |
+| B2 | Shared money gate, signed caller and honest availability/cost/privacy UI | waiting | Fixed signed protocol and current source tests pass; feature OFF. Root owns public-key pin, central provenance/global metering and gateway GO. Haiku5.5 input768KiB/output8000; actor2/IP4 per rolling24h and$25 rolling30d app cap. [Track](readiness/claude-beta.md) |
+| B3 | Real limited creation quality and exact changed public release | waiting | Keep production/config off until coordinator confirms global metering and owner spend/credit provenance. No provider call or deploy before GO. |
+
 ## Remaining buildable work
 
 Earlier release and recovery acceptance are preserved. T1/T2 analytics are accepted locally and on the actual public site, including genuine provider receipts. The accepted engine, private data and recovery remain unchanged. C1/C2 source, real changed-screen acceptance and existing-service rollout pass. C3 passed through the coordinator's separately approved genuine phone submission and Gmail receipt check; no worker sends. Unchanged gameplay, private data, analytics and recovery proofs remain accepted. Shared owner/provider actions stay in the portfolio ledger.

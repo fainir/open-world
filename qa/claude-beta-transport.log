@@ -1,0 +1,7 @@
+test_strict_signed_fixed_gateway_and_response (test_included_ai.GatewayTransport.test_strict_signed_fixed_gateway_and_response) ... ok
+test_typed_dispatch_proof_and_timeout_hold (test_included_ai.GatewayTransport.test_typed_dispatch_proof_and_timeout_hold) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.171s
+
+OK

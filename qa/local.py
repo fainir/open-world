@@ -3,7 +3,9 @@ import argparse,json,os,secrets,socket,sys,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser();parser.add_argument('--lightweight-game',action='store_true',help='Functional studio UI only; never a performance/gameplay verdict')
+parser.add_argument('--included-beta',action='store_true',help='Synthetic included/BYOK provider; requires lightweight game and never calls a provider')
 args=parser.parse_args()
+if args.included_beta and not args.lightweight_game:parser.error('--included-beta requires --lightweight-game')
 with tempfile.TemporaryDirectory(prefix='openworld-ui-') as temporary:
     root=Path(temporary);os.chmod(root,0o700)
     safe={'HOME':os.environ.get('HOME','/Users/nirfeinstein'),'PATH':'/usr/bin:/bin:/usr/local/bin','TMPDIR':'/tmp','LANG':'C','DATA_DIR':str(root/'data'),'VERSIONS_DIR':str(root/'versions'),'JWT_SECRET':'synthetic-fixture-secret-at-least-32-characters','SEED_DEMO_STORE':'0'}
@@ -14,6 +16,22 @@ with tempfile.TemporaryDirectory(prefix='openworld-ui-') as temporary:
     from app.backend.models import User,ChatSession,ChatMessage,GameVersion,ContactMessage
     from app.backend.auth import hash_password
     from app.backend.main import app
+    if args.included_beta:
+        import re
+        from types import SimpleNamespace
+        from app.backend import included_ai,agent
+        def synthetic_generate(system,messages,**kwargs):
+            text=messages[-1]['content']
+            if not isinstance(text,str):text='\n'.join(x.get('text','') for x in text if x.get('type')=='text')
+            if 'User request: fixture unknown' in text:raise included_ai.IncludedError('outcome_unknown','The creation result is uncertain. Check saved versions; this reference will not be sent again.')
+            code=re.search(r'<current_game_code>\n(.*?)\n</current_game_code>',text,re.S).group(1)
+            replacement=code.replace('</body>','<p>Claude created a small blue zone.</p></body>')
+            return SimpleNamespace(stop_reason='end_turn',content=[SimpleNamespace(type='text',text='<<<SEARCH\n'+code+'\n===\n'+replacement+'\n>>>SEARCH\n<description>A small blue zone appeared.</description><suggestions>[]</suggestions>')])
+        included_ai.ready=lambda:True
+        included_ai.generate=synthetic_generate
+        class SyntheticClient:
+            def __init__(self,**kwargs):self.messages=SimpleNamespace(create=lambda **body:synthetic_generate(body['system'],body['messages']))
+        agent.anthropic.Anthropic=SyntheticClient
     init_db();accounts=[]
     with SessionLocal() as db:
         for width in [375,1440]:

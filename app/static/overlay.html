@@ -218,7 +218,7 @@
 
 /* Studio controls remain reachable on phones and with a keyboard. */
 #ow-overlay-root button,#ow-overlay-root input:not([type=file]),#ow-overlay-root textarea,#ow-overlay-root select,#ow-overlay-root a{min-height:44px;min-width:44px;box-sizing:border-box}
-#ow-overlay-root a{display:inline-flex;align-items:center}
+#ow-overlay-root a{display:inline-flex;align-items:center}#ow-overlay-root [hidden]{display:none!important}
 #ow-fab,#ow-fs-btn{width:44px;height:44px}
 #ow-vdrop-btn{min-height:44px;max-width:calc(100vw - 130px);overflow:hidden;text-overflow:ellipsis}
 .ow-header{flex-direction:column;align-items:flex-start;gap:10px}.ow-hdr-btns{flex-wrap:wrap}.ow-hdr-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
@@ -244,6 +244,12 @@
         <button class="ow-hdr-btn" id="ow-btn-auth">Sign In</button>
         <button class="ow-close" id="ow-panel-close" aria-label="Close game editor">&times;</button>
       </div>
+    </div>
+    <div style="padding:8px 16px;color:#a4afc1;font-size:12px;line-height:1.6">
+      <label for="ow-funding">Creation mode</label>
+      <select id="ow-funding" style="width:100%;min-height:44px;background:#151827;color:#e8edf6;border:1px solid #65758b;border-radius:8px;padding:8px;font:inherit"><option value="included">Included Claude beta</option><option value="byok">My Anthropic key (provider billed)</option></select>
+      <p id="ow-included-status" role="status" aria-live="polite">Checking included creation availability…</p>
+      <button class="ow-hdr-btn" id="ow-use-own-key" type="button">Use my Anthropic key</button>
     </div>
     <div class="ow-apikey">
       <label for="ow-api-key">Anthropic API Key <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get key</a></label>
@@ -276,10 +282,10 @@
       </div>
       <div class="ow-input-footer">
         <span>Enter to send</span>
-        <span id="ow-status" role="status"></span>
+        <span id="ow-status" role="status"></span><button id="ow-stop-waiting" class="ow-hdr-btn" type="button" hidden>Stop waiting</button>
       </div>
     </div>
-    <p style="padding:0 16px;color:#a4afc1;font-size:12px;line-height:1.6"><strong>Free:</strong> play and browse. <strong>Bring your own key:</strong> AI edits use your paid Anthropic account. <strong>Paid plan:</strong> none sold by OpenWorld. <a href="/terms" target="_blank" rel="noopener noreferrer" style="color:#a9c6ff;text-underline-offset:3px">Terms &amp; costs</a></p><nav class="ow-footer-links" aria-label="Account and information"><button type="button" class="site-analytics-choice" data-analytics-open>Analytics choices</button><a href="/account">Account</a><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</a><a href="/contact" target="_blank" rel="noopener noreferrer">Contact</a><a href="https://nirfeinste.in">Made by Nir Feinstein</a></nav>
+    <p style="padding:0 16px;color:#a4afc1;font-size:12px;line-height:1.6"><strong>Free:</strong> play and browse. <strong>Included beta:</strong> limited Claude text edits when available. <strong>Bring your own key:</strong> optional heavier edits, billed by Anthropic. <strong>Paid plan:</strong> none sold by OpenWorld. <a href="/terms" target="_blank" rel="noopener noreferrer" style="color:#a9c6ff;text-underline-offset:3px">Terms &amp; costs</a></p><nav class="ow-footer-links" aria-label="Account and information"><button type="button" class="site-analytics-choice" data-analytics-open>Analytics choices</button><a href="/account">Account</a><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</a><a href="/contact" target="_blank" rel="noopener noreferrer">Contact</a><a href="https://nirfeinste.in">Made by Nir Feinstein</a></nav>
   </div>
 
   <!-- API Key Modal -->
@@ -287,7 +293,7 @@
     <div class="ow-modal">
       <button class="ow-modal-close" id="ow-apikey-close">&times;</button>
       <h3>Enter Your API Key</h3>
-      <p style="color:#a4afc1;font-size:13px;margin:0 0 16px">AI editing is bring your own key. Anthropic bills your account for requests; OpenWorld sells no paid plan. To edit the game, you need an <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:none">Anthropic API key</a>.</p>
+      <p style="color:#a4afc1;font-size:13px;margin:0 0 16px">This mode uses your own key for heavier edits and images. Anthropic bills your account; OpenWorld sells no paid plan. Limited included text edits may be available in the other creation mode. Use your <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:none">Anthropic API key</a>.</p>
       <div class="ow-form-group">
         <label for="ow-apikey-input">API Key</label>
         <input type="password" id="ow-apikey-input" placeholder="sk-ant-..." autocomplete="off">
@@ -385,7 +391,7 @@ document.body.insertBefore(gc,overlayRoot);
 // ── Storage Keys ──
 const SK={
   API_KEY:'ow_api_key',SESSION:'ow_session_id',VERSION:'ow_current_version',
-  TOKEN:'ow_token',USER:'ow_user',GUEST:'ow_guest_token',CHAT:'ow_chat_msgs',PANEL:'ow_panel_open',SUGG:'ow_suggestions'
+  FUNDING:'ow_ai_funding',TOKEN:'ow_token',USER:'ow_user',GUEST:'ow_guest_token',CHAT:'ow_chat_msgs',PANEL:'ow_panel_open',SUGG:'ow_suggestions'
 };
 
 // ── DOM refs ──
@@ -437,7 +443,7 @@ const Auth={
     const d=await r.json();if(!r.ok)throw new Error(typeof d.detail==='string'?d.detail:'Use a unique username and a password of at least 10 characters (at most 72 UTF-8 bytes)');
     this.setAuth(d.access_token,d.user);return d.user;
   },
-  logout(){this.clearAuth();for(const key of [SK.API_KEY,SK.GUEST,SK.CHAT,SK.SUGG])localStorage.removeItem(key);apiKeyInput.value="";apikeyModalInput.value="";suggArea.style.display="none"}
+  logout(){this.clearAuth();for(const key of [SK.API_KEY,SK.GUEST,SK.CHAT,SK.SUGG,SK.FUNDING])localStorage.removeItem(key);apiKeyInput.value="";apikeyModalInput.value="";suggArea.style.display="none"}
 };
 
 // ── Analytics helper ──
@@ -529,6 +535,32 @@ document.querySelectorAll('.ow-modal-overlay').forEach((modal,index)=>{
   for(const type of ['keyup','keypress'])modal.addEventListener(type,event=>event.stopPropagation());
 });
 
+// Included usage is an explicit mode. Saving a key never silently pays for it.
+const funding=$('ow-funding'),includedStatus=$('ow-included-status');
+funding.value=localStorage.getItem(SK.FUNDING)==='byok'?'byok':'included';
+let includedEnabled=false,includedRemaining=0,includedReason='',creationWait=null;
+$('ow-stop-waiting').onclick=()=>creationWait?.abort();
+function renderFunding(){
+  apiKeyInput.closest('.ow-apikey').hidden=funding.value!=='byok';
+  includedStatus.textContent=funding.value==='byok'?'Your Anthropic account pays for these requests. Included allowance is untouched.':includedReason||(!includedEnabled?'Included Claude creation is currently unavailable. Play stays free; using your own key is optional.':includedRemaining+' included attempts left in the rolling 24-hour allowance. Text only; shared budget and size limits apply. No signup needed for a guest demo.');
+}
+async function refreshAllowance(){
+  try{const response=await fetch('/api/creation-allowance',{headers:Auth.headers(),cache:'no-store'});if(!response.ok)throw Error();const data=await response.json();includedEnabled=data.enabled===true;includedRemaining=Number(data.remaining)||0;}
+  catch{includedEnabled=false;}
+  renderFunding();
+}
+funding.onchange=()=>{localStorage.setItem(SK.FUNDING,funding.value);includedReason='';renderFunding();};
+$('ow-use-own-key').onclick=()=>{funding.value='byok';funding.onchange();$('ow-btn-apikey').click();};
+renderFunding();refreshAllowance();
+async function includedRequestId(message){
+  if(!crypto?.subtle||!crypto?.randomUUID)throw Error('This browser cannot preserve a safe creation reference. Use an up-to-date browser or choose your own key.');
+  const material=JSON.stringify({message,session_id:sessionId,current_version_id:currentVersionId});
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(material)),hash=[...new Uint8Array(bytes)].map(n=>n.toString(16).padStart(2,'0')).join('');
+  let previous;try{previous=JSON.parse(sessionStorage.getItem('ow_included_request')||'null');}catch{}
+  if(previous?.hash===hash&&typeof previous.id==='string')return previous.id;
+  const id=crypto.randomUUID();try{sessionStorage.setItem('ow_included_request',JSON.stringify({id,hash}));}catch{throw Error('This browser cannot preserve a safe creation reference. Enable session storage or choose your own key.');}return id;
+}
+
 // ── Chat send ──
 input.addEventListener('keydown',(e)=>{
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}
@@ -560,15 +592,17 @@ async function sendMessage(){
   const message=input.value.trim();
   if(!message||isProcessing)return;
   const apiKey=apiKeyInput.value.trim()||localStorage.getItem(SK.API_KEY)||'';
-  if(!apiKey){
+  const included=funding.value==='included';
+  if(included&&!includedEnabled){includedReason='Included Claude creation is currently unavailable. Play stays free; your own key is optional.';renderFunding();return;}
+  if(included&&pendingImageB64){includedReason='Included creation is text only. Remove the image or choose your own key for this edit.';renderFunding();return;}
+  if(!included&&!apiKey){
     pendingSendAfterKey=true;
     apikeyModalInput.value='';
     $('ow-apikey-err').textContent='';
     $('ow-apikey-modal').classList.add('ow-show');
     return;
   }
-  localStorage.setItem(SK.API_KEY,apiKey);
-  apiKeyInput.value=apiKey;
+  if(!included){localStorage.setItem(SK.API_KEY,apiKey);apiKeyInput.value=apiKey;}
 
   const w=$('ow-welcome');if(w)w.remove();
 
@@ -583,15 +617,18 @@ async function sendMessage(){
 
   const thinkEl=addThinking();
   setStatus('Generating changes...','ow-loading');
-  sendBtn.disabled=true;isProcessing=true;
+  sendBtn.disabled=true;isProcessing=true;funding.disabled=true;$('ow-use-own-key').disabled=true;$('ow-btn-apikey').disabled=true;
 
   try{
     const headers={'Content-Type':'application/json',...Auth.headers()};
-    const body={message,session_id:sessionId,current_version_id:currentVersionId,api_key:apiKey};
+    const body={message,session_id:sessionId,current_version_id:currentVersionId,funding:included?'included':'byok'};
+    if(included)body.request_id=await includedRequestId(message);else body.api_key=apiKey;
     if(imgB64)body.image={data:imgB64,media_type:imgType};
-    const r=await fetch('/api/chat',{method:'POST',headers,body:JSON.stringify(body)});
+    creationWait=new AbortController();$('ow-stop-waiting').hidden=false;
+    const r=await fetch('/api/chat',{method:'POST',headers,body:JSON.stringify(body),signal:creationWait.signal});
     const data=await r.json();
-    if(!r.ok)throw new Error(data.detail||'Request failed');
+    if(!r.ok){if(included){includedReason=data.detail||'Included creation could not complete.';if(data.dispatched===false)sessionStorage.removeItem('ow_included_request');renderFunding();}throw new Error(typeof data.detail==='string'?data.detail:'Request failed');}
+    if(included)sessionStorage.removeItem('ow_included_request');
 
     thinkEl.remove();
     if(data.session_id)sessionId=data.session_id;
@@ -616,16 +653,20 @@ async function sendMessage(){
     setStatus('Done!','ow-success');setTimeout(()=>setStatus(''),2000);
   }catch(err){
     thinkEl.remove();
-    addMsg('assistant','Error: '+err.message);
+    if(!input.value.trim())input.value=message;
+    if(imgB64&&!pendingImageB64){pendingImageB64=imgB64;pendingImageType=imgType;imgThumb.src='data:'+imgType+';base64,'+imgB64;imgPreview.style.display='block';}
+    if(err.name==='AbortError'){includedReason='Stopped waiting. An already-sent attempt may still finish and count. Keep this draft and check its saved result before a new attempt.';renderFunding();}
+    addMsg('assistant','Error: '+(err.name==='AbortError'?'Stopped waiting; this does not cancel or refund an already-dispatched attempt.':err.message));
     setStatus('Failed','ow-error');setTimeout(()=>setStatus(''),3000);
   }finally{
-    sendBtn.disabled=false;isProcessing=false;
-    saveChatHistory();
+    creationWait=null;$('ow-stop-waiting').hidden=true;sendBtn.disabled=false;isProcessing=false;funding.disabled=false;$('ow-use-own-key').disabled=false;$('ow-btn-apikey').disabled=false;
+    saveChatHistory();if(included)refreshAllowance();
   }
 }
 
 // ── API Key Modal ──
 $('ow-btn-apikey').onclick=()=>{
+  funding.value='byok';funding.onchange();
   pendingSendAfterKey=false;
   apikeyModalInput.value=localStorage.getItem(SK.API_KEY)||'';
   $('ow-apikey-err').textContent='';

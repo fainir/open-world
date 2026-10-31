@@ -1,0 +1,11 @@
+test_no_dispatch_refunds_actor_but_bounds_network_storage (test_included_ai.SigningAndQuota.test_no_dispatch_refunds_actor_but_bounds_network_storage) ... /Users/nirfeinstein/Documents/GitHub/open-world/app/backend/included_ai.py:62: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  day = datetime.utcnow() - timedelta(hours=24)
+ok
+test_atomic_daily_reservations (test_included_ai.SigningAndQuota.test_atomic_daily_reservations) ... ok
+test_pre_dispatch_refusal_does_not_consume (test_included_ai.IncludedBeta.test_pre_dispatch_refusal_does_not_consume) ... Executing <Task pending name='Task-2' coro=<IncludedBeta.test_pre_dispatch_refusal_does_not_consume() running at /Users/nirfeinstein/Documents/GitHub/open-world/tests/test_included_ai.py:56> cb=[_run_until_complete_cb() at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py:181] created at /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:100> took 0.122 seconds
+ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.282s
+
+OK

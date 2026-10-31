@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import shutil
+from contextlib import nullcontext
 from typing import Optional
 
 import anthropic
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.backend.models import GameVersion, ChatMessage, ChatSession
 from app.backend.database import DATA_DIR
+from app.backend.recovery import PUBLICATION_LOCK
 
 _default_versions = os.path.join(os.path.dirname(os.path.dirname(__file__)), "versions")
 VERSIONS_DIR = os.environ.get("VERSIONS_DIR", _default_versions)
@@ -291,6 +293,7 @@ def run_agent(
     current_version_path: Optional[str] = None,
     parent_version_id: Optional[str] = None,
     image_data: Optional[dict] = None,
+    included_provider=None,
 ) -> dict:
     """Run the Claude agent to modify the game code.
 
@@ -306,7 +309,7 @@ def run_agent(
 
     # Minify game code to reduce token count
     if len(game_code.encode("utf-8")) > 4 * 1024 * 1024:
-        return {"error": "This game is too large to edit safely."}
+        return {"error": "This game is too large to edit safely.", "not_dispatched": True}
     game_code_for_prompt = _minify_game_code(game_code)
 
     # Build conversation history from session (limit to last 6 messages to save tokens)
@@ -354,18 +357,19 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
     messages = history + [{"role": "user", "content": current_content}]
 
     # Call Claude API
-    client = anthropic.Anthropic(api_key=api_key, timeout=90.0, max_retries=0)
-
     try:
-        response = client.messages.create(
-            model=GAME_MODEL,
-            max_tokens=16000,
-            system=SYSTEM_PROMPT,
-            messages=messages,
-            # Opus 5.5 always thinks, inside max_tokens; medium effort leaves room
-            # for the edits. SDK 0.42 predates output_config, hence extra_body.
-            extra_body={"output_config": {"effort": "medium"}},
-        )
+        if included_provider:
+            response = included_provider(SYSTEM_PROMPT, messages)
+        else:
+            client = anthropic.Anthropic(api_key=api_key, timeout=90.0, max_retries=0)
+            response = client.messages.create(
+                model=GAME_MODEL,
+                max_tokens=16000,
+                system=SYSTEM_PROMPT,
+                messages=messages,
+                # BYOK behavior and output budget stay unchanged.
+                extra_body={"output_config": {"effort": "medium"}},
+            )
     except anthropic.AuthenticationError:
         return {"error": "Invalid API key. Please check your Anthropic API key."}
     except anthropic.RateLimitError:
@@ -452,52 +456,62 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
     suggestions = [value[:500] for value in suggestions if isinstance(value, str)][:3]
     description = description[:8000]
 
-    # Determine version number
-    existing_versions = (
-        db.query(GameVersion).filter(GameVersion.session_id == session.id).count()
-    )
-    version_number = existing_versions + 1
+    saved_session_id = session.id
+    with PUBLICATION_LOCK if included_provider else nullcontext():
+        if included_provider:
+            # A funded job may outlive its browser connection. Never resurrect
+            # a session/account closed while Claude was working.
+            db.rollback()
+            current_session = db.get(ChatSession, saved_session_id, populate_existing=True)
+            if not current_session:
+                return {"error": "This session was closed while the creation was running. No new game was saved."}
+            session = current_session
+        # Determine version number
+        existing_versions = (
+            db.query(GameVersion).filter(GameVersion.session_id == session.id).count()
+        )
+        version_number = existing_versions + 1
 
-    # Save the new version
-    version_id = str(uuid.uuid4())
-    version_filename = f"{version_id}.html"
-    version_path = os.path.join(VERSIONS_DIR, version_filename)
+        # Save the new version
+        version_id = str(uuid.uuid4())
+        version_filename = f"{version_id}.html"
+        version_path = os.path.join(VERSIONS_DIR, version_filename)
 
-    _atomic_game_write(version_path, new_code)
+        _atomic_game_write(version_path, new_code)
 
-    # Create version record
-    version = GameVersion(
-        id=version_id,
-        session_id=session.id,
-        user_id=session.user_id,
-        version_number=version_number,
-        description=description,
-        file_path=version_filename,
-        parent_version_id=parent_version_id,
-    )
-    db.add(version)
+        # Create version record
+        version = GameVersion(
+            id=version_id,
+            session_id=session.id,
+            user_id=session.user_id,
+            version_number=version_number,
+            description=description,
+            file_path=version_filename,
+            parent_version_id=parent_version_id,
+        )
+        db.add(version)
 
-    # Save assistant message
-    assistant_msg = ChatMessage(
-        session_id=session.id,
-        role="assistant",
-        content=response_text,
-    )
-    db.add(assistant_msg)
-    try:
-        db.commit()
-    except Exception:
-        db.rollback()
-        os.unlink(version_path)
-        raise
+        # Save assistant message
+        assistant_msg = ChatMessage(
+            session_id=session.id,
+            role="assistant",
+            content=response_text,
+        )
+        db.add(assistant_msg)
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            os.unlink(version_path)
+            raise
 
-    return {
-        "version_id": version_id,
-        "version_number": version_number,
-        "description": description,
-        "suggestions": suggestions[:3],
-        "error": None,
-    }
+        return {
+            "version_id": version_id,
+            "version_number": version_number,
+            "description": description,
+            "suggestions": suggestions[:3],
+            "error": None,
+        }
 
 
 def _atomic_game_write(path, html):
