@@ -1,0 +1,34 @@
+test_strict_signed_fixed_gateway_and_response (test_included_ai.GatewayTransport.test_strict_signed_fixed_gateway_and_response) ... ok
+test_typed_dispatch_proof_and_timeout_hold (test_included_ai.GatewayTransport.test_typed_dispatch_proof_and_timeout_hold) ... ok
+test_actor_daily_limit_is_persistent (test_included_ai.IncludedBeta.test_actor_daily_limit_is_persistent) ... /Users/nirfeinstein/Documents/GitHub/open-world/app/backend/included_ai.py:62: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  day = datetime.utcnow() - timedelta(hours=24)
+ok
+test_ambiguous_included_patch_still_preserves_all_previous_versions (test_included_ai.IncludedBeta.test_ambiguous_included_patch_still_preserves_all_previous_versions) ... ok
+test_byok_still_uses_original_sdk_and_budget (test_included_ai.IncludedBeta.test_byok_still_uses_original_sdk_and_budget) ... ok
+test_client_cancellation_cannot_retry_an_already_started_call (test_included_ai.IncludedBeta.test_client_cancellation_cannot_retry_an_already_started_call) ... ok
+test_closed_session_is_not_recreated_after_included_call (test_included_ai.IncludedBeta.test_closed_session_is_not_recreated_after_included_call) ... /Users/nirfeinstein/Documents/GitHub/open-world/app/venv/lib/python3.13/site-packages/anyio/streams/memory.py:189: ResourceWarning: Unclosed <MemoryObjectReceiveStream at 1092c1010>
+  warnings.warn(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/nirfeinstein/Documents/GitHub/open-world/app/venv/lib/python3.13/site-packages/anyio/streams/memory.py:189: ResourceWarning: Unclosed <MemoryObjectReceiveStream at 1092c27b0>
+  warnings.warn(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_context_boundary_and_refusal_do_not_save_game (test_included_ai.IncludedBeta.test_context_boundary_and_refusal_do_not_save_game) ... ok
+test_default_off_never_calls_or_consumes (test_included_ai.IncludedBeta.test_default_off_never_calls_or_consumes) ... ok
+test_guest_success_real_patch_and_replay_without_charge (test_included_ai.IncludedBeta.test_guest_success_real_patch_and_replay_without_charge) ... ok
+test_included_anchors_target_the_exact_original_source (test_included_ai.IncludedBeta.test_included_anchors_target_the_exact_original_source) ... ok
+test_ip_limit_survives_new_guest_ids (test_included_ai.IncludedBeta.test_ip_limit_survives_new_guest_ids) ... ok
+test_pre_dispatch_refusal_does_not_consume (test_included_ai.IncludedBeta.test_pre_dispatch_refusal_does_not_consume) ... ok
+test_serialized_quote_overhead_is_refused_before_transport (test_included_ai.IncludedBeta.test_serialized_quote_overhead_is_refused_before_transport) ... ok
+test_unknown_outcome_held_and_never_falls_back (test_included_ai.IncludedBeta.test_unknown_outcome_held_and_never_falls_back) ... ok
+test_uuid_payload_binding_and_missing_guest (test_included_ai.IncludedBeta.test_uuid_payload_binding_and_missing_guest) ... ok
+test_atomic_daily_reservations (test_included_ai.SigningAndQuota.test_atomic_daily_reservations) ... ok
+test_cross_language_signature_contract (test_included_ai.SigningAndQuota.test_cross_language_signature_contract) ... ok
+test_no_dispatch_refunds_actor_but_bounds_network_storage (test_included_ai.SigningAndQuota.test_no_dispatch_refunds_actor_but_bounds_network_storage) ... /Users/nirfeinstein/Documents/GitHub/open-world/app/backend/included_ai.py:62: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  day = datetime.utcnow() - timedelta(hours=24)
+ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.571s
+
+OK

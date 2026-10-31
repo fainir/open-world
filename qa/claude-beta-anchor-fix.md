@@ -1,0 +1,11 @@
+# Included game-edit anchor correction
+
+October 31, 2026. The coordinator's first genuine public included edit was a small Synthetic QA badge. The model completed, but the strict parser returned HTTP 400 and saved no game change. No automatic retry was made.
+
+The existing prompt used `_minify_game_code` while exact patches were applied to the untouched original. That compact view collapses spaces and comments and replaces a CSS section with a placeholder. An anchor copied faithfully from that view can therefore have zero matches in the original. The generic non-unique error covers both zero and multiple matches. The source regression demonstrates this mismatch without another model call.
+
+Included requests now show the original source verbatim, with literal-unique-anchor guidance. The parser still requires exactly one original match for every patch and creates no version until all edits pass. Existing BYOK compaction, model/output/image behavior and the retained public game are unchanged. The signed transport now checks the entire UTF8 JSON body, including escaping, system, history and envelope, against 768 KiB before any request.
+
+[19 focused tests](claude-beta-anchor-tests.log), [all 63 source/ASGI tests](claude-beta-anchor-full.log), Python compile and the [offline full-source wire check](claude-beta-wire-check.log) pass. The largest tracked original plus actual new prompt/history/envelope is 766,901 bytes, below 786,432. The existing production volume base was read without modification: 725,574 UTF8 bytes, intentionally different from tracked index.html, with one each of the three HTML boundaries. Its exact first-request input before the extra guidance was 752,118 bytes, also below the bound. No data/volume base is replaced by this code change.
+
+Current source acceptance is offline. The coordinator still controls the existing-service rollout and at most two further deliberate synthetic private-guest model dispatches. One is planned after this correction. Unknown outcomes must stop and retain the original request reference; no new-ID retry. Genuine model-to-parser-to-private-game 375/1440 acceptance remains to be recorded, with no publication, real account, mail or payment action.

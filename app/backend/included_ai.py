@@ -111,6 +111,10 @@ def generate(system, messages, *, request_id, actor, network):
     payload = {'version': 1, 'app': 'openworld', 'feature': 'generate', 'request_id': request_id,
         'actor': actor, 'actor_ip': network, 'input': {'system': system, 'messages': messages}}
     body = json.dumps(payload, ensure_ascii=False, separators=(',', ':')).encode()
+    # Bound the complete wire representation too: quotes, newlines and history
+    # can make a decoded context exceed the signed profile's byte allowance.
+    if len(body) > MAX_CONTEXT_BYTES:
+        raise IncludedError('context_limit', 'This game and conversation are too large for the included beta. Use your own key for a heavier edit.', dispatched=False, status=413)
     timestamp = int(time.time())
     request = Request(GATEWAY, data=body, method='POST', headers={
         'Content-Type': 'application/json', 'X-Portfolio-Timestamp': str(timestamp),

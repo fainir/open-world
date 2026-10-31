@@ -40,8 +40,8 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | ID | Flow or gate | Status | Evidence / next action |
 |---|---|---|---|
 | B1 | Prepare a bounded Claude edit without signup or key, with optional BYOK | verified | [Offline candidate acceptance](qa/claude-beta/acceptance.md): actual375/1440 functional UI, current15 focused cases, guest quotas, stop-waiting/reload/replay, private result and unchanged BYOK. Provider/game doubles are explicit; no genuine model quality or public release claimed. [Track](readiness/claude-beta.md) |
-| B2 | Shared money gate, signed caller and honest availability/cost/privacy UI | waiting | Fixed signed protocol and current source tests pass; feature OFF. Root owns public-key pin, central provenance/global metering and gateway GO. Haiku5.5 input768KiB/output8000; actor2/IP4 per rolling24h and$25 rolling30d app cap. [Track](readiness/claude-beta.md) |
-| B3 | Real limited creation quality and exact changed public release | waiting | Keep production/config off until coordinator confirms global metering and owner spend/credit provenance. No provider call or deploy before GO. |
+| B2 | Shared money gate, signed caller and honest availability/cost/privacy UI | verified | Coordinator enabled the existing b3dcfa2 service through the accepted signed gateway after global GO; no direct owner-key fallback. Haiku5.5 input768KiB/output8000, actor2/IP4 per rolling24h, $25 rolling30d app cap. New full-wire bound is part of B3 correction. [Track](readiness/claude-beta.md) |
+| B3 | Real limited creation quality and exact changed public release | building | First actual small edit completed but was safely rejected by exact parser; base/versions unchanged. Fixed included prompt's compact-view/original-anchor mismatch without weakening unique-match guard. 19 focused / all63 source cases and full serialized-wire proof pass. Coordinate corrected release, then one deliberate private-guest creation and real375/1440 game/UI. At most2 additional authorized dispatches; no unknown retry/publication. [Fix](qa/claude-beta-anchor-fix.md) |
 
 ## Remaining buildable work
 

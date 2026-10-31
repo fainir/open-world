@@ -307,10 +307,12 @@ def run_agent(
     with open(source_path, "r", encoding="utf-8") as f:
         game_code = f.read()
 
-    # Minify game code to reduce token count
+    # Included patches must target exactly what the model sees. The legacy
+    # compact BYOK view changes whitespace/comments and replaces CSS, so a
+    # copied anchor from it may never exist in the untouched source file.
     if len(game_code.encode("utf-8")) > 4 * 1024 * 1024:
         return {"error": "This game is too large to edit safely.", "not_dispatched": True}
-    game_code_for_prompt = _minify_game_code(game_code)
+    game_code_for_prompt = game_code if included_provider else _minify_game_code(game_code)
 
     # Build conversation history from session (limit to last 6 messages to save tokens)
     history = []
@@ -337,6 +339,15 @@ def run_agent(
 User request: {user_message}
 
 Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and <suggestions> tags."""
+    if included_provider:
+        current_text += (
+            "\nThe current_game_code block is the exact original source. Copy SEARCH text literally, "
+            "including indentation and comments; use enough context to occur exactly once inside that block. "
+            "Do not normalize whitespace or replace an abbreviated/imagined CSS section."
+        )
+        unique_anchors = [anchor for anchor in ('</head>', '</body>', '</html>') if game_code.count(anchor) == 1]
+        if unique_anchors:
+            current_text += "\nThese exact HTML insertion anchors each occur once in the source: " + ', '.join(unique_anchors) + ". Prefer a small insertion when it satisfies the request; preserve existing gameplay code."
 
     # Build content — multimodal if image is attached
     if image_data:

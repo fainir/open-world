@@ -34,6 +34,35 @@ class IncludedBeta(unittest.IsolatedAsyncioTestCase):
             first=await self.post();self.assertEqual(first.status_code,200,first.text);again=await self.post();self.assertEqual(again.status_code,200);self.assertEqual(first.json()['version_id'],again.json()['version_id']);self.assertEqual(provider.call_count,1);direct.assert_not_called()
         version=self.db.get(GameVersion,first.json()['version_id']);self.assertIn('NEW_BETA_MARKER',Path(os.environ['VERSIONS_DIR'],version.file_path).read_text());self.assertEqual(first.json()['included_remaining'],1)
         self.assertEqual(len(provider.call_args.args),2);self.assertNotIn(self.guest,json.dumps(provider.call_args.args));self.assertNotIn('api_key',provider.call_args.kwargs)
+    async def test_included_anchors_target_the_exact_original_source(self):
+        from app.backend.agent import _minify_game_code
+        previous=self.db.get(GameVersion,self.payload['current_version_id'])
+        source='<!doctype html>\n<html>\n<head><style>\n    body { color: white; background: black; }\n</style></head>\n<body>\n    <div id="exact-anchor"  data-label="two  spaces">OLD_BETA_MARKER</div>\n<script>\n    const label = "two  spaces"; // retained source context\n</script>\n</body></html>'
+        anchor='    <div id="exact-anchor"  data-label="two  spaces">OLD_BETA_MARKER</div>'
+        self.assertEqual(source.count(_minify_game_code(anchor)),0)
+        original=Path(os.environ['VERSIONS_DIR'],previous.file_path);original.write_text(source)
+        def exact(system,messages,**kwargs):
+            prompt=messages[-1]['content'];self.assertIn('<current_game_code>\n'+source+'\n</current_game_code>',prompt)
+            self.assertIn('exact original source',prompt);self.assertIn('anchors each occur once',prompt)
+            return SimpleNamespace(stop_reason='end_turn',content=[SimpleNamespace(type='text',text='<<<SEARCH\n'+anchor+'\n===\n'+anchor.replace('OLD_BETA_MARKER','NEW_BETA_MARKER')+'\n>>>SEARCH\n<description>The marker changed.</description>')])
+        with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',side_effect=exact) as provider:
+            result=await self.post();self.assertEqual(result.status_code,200,result.text);self.assertEqual(provider.call_count,1)
+        changed=self.db.get(GameVersion,result.json()['version_id']);self.assertEqual(Path(os.environ['VERSIONS_DIR'],changed.file_path).read_text(),source.replace('OLD_BETA_MARKER','NEW_BETA_MARKER'))
+        self.assertEqual(original.read_text(),source)
+    async def test_ambiguous_included_patch_still_preserves_all_previous_versions(self):
+        previous=self.db.get(GameVersion,self.payload['current_version_id']);original=Path(os.environ['VERSIONS_DIR'],previous.file_path)
+        source='<!doctype html><html><body><p>REPEATED_MARKER</p><p>REPEATED_MARKER</p></body></html>';original.write_text(source)
+        count=self.db.query(GameVersion).filter(GameVersion.session_id==self.payload['session_id']).count()
+        answer=SimpleNamespace(stop_reason='end_turn',content=[SimpleNamespace(type='text',text='<<<SEARCH\nREPEATED_MARKER\n===\nNEW_MARKER\n>>>SEARCH')])
+        with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',return_value=answer) as provider:
+            result=await self.post();self.assertEqual(result.status_code,400);self.assertIn('match uniquely',result.json()['detail'])
+            again=await self.post();self.assertEqual(again.status_code,409);self.assertEqual(provider.call_count,1)
+        self.assertEqual(original.read_text(),source);self.assertEqual(self.db.query(GameVersion).filter(GameVersion.session_id==self.payload['session_id']).count(),count)
+    def test_serialized_quote_overhead_is_refused_before_transport(self):
+        with patch.dict(os.environ,{'OPENWORLD_INCLUDED_AI_ENABLED':'1','JWT_SECRET':'a'*64}),patch.object(beta,'build_opener') as opener:
+            with self.assertRaises(beta.IncludedError) as caught:
+                beta.generate('Synthetic bounds',[{'role':'user','content':'"'*(beta.MAX_CONTEXT_BYTES//2)}],request_id=str(uuid.uuid4()),actor='a'*64,network='b'*64)
+            self.assertEqual(caught.exception.code,'context_limit');self.assertIs(caught.exception.dispatched,False);opener.assert_not_called()
     async def test_actor_daily_limit_is_persistent(self):
         with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',return_value=self.answer()) as provider:
             for _ in range(2):
