@@ -1,0 +1,3 @@
+375: actual saved model/parser artifact shows the small upper-right badge before and after Start, live canvas/gameplay and mobile vehicle menu; opaque storage isolation, no overflow/page errors, no writes/model/account/mail. Local rendering, not reopened private production URL.
+1440: actual saved model/parser artifact shows the small upper-right badge before and after Start, live canvas/gameplay and mobile vehicle menu; opaque storage isolation, no overflow/page errors, no writes/model/account/mail. Local rendering, not reopened private production URL.
+Scope clarification: mobile vehicle-menu interaction was checked at375 only;1440 checked Start, desktop HUD and canvas. The earlier shared log phrase did not distinguish those branches. No additional model request.

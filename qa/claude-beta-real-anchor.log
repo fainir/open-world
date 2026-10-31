@@ -1,0 +1,14 @@
+PLANNED {"request_id":"2b7c6d03-0a8d-4460-9a87-8e52beeca9af","funding":"included","message":"Add a small always-visible badge at the upper-right that says Synthetic QA. Keep all gameplay, controls and other text unchanged.","session_id":null,"current_version_id":null}
+STOP: no automatic retry; reconcile the recorded request ID. {"request_id":"2b7c6d03-0a8d-4460-9a87-8e52beeca9af","posts":1,"error":"response.json: Protocol error (Network.getResponseBody): No resource with given identifier found\nResponse body is not available for a response that was navigated away from. Read response.body() before triggering any navigation.","page_errors":[]}
+node:internal/modules/run_main:122
+    triggerUncaughtException(
+    ^
+
+response.json: Protocol error (Network.getResponseBody): No resource with given identifier found
+Response body is not available for a response that was navigated away from. Read response.body() before triggering any navigation.
+    at /Users/nirfeinstein/Documents/GitHub/open-world/qa/check-live-anchors.mjs:45:57 {
+  log: [],
+  name: 'Error'
+}
+
+Node.js v22.15.0

@@ -41,17 +41,19 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 |---|---|---|---|
 | B1 | Prepare a bounded Claude edit without signup or key, with optional BYOK | verified | [Offline candidate acceptance](qa/claude-beta/acceptance.md): actual375/1440 functional UI, current15 focused cases, guest quotas, stop-waiting/reload/replay, private result and unchanged BYOK. Provider/game doubles are explicit; no genuine model quality or public release claimed. [Track](readiness/claude-beta.md) |
 | B2 | Shared money gate, signed caller and honest availability/cost/privacy UI | verified | Coordinator enabled the existing b3dcfa2 service through the accepted signed gateway after global GO; no direct owner-key fallback. Haiku5.5 input768KiB/output8000, actor2/IP4 per rolling24h, $25 rolling30d app cap. New full-wire bound is part of B3 correction. [Track](readiness/claude-beta.md) |
-| B3 | Real limited creation quality and exact changed public release | building | First actual small edit completed but was safely rejected by exact parser; base/versions unchanged. Fixed included prompt's compact-view/original-anchor mismatch without weakening unique-match guard. 19 focused / all63 source cases and full serialized-wire proof pass. Coordinate corrected release, then one deliberate private-guest creation and real375/1440 game/UI. At most2 additional authorized dispatches; no unknown retry/publication. [Fix](qa/claude-beta-anchor-fix.md) |
+| B3 | Real limited creation quality and exact changed public release | verified | Exact-source fix is live on the existing service; health/source and persistent base match. One genuine Haiku edit completed, two strict unique patches saved a private version, and all original game scripts remain unchanged. Its actual saved HTML passes Start/canvas/sandbox at 375/1440 locally; real public navigation succeeded, but a CDP body race prevented reopening that private URL. The badge partly overlaps the existing studio Edit button, so pixel-perfect layout is not claimed. [Acceptance and scope](qa/claude-beta-anchor-fix.md) |
 
 ## Remaining buildable work
 
-Earlier release and recovery acceptance are preserved. T1/T2 analytics are accepted locally and on the actual public site, including genuine provider receipts. The accepted engine, private data and recovery remain unchanged. C1/C2 source, real changed-screen acceptance and existing-service rollout pass. C3 passed through the coordinator's separately approved genuine phone submission and Gmail receipt check; no worker sends. Unchanged gameplay, private data, analytics and recovery proofs remain accepted. Shared owner/provider actions stay in the portfolio ledger.
+No buildable row remains in this scoped release. The limited included beta is deployed and its genuine model/parser/private-save result is accepted with the explicit browser-capture and generated-layout limits above. Earlier gameplay, private data, analytics, contacts and recovery proofs remain valid. Shared owner/provider actions stay in the portfolio ledger.
 
 ## Owner / waiting
 
 Shared inherited credential, hosted-CI allowance and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+- 2026-10-31 - Released the exact-source included patch correction. 19 focused / all 63 source cases pass; one genuine Haiku creation saved two unique patches without changing original scripts or the public base. Exact saved private artifact Start/canvas/sandbox passes 375/1440 locally; public navigation succeeded but its CDP response capture raced navigation. No model replay, access change or publication.
 
 - 2026-10-31 - Released durable new-contact notifications, honest failure/retry/admin status, Terms and visible costs.44 source/ASGI cases and actual375/1440 changed UI/contrast pass; public source/health and existing/data volume verified. All worker writes/mail mocked; root independently verified genuine Gmail receipt/Reply-To. Existing analytics, game/model, recovery and unrelated main/video files preserved.
 
