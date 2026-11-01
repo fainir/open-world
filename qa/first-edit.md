@@ -24,6 +24,14 @@ Seen as a fresh visitor on the live site in headless system Chrome at 375 (touch
 - [Source checks](first-edit/tests.log): 73 unittest cases (67 before, 6 new in tests/test_first_edit.py) and 8 analytics node cases pass; pip check, compile and overlay script syntax pass.
 - [Browser check](first-edit/browser.log) with `qa/check-first-edit.mjs` against `qa/local.py --lightweight-game --included-beta` (synthetic provider, no model call): 375 and 1440 screenshots of [ideas](first-edit/ideas-375.png), [progress](first-edit/working-375.png), [ready](first-edit/ready-1440.png), [shared](first-edit/shared-375.png), [failed](first-edit/failed-375.png), [none left](first-edit/none-left-375.png) and [folded](first-edit/collapsed-375.png). The lightweight fixture proves the studio UI only, not gameplay.
 
+## Live release
+
+PR #15 squash-merged as 625a53d after hosted CI passed. Before deploying, live 817ca527 served exactly main (home shell, analytics, comparison, terms and privacy byte-equal). Existing-service deployment `97ea2a97-6a18-46c0-bc00-288ec0c5d652` is SUCCESS; `/healthz` ok and the live home equals the merged main build.
+
+- [Read-only live check](first-edit/live.log) (`qa/check-first-edit-live.mjs`, never clicks an idea): fresh visitors see the card over the real game with "2 free AI edits left" at [375](first-edit/live-ideas-375.png) and [1440](first-edit/live-ideas-1440.png), inside the viewport, 44px targets, no overflow or page errors; at 1440 it [folds into the count button](first-edit/live-playing-1440.png) once the game takes focus.
+- [One real included edit](first-edit/live-real-edit.log) at 375 through the "Turn the sky purple" idea: `POST /api/chat/idea` returned 200 in 15.3 s with version 2 and 1 edit left. The card showed [progress](first-edit/live-working-375.png), then the private version opened with a purple sky and the [share prompt](first-edit/live-ready-375.png). The owner's guest proof reads it; anonymous `/game/version/<id>` and `/api/versions/info/<id>` return 404 and it is not in the store. Share was not clicked. The app shows no cost; the earlier comparable guest edit settled at $0.201129.
+- One extra synthetic `POST /api/chat/idea` with an empty body (422) at 12:25 UTC proved the route; exclude it from the weekly read along with the real edit at 12:28 UTC.
+
 ## Weekly read
 
 Count AI edit attempts as `POST /api/chat` (typed in the editor) plus `POST /api/chat/idea` (one-click idea); status 200 is a completed edit, and a saved version is followed by `GET /v/<id>`. Shares are `POST /api/versions/share`; shared plays are `GET /shared/<slug>`.

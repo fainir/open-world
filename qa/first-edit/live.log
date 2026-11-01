@@ -1,0 +1,4 @@
+node qa/check-first-edit-live.mjs  2026-11-01T12:27:24Z  deployment 97ea2a97 of main 625a53d
+375px live: ideas card over the real game, "2 free AI edits left", 3 ideas + Write your own, inside the viewport, 44px targets, no overflow, no edit request, no page errors.
+1440px live: ideas card over the real game, "2 free AI edits left", 3 ideas + Write your own, inside the viewport, 44px targets, no overflow, folds when the game takes focus, no edit request, no page errors.
+exit 0
