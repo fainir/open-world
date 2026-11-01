@@ -24,7 +24,7 @@ async def boundaries(request, call_next):
             category, limit, window = ('write', 60, 60)
         if path.startswith('/api/auth/') and request.method == 'POST':
             category, limit, window = ('auth', 20, 3600)
-        elif path == '/api/chat':
+        elif path in ('/api/chat', '/api/chat/idea'):
             category, limit, window = ('generation', 10, 3600)
         elif path == '/api/contact':
             category, limit, window = ('contact', 5, 3600)

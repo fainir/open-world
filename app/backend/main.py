@@ -524,7 +524,10 @@ def api_delete_account(req: DeleteAccountRequest,db: Session=Depends(get_db),use
     except Exception:raise HTTPException(503,'Account closure could not complete. Refresh to check its status, or try again. No other account is affected.')
 
 
+# One-click idea edits use a second path to the same handler so request logs can
+# tell them apart from typed edits. Limits, allowance and checks are identical.
 @app.post("/api/chat")
+@app.post("/api/chat/idea")
 async def api_chat(req: ChatRequest, request: Request, db: Session = Depends(get_db),
                    user: Optional[User] = Depends(get_current_user_optional)):
     identity = (user.id if user else guest_hash(request)) or request.client.host

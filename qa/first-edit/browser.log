@@ -1,0 +1,3 @@
+node qa/check-first-edit.mjs <loopback fixture from qa/local.py --lightweight-game --included-beta>  2026-11-01T12:22:32Z
+375/1440: ideas over the game with the plain free-edit count, hide/restore, one-click included edit on /api/chat/idea with live progress, private version, share prompt and link, failure detail with ideas kept, typed edits on /api/chat, none-left copy, no card for returning or own-key editors; no overflow, 44px targets, no page errors or external requests.
+exit 0
