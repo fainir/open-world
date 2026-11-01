@@ -5,6 +5,7 @@ video/
 node_modules/
 .git/
 app/venv/
+.venv/
 
 .mcp.json
 .env
