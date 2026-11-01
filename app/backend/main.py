@@ -1353,6 +1353,11 @@ def privacy_page():
     return FileResponse(os.path.join(STATIC_DIR,'privacy.html'),media_type='text/html')
 
 
+@app.get('/rosebud-alternative')
+def rosebud_alternative_page():
+    return FileResponse(os.path.join(STATIC_DIR, 'rosebud-alternative.html'), media_type='text/html')
+
+
 @app.get("/shared/{share_slug}")
 def shared_page(share_slug: str, db: Session = Depends(get_db)):
     """Serve the shared game as a standalone page (no overlay)."""
