@@ -49,7 +49,7 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 
 | ID | Flow or gate | Status | Evidence / next action |
 |---|---|---|---|
-| X4 | A new visitor reaches a first AI edit in one click and is asked to share it | waiting | [Local acceptance](qa/first-edit.md): 73 unittest and 8 node cases, synthetic 375/1440 ideas, progress, ready/share, failure and none-left states. Next: merge, deploy on the existing service, live 375/1440 check with one real included edit. Weekly read counts `POST /api/chat` plus `POST /api/chat/idea`. |
+| X4 | A new visitor reaches a first AI edit in one click and is asked to share it | verified | [Acceptance](qa/first-edit.md): PR #15 (625a53d) deployed as 97ea2a97 SUCCESS, live equals main. Live 375/1440 card over the real game; one real included edit via "Turn the sky purple" saved private version 2 in 15.3 s with the share prompt and 1 edit left. 73 unittest, 8 node, synthetic 375/1440 states. Weekly read: `POST /api/chat` plus `POST /api/chat/idea`. |
 
 ## Remaining buildable work
 
@@ -60,6 +60,8 @@ No buildable row remains in this scoped release. The limited included beta is de
 Shared inherited credential, hosted-CI allowance and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+- 2026-11-01 - Growth X4: one-click AI edit ideas over the game for new visitors, plain free-edit count, progress and a share prompt. 73 unittest/8 node cases, synthetic 375/1440 states, hosted CI; deployed 97ea2a97 from 625a53d; live 375/1440 card and one real included edit saved privately. Caps and funding unchanged.
 
 - 2026-10-31 - Released the exact-source included patch correction. 19 focused / all 63 source cases pass; one genuine Haiku creation saved two unique patches without changing original scripts or the public base. Exact saved private artifact Start/canvas/sandbox passes 375/1440 locally; public navigation succeeded but its CDP response capture raced navigation. No model replay, access change or publication.
 
