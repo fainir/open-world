@@ -1,0 +1,14 @@
+375px: revised conditional copy, no stale end date, guest 2 included attempts, included mode, no signup/key prompt, no horizontal overflow. Page errors: 0.
+1440px: revised conditional copy, no stale end date, guest 2 included attempts, included mode, no signup/key prompt, no horizontal overflow. Page errors: 0.
+node:internal/modules/run_main:122
+    triggerUncaughtException(
+    ^
+
+response.json: Protocol error (Network.getResponseBody): No resource with given identifier found
+Response body is not available for a response that was navigated away from. Read response.body() before triggering any navigation.
+    at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/cdx-openworld/open-world/qa/check-allowance-renewal.mjs:29:54 {
+  log: [],
+  name: 'Error'
+}
+
+Node.js v22.15.0
