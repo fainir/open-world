@@ -1,0 +1,27 @@
+Existing service deployment 817ca527-d0e2-477a-b566-0f2c1969d351 SUCCESS, merged main e990352.
+{
+  "/healthz": {
+    "http": 200,
+    "health": {
+      "status": "ok",
+      "database": "ok",
+      "gameFiles": true,
+      "recovery": {
+        "ok": true,
+        "ageSeconds": 14,
+        "deletionsBackedUp": true
+      },
+      "providerMode": "limited-included-and-user-key",
+      "model": "claude-sonnet-5-5",
+      "includedModel": "claude-haiku-5-5"
+    }
+  },
+  "/rosebud-alternative": {
+    "http": 200,
+    "matches_main": true
+  },
+  "/terms": {
+    "http": 200
+  }
+}
+Public /game/base response hash matches the existing sandbox renderer of the unchanged base verified in the synthetic edit readback. HTTP 200. Raw files and rendered responses are intentionally different.
