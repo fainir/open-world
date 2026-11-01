@@ -45,6 +45,12 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 
 | B4 | Continue the small free daily allowance after the original November 3 cutoff | verified | [November 1 renewal and public acceptance](qa/allowance-renewal.md). Betterloop PR #14 and OpenWorld PR #13 merged/deployed; independent DB readback confirms December 1 cutoff with unchanged caps/key/profiles. Fresh public guests get 2 included attempts at 375/1440, comparison copy is conditional with no stale end date, and one real guest edit saved a private version for $0.201129. Funding review due before December 1. |
 
+## Growth experiments - November 1
+
+| ID | Flow or gate | Status | Evidence / next action |
+|---|---|---|---|
+| X4 | A new visitor reaches a first AI edit in one click and is asked to share it | waiting | [Local acceptance](qa/first-edit.md): 73 unittest and 8 node cases, synthetic 375/1440 ideas, progress, ready/share, failure and none-left states. Next: merge, deploy on the existing service, live 375/1440 check with one real included edit. Weekly read counts `POST /api/chat` plus `POST /api/chat/idea`. |
+
 ## Remaining buildable work
 
 No buildable row remains in this scoped release. The limited included beta is deployed and its genuine model/parser/private-save result is accepted with the explicit browser-capture and generated-layout limits above. Earlier gameplay, private data, analytics, contacts and recovery proofs remain valid. Shared owner/provider actions stay in the portfolio ledger.

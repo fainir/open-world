@@ -1,0 +1,105 @@
+No broken requirements found.
+compile-ok
+overlay-syntax-ok
+  now = datetime.utcnow()
+  now = datetime.utcnow()
+ok
+test_admin_retry_stays_private_and_review_is_not_resendable (test_contact_delivery.ContactOutbox.test_admin_retry_stays_private_and_review_is_not_resendable) ... ok
+test_concurrent_claims_send_only_once (test_contact_delivery.ContactOutbox.test_concurrent_claims_send_only_once) ... ok
+  row=db.get(ContactMessage,other);row.notification_status='sending';row.notification_attempts=1;row.notification_last_at=datetime.utcnow()-timedelta(seconds=120);db.commit()
+ok
+test_migration_keeps_historical_inbox_and_never_backfills (test_contact_delivery.ContactOutbox.test_migration_keeps_historical_inbox_and_never_backfills) ... ok
+test_relay_headers_fixed_recipient_route_and_uncertain_classification (test_contact_delivery.ContactOutbox.test_relay_headers_fixed_recipient_route_and_uncertain_classification) ... ok
+test_submission_payload_bound_duplicate_and_no_transport (test_contact_delivery.ContactOutbox.test_submission_payload_bound_duplicate_and_no_transport) ... ok
+  message.notification_next_at = datetime.utcnow() + timedelta(seconds=max(delay, [60, 300, 1800, 7200][min(message.notification_attempts - 1, 3)]))
+  with SessionLocal() as db:db.get(ContactMessage,id).notification_next_at=datetime.utcnow()-timedelta(seconds=1);db.commit()
+ok
+  old=self.add(notification_attempts=1,created_at=datetime.utcnow()-timedelta(hours=21))
+ok
+ok
+test_idea_and_typed_edits_share_one_generation_rate_bucket (test_first_edit.IdeaEditPath.test_idea_and_typed_edits_share_one_generation_rate_bucket) ... ok
+test_idea_edit_uses_the_same_allowance_and_replay_as_typed_edits (test_first_edit.IdeaEditPath.test_idea_edit_uses_the_same_allowance_and_replay_as_typed_edits) ... ok
+test_home_and_private_version_shell_carry_the_hidden_ideas_card (test_first_edit.IdeasCard.test_home_and_private_version_shell_carry_the_hidden_ideas_card) ... ok
+test_new_card_copy_has_no_en_or_em_dashes (test_first_edit.IdeasCard.test_new_card_copy_has_no_en_or_em_dashes) ... ok
+test_three_one_click_ideas_say_plainly_how_many_free_edits_remain (test_first_edit.IdeasCard.test_three_one_click_ideas_say_plainly_how_many_free_edits_remain) ... ok
+test_strict_signed_fixed_gateway_and_response (test_included_ai.GatewayTransport.test_strict_signed_fixed_gateway_and_response) ... ok
+test_typed_dispatch_proof_and_timeout_hold (test_included_ai.GatewayTransport.test_typed_dispatch_proof_and_timeout_hold) ... ok
+test_actor_daily_limit_is_persistent (test_included_ai.IncludedBeta.test_actor_daily_limit_is_persistent) ... ok
+test_ambiguous_included_patch_still_preserves_all_previous_versions (test_included_ai.IncludedBeta.test_ambiguous_included_patch_still_preserves_all_previous_versions) ... ok
+test_byok_still_uses_original_sdk_and_budget (test_included_ai.IncludedBeta.test_byok_still_uses_original_sdk_and_budget) ... ok
+test_client_cancellation_cannot_retry_an_already_started_call (test_included_ai.IncludedBeta.test_client_cancellation_cannot_retry_an_already_started_call) ... ok
+test_closed_session_is_not_recreated_after_included_call (test_included_ai.IncludedBeta.test_closed_session_is_not_recreated_after_included_call) ... ok
+test_context_boundary_and_refusal_do_not_save_game (test_included_ai.IncludedBeta.test_context_boundary_and_refusal_do_not_save_game) ... ok
+test_default_off_never_calls_or_consumes (test_included_ai.IncludedBeta.test_default_off_never_calls_or_consumes) ... ok
+test_guest_success_real_patch_and_replay_without_charge (test_included_ai.IncludedBeta.test_guest_success_real_patch_and_replay_without_charge) ... ok
+test_included_anchors_target_the_exact_original_source (test_included_ai.IncludedBeta.test_included_anchors_target_the_exact_original_source) ... ok
+test_ip_limit_survives_new_guest_ids (test_included_ai.IncludedBeta.test_ip_limit_survives_new_guest_ids) ... ok
+test_pre_dispatch_refusal_does_not_consume (test_included_ai.IncludedBeta.test_pre_dispatch_refusal_does_not_consume) ... ok
+test_serialized_quote_overhead_is_refused_before_transport (test_included_ai.IncludedBeta.test_serialized_quote_overhead_is_refused_before_transport) ... ok
+test_unknown_outcome_held_and_never_falls_back (test_included_ai.IncludedBeta.test_unknown_outcome_held_and_never_falls_back) ... ok
+test_uuid_payload_binding_and_missing_guest (test_included_ai.IncludedBeta.test_uuid_payload_binding_and_missing_guest) ... ok
+test_atomic_daily_reservations (test_included_ai.SigningAndQuota.test_atomic_daily_reservations) ... ok
+test_cross_language_signature_contract (test_included_ai.SigningAndQuota.test_cross_language_signature_contract) ... ok
+ok
+test_changed_or_missing_contract_forces_drill_on_unchanged_archive (test_mirror_contract.MirrorRestoreContract.test_changed_or_missing_contract_forces_drill_on_unchanged_archive) ... ok
+test_changed_snapshot_or_missing_encrypted_target_forces_drill (test_mirror_contract.MirrorRestoreContract.test_changed_snapshot_or_missing_encrypted_target_forces_drill) ... ok
+test_incomplete_prior_success_cannot_skip_drill (test_mirror_contract.MirrorRestoreContract.test_incomplete_prior_success_cannot_skip_drill) ... ok
+test_unchanged_verified_archive_and_contract_can_reuse_its_drill (test_mirror_contract.MirrorRestoreContract.test_unchanged_verified_archive_and_contract_can_reuse_its_drill) ... ok
+test_default_railway_host_moves_the_page_to_the_real_domain (test_public_pages.RosebudAlternative.test_default_railway_host_moves_the_page_to_the_real_domain) ... ok
+test_page_and_its_new_links_contain_no_en_or_em_dashes (test_public_pages.RosebudAlternative.test_page_and_its_new_links_contain_no_en_or_em_dashes) ... ok
+test_page_has_its_own_canonical_metadata_and_required_sections (test_public_pages.RosebudAlternative.test_page_has_its_own_canonical_metadata_and_required_sections) ... ok
+test_sitemap_lists_the_page_and_the_home_footer_links_to_it (test_public_pages.RosebudAlternative.test_sitemap_lists_the_page_and_the_home_footer_links_to_it) ... ok
+test_account_action_limit_does_not_block_another_account (test_security.AccountRights.test_account_action_limit_does_not_block_another_account) ... Executing <Task finished name='Task-177' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.259 seconds
+ok
+test_closure_removes_active_owned_records_and_preserves_other_account (test_security.AccountRights.test_closure_removes_active_owned_records_and_preserves_other_account) ... Executing <Task finished name='Task-182' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.248 seconds
+ok
+test_closure_requires_current_password_exact_confirmation_and_same_origin (test_security.AccountRights.test_closure_requires_current_password_exact_confirmation_and_same_origin) ... Executing <Task finished name='Task-187' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.245 seconds
+ok
+test_export_contains_only_account_owned_data_and_real_game_files (test_security.AccountRights.test_export_contains_only_account_owned_data_and_real_game_files) ... Executing <Task finished name='Task-192' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.247 seconds
+ok
+test_failed_database_commit_restores_rows_files_and_deletion_evidence (test_security.AccountRights.test_failed_database_commit_restores_rows_files_and_deletion_evidence) ... Executing <Task finished name='Task-197' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.256 seconds
+ok
+test_failed_game_move_preserves_account_and_files (test_security.AccountRights.test_failed_game_move_preserves_account_and_files) ... Executing <Task finished name='Task-202' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.262 seconds
+ok
+test_startup_reconciles_a_crash_after_durable_closure_intent (test_security.AccountRights.test_startup_reconciles_a_crash_after_durable_closure_intent) ... Executing <Task finished name='Task-207' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.248 seconds
+ok
+test_surviving_deletion_evidence_is_mandatory_and_applies_to_an_older_restore (test_security.AccountRights.test_surviving_deletion_evidence_is_mandatory_and_applies_to_an_older_restore) ... Executing <Task finished name='Task-212' coro=<AccountRights.asyncSetUp() done, defined at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:202> result=None created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.247 seconds
+ok
+test_approval_commit_failure_restores_the_previous_base_game (test_security.AdminReviews.test_approval_commit_failure_restores_the_previous_base_game) ... ok
+test_completed_review_is_idempotent_and_cannot_reverse_another_decision (test_security.AdminReviews.test_completed_review_is_idempotent_and_cannot_reverse_another_decision) ... ok
+test_review_requires_admin_and_explicit_owner_submission (test_security.AdminReviews.test_review_requires_admin_and_explicit_owner_submission) ... ok
+test_all_private_mutations_require_owner (test_security.PrivateAccess.test_all_private_mutations_require_owner) ... ok
+test_all_private_reads_require_owner (test_security.PrivateAccess.test_all_private_reads_require_owner) ... ok
+test_analytics_config_exposes_only_valid_public_identifiers (test_security.PrivateAccess.test_analytics_config_exposes_only_valid_public_identifiers) ... ok
+test_body_and_model_bounds (test_security.PrivateAccess.test_body_and_model_bounds) ... ok
+test_cannot_chat_or_branch_private_session (test_security.PrivateAccess.test_cannot_chat_or_branch_private_session) ... ok
+test_guest_capability_not_public_id_or_other_guest (test_security.PrivateAccess.test_guest_capability_not_public_id_or_other_guest) ... ok
+test_legacy_guest_requires_original_key (test_security.PrivateAccess.test_legacy_guest_requires_original_key) ... ok
+test_opaque_or_cross_origin_cannot_call_editor (test_security.PrivateAccess.test_opaque_or_cross_origin_cannot_call_editor) ... ok
+test_provider_failure_or_partial_edit_does_not_write_version (test_security.PrivateAccess.test_provider_failure_or_partial_edit_does_not_write_version) ... ok
+test_recovery_rejects_corruption_and_missing_game (test_security.PrivateAccess.test_recovery_rejects_corruption_and_missing_game) ... ok
+test_recovery_retains_game_files_and_invalidates_old_sessions (test_security.PrivateAccess.test_recovery_retains_game_files_and_invalidates_old_sessions) ... Executing <Task pending name='Task-286' coro=<PrivateAccess.test_recovery_retains_game_files_and_invalidates_old_sessions() running at /private/tmp/claude-501/-Users-nirfeinstein-Library-Application-Support-Claude-scratch-workspaces-bbbf1ae7-8508-4f81-a7f2-9c0ea1487dde-9791d62b-d52d-4562-8b98-80460223eba4-scratch-2026-10-29-9a1718/b0ee55d5-63a5-4d8e-8c7a-6185871e2156/scratchpad/x4-first-edit-1793534504/repo/tests/test_security.py:173> cb=[_run_until_complete_cb() at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/base_events.py:181] created at /Users/nirfeinstein/.local/share/uv/python/cpython-3.13.16-macos-aarch64-none/lib/python3.13/asyncio/runners.py:101> took 0.101 seconds
+ok
+test_sharing_exposes_only_game_and_public_metadata (test_security.PrivateAccess.test_sharing_exposes_only_game_and_public_metadata) ... ok
+test_studio_document_never_contains_game_code (test_security.PrivateAccess.test_studio_document_never_contains_game_code) ... ok
+test_success_preserves_previous_version (test_security.PrivateAccess.test_success_preserves_previous_version) ... ok
+test_public_base_keeps_opaque_policy_and_missing_file_offers_retry (test_security.PublicBaseTransport.test_public_base_keeps_opaque_policy_and_missing_file_offers_retry) ... ok
+test_production_railway_host_pages_move_to_the_real_domain (test_security.RailwayHost.test_production_railway_host_pages_move_to_the_real_domain) ... ok
+test_hostile_title_and_description_render_inert (test_security.SharedGameCards.test_hostile_title_and_description_render_inert) ... ok
+test_private_unshared_or_missing_games_show_no_card (test_security.SharedGameCards.test_private_unshared_or_missing_games_show_no_card) ... ok
+test_published_game_card_has_its_own_title_description_url_and_image (test_security.SharedGameCards.test_published_game_card_has_its_own_title_description_url_and_image) ... ok
+test_shared_game_without_title_uses_fallback_and_trims_description (test_security.SharedGameCards.test_shared_game_without_title_uses_fallback_and_trims_description) ... ok
+
+----------------------------------------------------------------------
+Ran 73 tests in 5.517s
+
+OK
+✔ a failed withdrawal stays off through late SDK, focus and pageshow until a successful fresh choice (0.513292ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64.399459

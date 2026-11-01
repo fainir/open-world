@@ -57,7 +57,7 @@
 #ow-messages::-webkit-scrollbar{width:5px}
 #ow-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
 
-.ow-welcome{text-align:center;padding:40px 20px;color:#6b7280}
+.ow-welcome{text-align:center;padding:12px 4px;color:#6b7280}
 .ow-welcome h3{color:#e8ecf0;margin:0 0 8px;font-size:16px}
 .ow-welcome p{margin:0 0 20px;font-size:13px}
 .ow-examples{display:flex;flex-direction:column;gap:8px}
@@ -228,6 +228,38 @@
 #ow-panel button:focus-visible,#ow-overlay-root a:focus-visible,#ow-overlay-root input:focus-visible,#ow-overlay-root textarea:focus-visible,#ow-overlay-root button:focus-visible{outline:3px solid #a9c6ff;outline-offset:2px}
 .ow-welcome,.ow-welcome p,.ow-form-group label,.ow-store-empty,.ow-input-footer{color:#a4afc1}
 @media(max-width:600px){#ow-panel.ow-open{padding-top:56px;box-sizing:border-box}}
+
+/* First AI edit: one-click ideas, progress and a share prompt over the game. */
+#ow-ideas{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e8ecf0}
+.ow-ideas-card{position:fixed;z-index:9990;top:64px;left:50%;transform:translateX(-50%);width:min(440px,calc(100vw - 16px));box-sizing:border-box;
+  background:rgba(12,15,22,.94);border:1px solid rgba(168,85,247,.5);border-radius:14px;padding:12px 14px 14px;
+  box-shadow:0 10px 32px rgba(0,0,0,.45);pointer-events:auto;outline:none}
+.ow-ideas-pill{position:fixed;z-index:9990;top:64px;right:12px;pointer-events:auto}
+@media(min-width:601px){#ow-panel.ow-open~#ow-ideas .ow-ideas-card{left:calc(50% - 150px)}#ow-panel.ow-open~#ow-ideas .ow-ideas-pill{right:312px}}
+@media(max-width:600px){.ow-ideas-card{top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:8px;right:8px;width:auto;transform:none}.ow-ideas-pill{right:8px}}
+.ow-ideas-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ow-ideas-title{margin:0;font-size:16px;font-weight:600;line-height:1.35}
+#ow-ideas .ow-ideas-hide{background:none;border:none;color:#a4afc1;font-size:22px;line-height:1;cursor:pointer;border-radius:8px;margin-right:-8px;padding:0}
+#ow-ideas .ow-ideas-hide:hover{color:#fff}
+.ow-ideas-sub{margin:2px 0 10px;font-size:13px;line-height:1.5;color:#c5cddb}
+.ow-ideas-list,.ow-ideas-actions{display:flex;flex-wrap:wrap;gap:8px}
+#ow-ideas .ow-idea{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:999px;color:#f3f4f6;
+  padding:8px 12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}
+#ow-ideas .ow-idea:hover{background:rgba(168,85,247,.3);border-color:rgba(196,181,253,.6)}
+#ow-ideas .ow-idea-own{background:none;border-style:dashed}
+#ow-ideas .ow-ideas-primary{background:#e0e4ea;border:none;color:#111;border-radius:10px;padding:8px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+#ow-ideas .ow-ideas-primary:hover{background:#fff}
+#ow-ideas .ow-ideas-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#e8ecf0;border-radius:10px;padding:8px 16px;font-family:inherit;font-size:14px;cursor:pointer}
+.ow-ideas-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin:4px 0 6px}
+.ow-ideas-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#a855f7,#60a5fa);transition:width .9s linear}
+.ow-ideas-meta{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#c5cddb}
+.ow-ideas-left{margin:10px 0 0;font-size:14px;font-weight:600;color:#d8ccff}
+.ow-ideas-note{margin:2px 0 0;font-size:12px;line-height:1.45;color:#a4afc1}
+#ow-ideas .ow-ideas-pill{background:linear-gradient(135deg,#6d28d9,#9333ea);border:1px solid rgba(216,204,255,.55);color:#fff;border-radius:999px;
+  padding:8px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#ow-ideas button:focus-visible{outline:3px solid #a9c6ff;outline-offset:2px}
+@media(max-height:500px){.ow-ideas-sub{display:none}.ow-ideas-card{top:56px}}
+@media(prefers-reduced-motion:reduce){.ow-ideas-bar span{transition:none}}
 </style>
 
 <div id="ow-overlay-root">
@@ -261,11 +293,7 @@
       <div class="ow-welcome" id="ow-welcome">
         <h3>Make It Yours</h3>
         <p>Tell AI what to change and it will modify the game in real time.</p>
-        <div class="ow-examples">
-          <button class="ow-example">Add a day/night cycle with a moving sun</button>
-          <button class="ow-example">Make the buildings taller and add neon lights</button>
-          <button class="ow-example">Add a minimap in the corner</button>
-        </div>
+        <div class="ow-examples" id="ow-examples"></div>
       </div>
     </div>
     <div id="ow-suggestions">
@@ -287,6 +315,29 @@
     </div>
     <p style="padding:0 16px;color:#a4afc1;font-size:12px;line-height:1.6"><strong>Free:</strong> play and browse. <strong>Included beta:</strong> limited Claude text edits when available. <strong>Bring your own key:</strong> optional heavier edits, billed by Anthropic. <strong>Paid plan:</strong> none sold by OpenWorld. <a href="/terms" target="_blank" rel="noopener noreferrer" style="color:#a9c6ff;text-underline-offset:3px">Terms &amp; costs</a></p><nav class="ow-footer-links" aria-label="Account and information"><button type="button" class="site-analytics-choice" data-analytics-open>Analytics choices</button><a href="/account">Account</a><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</a><a href="/contact" target="_blank" rel="noopener noreferrer">Contact</a><a href="/rosebud-alternative" target="_blank" rel="noopener noreferrer">OpenWorld vs Rosebud</a><a href="https://nirfeinste.in">Made by Nir Feinstein</a></nav>
   </div>
+
+  <!-- First AI edit: one-click ideas, progress and the share prompt, over the game -->
+  <section id="ow-ideas" aria-labelledby="ow-ideas-title" hidden>
+    <div class="ow-ideas-card" id="ow-ideas-card" tabindex="-1">
+      <div class="ow-ideas-head">
+        <h2 class="ow-ideas-title" id="ow-ideas-title">Change this game with words</h2>
+        <button type="button" class="ow-ideas-hide" id="ow-ideas-hide" aria-label="Hide this card">&times;</button>
+      </div>
+      <p class="ow-ideas-sub" id="ow-ideas-sub">Pick an idea and Claude edits the game for you. No signup.</p>
+      <div class="ow-ideas-list" id="ow-ideas-list"></div>
+      <div id="ow-ideas-progress" hidden>
+        <div class="ow-ideas-bar" aria-hidden="true"><span id="ow-ideas-bar"></span></div>
+        <div class="ow-ideas-meta"><span id="ow-ideas-stage" role="status" aria-live="polite"></span><span id="ow-ideas-time" aria-hidden="true">0:00</span></div>
+      </div>
+      <div class="ow-ideas-actions" id="ow-ideas-actions" hidden>
+        <button type="button" class="ow-ideas-primary" id="ow-ideas-share">Share your version</button>
+        <button type="button" class="ow-ideas-secondary" id="ow-ideas-more">Try another idea</button>
+      </div>
+      <p class="ow-ideas-left" id="ow-ideas-left"></p>
+      <p class="ow-ideas-note" id="ow-ideas-note"></p>
+    </div>
+    <button type="button" class="ow-ideas-pill" id="ow-ideas-pill" hidden></button>
+  </section>
 
   <!-- API Key Modal -->
   <div class="ow-modal-overlay" id="ow-apikey-modal">
@@ -547,11 +598,11 @@ function renderFunding(){
 async function refreshAllowance(){
   try{const response=await fetch('/api/creation-allowance',{headers:Auth.headers(),cache:'no-store'});if(!response.ok)throw Error();const data=await response.json();includedEnabled=data.enabled===true;includedRemaining=Number(data.remaining)||0;}
   catch{includedEnabled=false;}
-  renderFunding();
+  renderFunding();syncIdeas();
 }
-funding.onchange=()=>{localStorage.setItem(SK.FUNDING,funding.value);includedReason='';renderFunding();};
+funding.onchange=()=>{localStorage.setItem(SK.FUNDING,funding.value);includedReason='';renderFunding();renderIdeas();};
 $('ow-use-own-key').onclick=()=>{funding.value='byok';funding.onchange();$('ow-btn-apikey').click();};
-renderFunding();refreshAllowance();
+renderFunding();
 async function includedRequestId(message){
   if(!crypto?.subtle||!crypto?.randomUUID)throw Error('This browser cannot preserve a safe creation reference. Use an up-to-date browser or choose your own key.');
   const material=JSON.stringify({message,session_id:sessionId,current_version_id:currentVersionId});
@@ -560,6 +611,92 @@ async function includedRequestId(message){
   if(previous?.hash===hash&&typeof previous.id==='string')return previous.id;
   const id=crypto.randomUUID();try{sessionStorage.setItem('ow_included_request',JSON.stringify({id,hash}));}catch{throw Error('This browser cannot preserve a safe creation reference. Enable session storage or choose your own key.');}return id;
 }
+
+// ── First AI edit: one-click ideas over the game, progress, then a share prompt ──
+// New visitors see ideas only while included edits are available. Each idea fills
+// and submits the normal edit box, so the same allowance, limits and checks apply.
+const IDEAS=[
+  {label:'❄️ Make it snow',prompt:'Make it snow: add gently falling white snowflakes all around the player, wherever they go.'},
+  {label:'🌆 Turn the sky purple',prompt:'Turn the sky a purple sunset color and make the fog match it.'},
+  {label:'🐉 Add a dragon',prompt:'Add a big friendly dragon built from simple shapes that slowly circles high above the city.'}
+];
+const IDEAS_PREF='ow_ideas_card',SHARE_PROMPT='ow_share_prompt';
+const ideasBox=$('ow-ideas'),ideasCard=$('ow-ideas-card'),ideasPill=$('ow-ideas-pill');
+let ideasMode=null,ideasCollapsed=false,ideasDetail='',ideasTimer=null,ideasStarted=0,editSource='';
+function readStore(store,key){try{return store.getItem(key)}catch{return null}}
+function writeStore(store,key,value){try{value===null?store.removeItem(key):store.setItem(key,value)}catch{}}
+function freeEditsText(){return includedRemaining===1?'1 free AI edit left':includedRemaining+' free AI edits left'}
+function ideaButton(className,label,onclick){const b=document.createElement('button');b.type='button';b.className=className;b.textContent=label;b.onclick=onclick;return b}
+function runIdea(idea){
+  if(isProcessing)return;
+  mp('example_prompt_clicked');
+  input.value=idea.prompt;editSource='idea';sendMessage();
+  // sendMessage returns before any request when an edit cannot start; say why here too.
+  if(!isProcessing&&ideasMode){ideasMode='failed';ideasDetail=includedReason||'This edit could not start.';renderIdeas();}
+}
+function writeOwn(){if(!panelOpen)openPanel();else input.focus()}
+function ideasStage(seconds){
+  if(seconds<4)return 'Sending your idea to Claude';
+  if(seconds<20)return 'Claude is reading the game code';
+  if(seconds<45)return 'Claude is writing the change';
+  return 'Still working. Bigger changes take longer';
+}
+function tickIdeas(){
+  const seconds=Math.floor((Date.now()-ideasStarted)/1000),clock=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+  const stage=ideasStage(seconds);
+  if($('ow-ideas-stage').textContent!==stage)$('ow-ideas-stage').textContent=stage;
+  $('ow-ideas-time').textContent=clock;
+  $('ow-ideas-bar').style.width=(92*(1-Math.exp(-seconds/25))).toFixed(1)+'%';
+  if(ideasCollapsed)ideasPill.textContent='Editing your game '+clock;
+}
+function renderIdeas(){
+  const left=includedEnabled&&funding.value==='included';
+  if(!ideasMode||(ideasMode==='ideas'&&!left)){ideasBox.hidden=true;return}
+  ideasBox.hidden=false;ideasCard.hidden=ideasCollapsed;ideasPill.hidden=!ideasCollapsed;
+  const busy=ideasMode==='working'||ideasMode==='done',ready=ideasMode==='ready',failed=ideasMode==='failed';
+  const canTry=left&&includedRemaining>0&&!busy&&!ready;
+  $('ow-ideas-title').textContent=busy?'Claude is editing your game':ready?'Your version is ready':failed?'That edit did not finish':'Change this game with words';
+  const sub=busy?'Your new version opens here by itself when it is ready.':ready?'Only you can see it. Share the link and friends can play your version.':failed?ideasDetail:canTry?'Pick an idea and Claude edits the game for you. No signup.':'';
+  $('ow-ideas-sub').textContent=sub;$('ow-ideas-sub').hidden=!sub;
+  const list=$('ow-ideas-list');list.hidden=!canTry;
+  if(canTry&&!list.childElementCount){
+    IDEAS.forEach(idea=>list.appendChild(ideaButton('ow-idea',idea.label,()=>runIdea(idea))));
+    list.appendChild(ideaButton('ow-idea ow-idea-own','\u270F\uFE0F Write your own',writeOwn));
+  }
+  $('ow-ideas-progress').hidden=!busy;
+  $('ow-ideas-actions').hidden=!ready;$('ow-ideas-more').hidden=!(left&&includedRemaining>0);
+  $('ow-ideas-left').hidden=!left||busy;
+  $('ow-ideas-left').textContent=includedRemaining>0?freeEditsText():'No free AI edits left right now';
+  const note=busy?'Keep this tab open. It can take a minute.':!left?'':includedRemaining>0?'Each try counts, even if it fails, and comes back 24 hours after you use it. Text edits only.':'They come back 24 hours after use. You can keep playing, or use your own Anthropic key in the editor.';
+  $('ow-ideas-note').textContent=note;$('ow-ideas-note').hidden=!note;
+  if(ideasMode==='working')tickIdeas();
+  else if(ideasMode==='done'){$('ow-ideas-bar').style.width='100%';$('ow-ideas-stage').textContent='Done. Opening your version';ideasPill.textContent='Opening your version'}
+  else ideasPill.textContent=ready?'Share your version':left&&includedRemaining>0?'\u2728 '+freeEditsText():'\u2728 Edit this game';
+}
+function syncIdeas(){
+  if(!ideasMode){
+    if(readStore(sessionStorage,SHARE_PROMPT)===currentVersionId&&currentVersionId)ideasMode='ready';
+    else if(!sessionId&&funding.value==='included'&&includedEnabled&&includedRemaining>0){ideasMode='ideas';ideasCollapsed=readStore(localStorage,IDEAS_PREF)==='collapsed';}
+  }
+  renderIdeas();
+}
+function ideasWorking(){
+  if(!ideasMode)return;
+  ideasMode='working';ideasCollapsed=false;ideasStarted=Date.now();clearInterval(ideasTimer);ideasTimer=setInterval(tickIdeas,1000);
+  renderIdeas();if(!panelOpen)ideasCard.focus({preventScroll:true});
+}
+function ideasEnded(failure){
+  clearInterval(ideasTimer);ideasTimer=null;
+  if(!ideasMode)return;
+  ideasMode=failure===null?'done':'failed';ideasDetail=failure||'';renderIdeas();
+}
+$('ow-ideas-hide').onclick=()=>{ideasCollapsed=true;if(ideasMode==='ideas')writeStore(localStorage,IDEAS_PREF,'collapsed');renderIdeas();ideasPill.focus()};
+ideasPill.onclick=()=>{ideasCollapsed=false;renderIdeas();ideasCard.focus({preventScroll:true})};
+$('ow-ideas-more').onclick=()=>{writeStore(sessionStorage,SHARE_PROMPT,null);ideasMode='ideas';renderIdeas();$('ow-ideas-list').querySelector('button')?.focus()};
+$('ow-ideas-share').onclick=async()=>{const button=$('ow-ideas-share');if(await handleShare(currentVersionId,button))writeStore(sessionStorage,SHARE_PROMPT,null)};
+// Starting to play (focus moves into the game frame) folds the card into a small button.
+addEventListener('blur',()=>setTimeout(()=>{if(ideasMode&&!ideasCollapsed&&document.activeElement===$('ow-game')){ideasCollapsed=true;renderIdeas()}},0));
+refreshAllowance();
 
 // ── Chat send ──
 input.addEventListener('keydown',(e)=>{
@@ -589,6 +726,7 @@ imgFile.onchange=()=>{
 $('ow-img-remove').onclick=()=>{pendingImageB64=null;pendingImageType=null;imgPreview.style.display='none';imgFile.value='';};
 
 async function sendMessage(){
+  const source=editSource;editSource='';
   const message=input.value.trim();
   if(!message||isProcessing)return;
   const apiKey=apiKeyInput.value.trim()||localStorage.getItem(SK.API_KEY)||'';
@@ -618,6 +756,7 @@ async function sendMessage(){
   const thinkEl=addThinking();
   setStatus('Generating changes...','ow-loading');
   sendBtn.disabled=true;isProcessing=true;funding.disabled=true;$('ow-use-own-key').disabled=true;$('ow-btn-apikey').disabled=true;
+  ideasWorking();
 
   try{
     const headers={'Content-Type':'application/json',...Auth.headers()};
@@ -625,7 +764,7 @@ async function sendMessage(){
     if(included)body.request_id=await includedRequestId(message);else body.api_key=apiKey;
     if(imgB64)body.image={data:imgB64,media_type:imgType};
     creationWait=new AbortController();$('ow-stop-waiting').hidden=false;
-    const r=await fetch('/api/chat',{method:'POST',headers,body:JSON.stringify(body),signal:creationWait.signal});
+    const r=await fetch(source==='idea'?'/api/chat/idea':'/api/chat',{method:'POST',headers,body:JSON.stringify(body),signal:creationWait.signal});
     const data=await r.json();
     if(!r.ok){if(included){includedReason=data.detail||'Included creation could not complete.';if(data.dispatched===false)sessionStorage.removeItem('ow_included_request');renderFunding();}throw new Error(typeof data.detail==='string'?data.detail:'Request failed');}
     if(included)sessionStorage.removeItem('ow_included_request');
@@ -638,6 +777,7 @@ async function sendMessage(){
     if(data.message&&!data.version_id){
       addMsg('assistant',data.message||data.description);
       mp('chat_response');
+      ideasEnded('Claude answered without changing the game. Open the editor to read its reply.');
     }else{
       const desc=data.description||'Changes applied!';
       addAssistantMsg(desc,data.version_id,data.version_number);
@@ -647,6 +787,7 @@ async function sendMessage(){
         localStorage.setItem(SK.VERSION,currentVersionId);
         showSuggestions(data.suggestions||[]);
         saveChatHistory();
+        writeStore(sessionStorage,SHARE_PROMPT,data.version_id);ideasEnded(null);
         window.location.href='/v/'+data.version_id;
       }
     }
@@ -657,6 +798,7 @@ async function sendMessage(){
     if(imgB64&&!pendingImageB64){pendingImageB64=imgB64;pendingImageType=imgType;imgThumb.src='data:'+imgType+';base64,'+imgB64;imgPreview.style.display='block';}
     if(err.name==='AbortError'){includedReason='Stopped waiting. An already-sent attempt may still finish and count. Keep this draft and check its saved result before a new attempt.';renderFunding();}
     addMsg('assistant','Error: '+(err.name==='AbortError'?'Stopped waiting; this does not cancel or refund an already-dispatched attempt.':err.message));
+    ideasEnded(err.name==='AbortError'?'Stopped waiting. The edit may still finish and count. Check Versions in the editor before trying again.':err.message);
     setStatus('Failed','ow-error');setTimeout(()=>setStatus(''),3000);
   }finally{
     creationWait=null;$('ow-stop-waiting').hidden=true;sendBtn.disabled=false;isProcessing=false;funding.disabled=false;$('ow-use-own-key').disabled=false;$('ow-btn-apikey').disabled=false;
@@ -688,10 +830,8 @@ apikeyModalInput.addEventListener('keydown',(e)=>{
   if(e.key==='Enter'){e.preventDefault();$('ow-apikey-save').click()}
 });
 
-// ── Example prompts ──
-document.querySelectorAll('.ow-example').forEach(btn=>{
-  btn.onclick=()=>{mp('example_prompt_clicked');input.value=btn.textContent;sendMessage()};
-});
+// ── Example prompts (the same one-click ideas as the card over the game) ──
+IDEAS.forEach(idea=>$('ow-examples').appendChild(ideaButton('ow-example',idea.label,()=>runIdea(idea))));
 
 // ── Message rendering ──
 function escHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
@@ -761,7 +901,8 @@ async function handleShare(versionId,btn){
     btn.textContent='Shared!';btn.style.color='#34d399';mp('version_shared');
     $('ow-share-link').value=location.origin+'/shared/'+d.share_slug;
     $('ow-share-modal').classList.add('ow-show');
-  }catch(e){showToast('Error: '+e.message)}
+    return true;
+  }catch(e){showToast('Error: '+e.message);return false}
 }
 
 async function handleSuggest(versionId,btn){
