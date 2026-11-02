@@ -80,3 +80,9 @@ Shared inherited credential, hosted-CI allowance and provider-budget actions sta
 - 2026-10-29 - Scoped ZIP export, atomic account closure, durable deletion/restore reconciliation, privacy and studio modal/touch fixes pass24 source/ASGI cases and actual375/1440 UI. No real provider or production work; actual-game performance, admin and coordinator rollout remain.
 
 - 2026-10-29 - Distilled accepted gameplay, private access, actual Sonnet journey and recovery proofs; claimed missing account-data/policy/UX/release rows only. No provider request, public change or production data touched.
+
+## Railway compatibility - November2
+
+| ID | Flow | Status | Evidence / next action |
+|---|---|---|---|
+| OPS1 | Deploy current accepted OpenWorld source without retired legacy config | building (portfolio coordinator) | Main3a1c168 retained; exact named service partial must preserve Nixpacks/uvicorn/health/restart/region and the saved game volume. Verify no resolved legacy file and live public/health after source rollout. No AI call. |
