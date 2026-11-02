@@ -19,10 +19,10 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | U3 | Owner admin suggestions/contacts and role-denied states at375/1440 | verified | [Actual admin acceptance](qa/account-acceptance.md), [log](qa/admin-checks.log): role denial, submitted-only opaque preview, in-page review/cancel, rollback/idempotence, contacts/read retries and safe logout; all44px and no overflow |
 | G1 | Main mobile Lighthouse performance/accessibility >=90 | verified | Actual public retained base96/100, warnings[],FCP/LCP1.4s,TBT10ms,CLS0; real city/intro visually reviewed. Local actual source game90/100 retained. [Public report](qa/perf/public-mobile.report.html), [release](qa/public-release.md) |
 | G2 | Current changed-source tests and dependency/security checks | verified | [29 source/ASGI checks](qa/account-checks.log), frontend syntax and Python compile pass; dependency versions unchanged from accepted zero-vulnerability audit A/openworld-dependencies-after.json |
-| G3 | Truthful deploy/rollback/CI and cost guide | verified | [Current README](README.md) and [operations](OPERATIONS.md): existing service only, no reseeding/new account, scoped limits and deletion-aware restore; shared hosted-CI/provider-budget owner actions retained |
+| G3 | Truthful deploy/rollback/CI and cost guide | verified | [Current README](README.md) and [operations](OPERATIONS.md): existing service only, no reseeding/new account, scoped limits and deletion-aware restore; hosted CI passes and shared provider-budget review stays separate |
 | G4 | Verified public changed release | verified | Existing rollout SUCCESS; exact public HTML/health/access guards, actual375/1440 game/start/vehicle/account/privacy/contact/sign-in and new-format independent snapshot/restore pass. No writes/provider/owner data. [Live release/rollback](qa/public-release.md) |
 | G5 | Existing independent mirror uses the deletion-aware helper and current-snapshot drill | verified | Coordinator atomic two-helper update and owned foreground sync succeeded at2026-10-29T17:06:57Z; encryptedCopyVerified/restoreDrillPassed/restoreDrillRanThisCheck true, contract2; key/config/CLI/runtime preserved. [Selected evidence](qa/account-acceptance.md) |
-| G6 | Hosted source checks | owner | New bounded workflow is configured and local29 tests/compile pass. Existing portfolio Actions allowance must be restored within an owner-chosen cap before hosted CI; no new budget authorized |
+| G6 | Hosted source checks | verified | [Current-main run41426636894](https://github.com/fainir/open-world/actions/runs/41426636894) succeeds on2122b50f; later canonical changes are release evidence only. Included allowance renewed and paid overages stay capped at$0. No repeated AI/game/digest test. |
 
 | T1 | Optional public studio analytics, explicit device choice and safe payload/route boundaries | verified | [Source and actual375/1440 acceptance](qa/analytics.md):30 ASGI and8 analytics cases, all three transports intercepted, withdrawal/races and memory lock pass. No real provider receipt is claimed |
 | T2 | Existing analytics project configuration and public rollout/receipt | verified | [Actual public release](qa/analytics.md), [live375/1440](qa/analytics-live.log), [exact public config/source/health](qa/analytics-public-http.log). Genuine Google204, Mixpanel200/body1 and cross-origin Betterloop200/bodyok; actual Store action to all3, no pre-consent requests, sanitized context, withdrawal, private account/contact exclusion and GPC pass. Same existing service/data volume; dashboard visibility is not inferred from HTTP proof |
@@ -57,7 +57,7 @@ No buildable row remains in this scoped release. The limited included beta is de
 
 ## Owner / waiting
 
-Shared inherited credential, hosted-CI allowance and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. No new provider review is required for unchanged configuration.
+Shared inherited credential and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. Hosted CI no longer needs an allowance action. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
 
