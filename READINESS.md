@@ -85,4 +85,4 @@ Shared inherited credential, hosted-CI allowance and provider-budget actions sta
 
 | ID | Flow | Status | Evidence / next action |
 |---|---|---|---|
-| OPS1 | Deploy current accepted OpenWorld source without retired legacy config | building (portfolio coordinator) | Main3a1c168 retained; exact named service partial must preserve Nixpacks/uvicorn/health/restart/region and the saved game volume. Verify no resolved legacy file and live public/health after source rollout. No AI call. |
+| OPS1 | Deploy current accepted OpenWorld source without retired legacy config | verified | [Completed source/configuration and public375/1440 acceptance](qa/railway-compatibility.md); SUCCESS, no resolved legacy file, exact operational manifest and original5000MB/data volume, health200 and plan0. No AI request. |
