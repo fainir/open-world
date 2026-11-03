@@ -59,7 +59,9 @@ try{for(const [width,options] of widths){
  await share.click();await p.waitForFunction(()=>window.__shares.length===1);
  const sent=await p.evaluate(()=>window.__shares[0]);assert.equal(sent.url,shareUrl);assert.equal(sent.title,game.title||'A game made in OpenWorld');
  assert.equal(await p.locator('#ow-copy').isVisible(),false);
- // The game still starts and plays inside the page.
+ // The game still starts and plays inside the page. Its start handlers exist once its module has run,
+ // which ends by adding the web app manifest link (the start screen is plain HTML and shows earlier).
+ await g.locator('link[rel="manifest"]').waitFor({state:'attached'});
  if(width===375){await g.locator('body.mobile').waitFor({state:'attached'});await g.locator('#overlay').tap();}
  else await g.locator('#overlay').click();
  await g.locator('#overlay').waitFor({state:'hidden'});assert.equal(await g.locator('#hud').evaluate(el=>getComputedStyle(el).display),'block');

@@ -40,3 +40,26 @@ The share prompt that follows a successful AI edit (X4, PR #15) now uses the sam
 - [Post-edit share prompt](share-loop/prompt.log). `qa/check-share-prompt.mjs` ran against `qa/local.py --lightweight-game --included-beta`, a synthetic provider with no model call. At 375 the share sheet received `/shared/<slug>` and no dialog opened. At 1440, with no share sheet, the link was copied and the dialog said so. The existing `qa/check-first-edit.mjs` still passes.
 - Headless Chrome exposes `navigator.share` but never opens it or settles it. The checks replace it with a recorder, and `qa/check-first-edit.mjs` removes it to keep testing the dialog.
 - [Live equals main before release](share-loop/live-before.log): 11 public responses from origin/main 82b2e88 match live byte for byte.
+
+## Live release
+
+PR #18 was squash-merged as 799e077 after hosted CI passed. Before deploying, live served exactly main 82b2e88 ([log](share-loop/live-before.log)). `railway up` from merged main created existing-service deployment `f87ceabd-2a4a-4e14-8393-72ec409ea908`, which is SUCCESS. `/healthz` is ok and fresh, and the live home, terms, privacy, rosebud page and both new scripts equal the merged source byte for byte ([log](share-loop/live-after.log)).
+
+The [read-only live check](share-loop/live.log) (`qa/check-share-loop.mjs https://open-world.gg`, every non-GET aborted, no AI edit) used the newest public game, Enchanted Forest (`/shared/0cf0e229`), at 375 (touch) and 1440. It confirmed:
+- the bar with 44px targets, and the game below it in the opaque frame
+- the game starting with its HUD
+- the share sheet receiving `https://open-world.gg/shared/0cf0e229`
+- the real clipboard copy and the manual link box
+- Made with going to the home page
+- Remix going to `/v/2b842403-...` with the flag dropped, the old chat cleared, the game loaded and the title shown. New visitors also get the ideas card with 2 free AI edits.
+
+Zero writes and zero page or console errors. Screenshots are in `share-loop/live/`.
+
+Open nit (READINESS X8): at 375 the 3 s remix toast covers two idea buttons.
+
+## Weekly read
+
+- Shared plays: `GET /shared/<slug>`
+- Remix clicks: `GET /remix/<slug>`, then the editor at `GET /v/<id>`
+- Remix edits: `POST /api/chat` or `/api/chat/idea` from a fresh session
+- Shares: `POST /api/versions/share`. The share sheet and copy are client-side and are not logged.

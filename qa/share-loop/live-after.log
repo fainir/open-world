@@ -1,0 +1,17 @@
+# 2026-11-03T14:10:25Z after deploy: railway deployment list
+f87ceabd-2a4a-4e14-8393-72ec409ea908 SUCCESS 2026-11-03T14:04:48.106Z Share loop on shared games, and a CrazyGames-ready base game zip (#18) from main 799e077
+# /healthz
+{"status":"ok","database":"ok","gameFiles":true,"recovery":{"ok":true,"ageSeconds":286,"deletionsBackedUp":true},"providerMode":"limited-included-and-user-key","model":"claude-sonnet-5-5","includedModel":"claude-haiku-5-5"}
+# live vs merged main 799e077
+SAME / source=961cd0397e5ac756 live=961cd0397e5ac756 bytes=77699
+SAME /terms source=abd6c4b0e49bbeff live=abd6c4b0e49bbeff bytes=2696
+SAME /privacy source=42a87ca0aa4cebf5 live=42a87ca0aa4cebf5 bytes=11457
+SAME /rosebud-alternative source=7da8a694001ffe9e live=7da8a694001ffe9e bytes=12674
+SAME /static/js/share-link.js source=f9f504b4f6fdea3b live=f9f504b4f6fdea3b bytes=639
+SAME /static/js/shared.js source=01f39a78dbf79893 live=01f39a78dbf79893 bytes=2028
+SAME /static/analytics.js source=d4f630cd1bfd2bdd live=d4f630cd1bfd2bdd bytes=9268
+ALL SAME
+# shared page CSP and remix redirect
+HTTP/2 200 
+content-security-policy: default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:; frame-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+remix 302 https://open-world.gg/v/2b842403-996f-468b-86e5-d1db82b13518?remix=1

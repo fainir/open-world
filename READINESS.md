@@ -55,9 +55,10 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 
 | ID | Flow or gate | Status | Evidence / next action |
 |---|---|---|---|
-| X5 | A shared game page says "Made with OpenWorld - make your own", has Remix this and one-tap share; the post-edit share prompt uses the same share | built | [Notes](qa/share-loop.md): 81 unittest (6 new share-loop, 2 portal), 13 node; local real-game 375/1440 visitor check ([log](qa/share-loop/local.log)) and synthetic post-edit share prompt ([log](qa/share-loop/prompt.log)) pass with zero writes and zero page errors. Live 375/1440 acceptance is recorded after deploy. |
+| X5 | A shared game page says "Made with OpenWorld - make your own", has Remix this and one-tap share; the post-edit share prompt uses the same share | verified | PR #18 squash-merged as 799e077; existing-service deployment f87ceabd-2a4a-4e14-8393-72ec409ea908 SUCCESS, /healthz ok, live equals main byte for byte ([log](qa/share-loop/live-after.log)). [Live 375/1440](qa/share-loop/live.log) on the public game Enchanted Forest: bar, game start/HUD in its frame, share sheet URL, real clipboard copy, manual box, Made with to home, Remix to the editor with a fresh chat and the ideas card; zero writes, zero page/console errors, no AI edit. [Notes](qa/share-loop.md) |
 | X6 | CrazyGames readiness: current rules read, honest verdict, base-game upload zip | verified | Go for Basic Launch. [release/crazygames/README.md](release/crazygames/README.md) cites docs.crazygames.com and the 18.08.2025 terms; `build.py` writes a 3-file, 444 KB zip with no editor, link out or open-world.gg call; [zip played offline and with SDK at 375/1440](qa/crazygames/zip.log). |
 | X7 | Create the CrazyGames developer account, upload the zip and submit Basic Launch | owner | Exact steps in [release/crazygames/README.md](release/crazygames/README.md#owner-steps-exact). New third-party account and terms, so the owner's click. |
+| X8 | Remix landing toast does not cover the ideas card | open | At 375 the 3 s "Remix: describe a change..." toast sits over two idea buttons ([screenshot](qa/share-loop/live/remix-375.jpg)). Fix: show the toast only when the ideas card stays hidden after the allowance check. |
 
 ## Remaining buildable work
 
@@ -69,7 +70,7 @@ Shared inherited credential and provider-budget actions stay in the portfolio le
 
 ## Log (last10)
 
-- 2026-11-03 - Growth X5/X6: shared game pages get Made with, Remix this (opens the editor on that version; first edit branches a private copy) and one-tap share; the post-edit share prompt uses the same share. CrazyGames research says go for Basic Launch; portal zip built and played offline. No AI edit, account, variable or spend.
+- 2026-11-03 - Growth X5/X6: shared game pages get Made with, Remix this (opens the editor on that version; first edit branches a private copy) and one-tap share; the post-edit share prompt uses the same share. PR #18 (799e077) deployed as f87ceabd SUCCESS; live 375/1440 check passes. CrazyGames research says go for Basic Launch; portal zip built and played offline. No AI edit, account, variable or spend. X8 toast overlap left open.
 
 - 2026-11-01 - Growth X4: one-click AI edit ideas over the game for new visitors, plain free-edit count, progress and a share prompt. 73 unittest/8 node cases, synthetic 375/1440 states, hosted CI; deployed 97ea2a97 from 625a53d; live 375/1440 card and one real included edit saved privately. Caps and funding unchanged.
 

@@ -1,0 +1,9 @@
+# 2026-11-03T14:08:47Z live https://open-world.gg after deployment f87ceabd-2a4a-4e14-8393-72ec409ea908 (main 799e077); read-only, every non-GET aborted
+Public game: {"title":"Enchanted Forest","slug":"0cf0e229"}
+375: bar, 44px targets, game below bar, opaque frame, start/HUD and share sheet (https://open-world.gg/shared/0cf0e229) pass
+375: Made with link to home, Remix to /v/2b842403-996f-468b-86e5-d1db82b13518 with old chat cleared and game loaded pass
+375: copy fallback (real clipboard) and manual link box pass; zero page/console errors, zero writes
+1440: bar, 44px targets, game below bar, opaque frame, start/HUD and share sheet (https://open-world.gg/shared/0cf0e229) pass
+1440: Made with link to home, Remix to /v/2b842403-996f-468b-86e5-d1db82b13518 with old chat cleared and game loaded pass
+1440: copy fallback (real clipboard) and manual link box pass; zero page/console errors, zero writes
+Share loop accepted on https://open-world.gg
