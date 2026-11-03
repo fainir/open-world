@@ -22,7 +22,7 @@
       copyLink.value = url; copyBox.hidden = false; copyLink.focus(); copyLink.select();
       let copied = false;
       try { copied = document.execCommand('copy'); } catch (error) { copied = false; }
-      if (copied) say('Link copied');
+      if (copied) { closeCopy(); say('Link copied'); }
     }
   });
   $('ow-copy-done').addEventListener('click', closeCopy);
@@ -32,6 +32,8 @@
   addEventListener('message', event => {
     if (event.source === frame.contentWindow && event.data && event.data.type === 'ow-open-store') location.href = '/';
   });
-  // Keys go to the game as soon as it loads, like the old full-page link.
-  frame.addEventListener('load', () => { if (document.activeElement === document.body) frame.focus(); });
+  // Keys go to the game, like the old full-page link, unless the visitor already moved focus.
+  const focusGame = () => { if (document.activeElement === document.body) frame.focus(); };
+  focusGame();
+  frame.addEventListener('load', focusGame);
 })();
