@@ -396,6 +396,7 @@
       <div class="ow-share-box">
         <input type="text" id="ow-share-link" readonly>
         <button class="ow-share-copy" id="ow-share-copy-btn">Copy</button>
+        <button class="ow-share-copy" id="ow-share-native" hidden>Share</button>
       </div>
       <div class="ow-share-copied" id="ow-share-copied">Copied to clipboard!</div>
     </div>
@@ -426,6 +427,7 @@
   <div id="ow-toast" role="status"></div>
 </div>
 
+<script src="/static/js/share-link.js" defer></script>
 <script id="ow-overlay-script">
 (function(){
 'use strict';
@@ -452,6 +454,10 @@ const fab=$('ow-fab'),panel=$('ow-panel'),msgs=$('ow-messages'),input=$('ow-inpu
   apiKeyInput=$('ow-api-key'),apikeyModalInput=$('ow-apikey-input');
 
 // ── State ──
+// "Remix this" on a shared game lands on /v/<id>?remix=1: start a new chat from that version,
+// the same way the store's Play does, so the first edit branches a private copy.
+const remixing=/^\/v\/[a-f0-9-]+$/.test(location.pathname)&&new URLSearchParams(location.search).get('remix')==='1';
+if(remixing){localStorage.removeItem(SK.SESSION);history.replaceState(history.state,'',location.pathname)}
 let sessionId=localStorage.getItem(SK.SESSION);
 let currentVersionId=localStorage.getItem(SK.VERSION);
 let panelOpen=false;
@@ -900,9 +906,22 @@ async function handleShare(versionId,btn){
     const d=await r.json();if(!r.ok)throw new Error(d.detail||'Share failed');
     btn.textContent='Shared!';btn.style.color='#34d399';mp('version_shared');
     $('ow-share-link').value=location.origin+'/shared/'+d.share_slug;
-    $('ow-share-modal').classList.add('ow-show');
-    return true;
   }catch(e){showToast('Error: '+e.message);return false}
+  await shareOut();
+  return true;
+}
+// One-tap share, the same as on the shared game page: the share sheet, else copy the link.
+// The dialog with the link opens only when nothing else worked or to show what was copied.
+const SHARE_TEXT='Play the version of this 3D game I made with AI on OpenWorld';
+$('ow-share-native').hidden=!navigator.share;
+async function shareOut(){
+  const url=$('ow-share-link').value,note=$('ow-share-copied');
+  const result=window.OWShare?await window.OWShare(url,'My OpenWorld game',SHARE_TEXT):'manual';
+  if(result==='shared'){showToast('Thanks for sharing!');return}
+  if(result==='cancelled')return;
+  note.textContent=result==='copied'?'Link copied. Paste it anywhere.':'Copy the link above to share it.';
+  note.style.display='block';
+  $('ow-share-modal').classList.add('ow-show');
 }
 
 async function handleSuggest(versionId,btn){
@@ -933,13 +952,14 @@ async function handlePublish(versionId,btn){
 }
 
 $('ow-share-close').onclick=()=>$('ow-share-modal').classList.remove('ow-show');
-$('ow-share-copy-btn').onclick=()=>{
-  const inp=$('ow-share-link');inp.select();
-  navigator.clipboard.writeText(inp.value).then(()=>{
-    $('ow-share-copied').style.display='block';showToast('Link copied!');
-    setTimeout(()=>$('ow-share-copied').style.display='none',2000);
-  });
+$('ow-share-copy-btn').onclick=async()=>{
+  const inp=$('ow-share-link'),note=$('ow-share-copied');inp.select();
+  let copied=false;
+  try{await navigator.clipboard.writeText(inp.value);copied=true}catch{try{copied=document.execCommand('copy')}catch{}}
+  note.textContent=copied?'Copied to clipboard!':'Select the link and copy it.';note.style.display='block';
+  if(copied)showToast('Link copied!');
 };
+$('ow-share-native').onclick=()=>{$('ow-share-modal').classList.remove('ow-show');shareOut()};
 
 // ── Versions Modal ──
 $('ow-btn-versions').onclick=showVersionsModal;
@@ -1186,6 +1206,7 @@ if(savedKey){apiKeyInput.value=savedKey;apikeyModalInput.value=savedKey}
 restoreChatHistory();
 updateAuthUI();
 loadGame();
+if(remixing)showToast('Remix: describe a change and it becomes your own copy.');
 if(new URLSearchParams(location.search).get('signin')==='1'&&!Auth.isLoggedIn())$('ow-auth-modal').classList.add('ow-show');
 
 // Landscape is forced via CSS rotation in index.html — no orientation lock needed

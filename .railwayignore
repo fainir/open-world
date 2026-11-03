@@ -19,3 +19,4 @@ qa/
 .runtime/
 .github/
 .claude/
+release/

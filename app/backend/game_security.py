@@ -47,6 +47,74 @@ def shared_game_head(share_slug, title, description):
         '<meta %s="%s" content="%s">' % (kind, key, escape(value, quote=True)) for kind, key, value in values)
 
 
+# The shared page is ours, not the game's: no inline script, and it can only frame our own game URL.
+SHARED_PAGE_CSP = (
+    "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:; "
+    "frame-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
+
+
+def shared_page_response(share_slug, title, description):
+    """One shared game: the game keeps its opaque frame and the share bar stays outside it.
+
+    Only the version's public title and description are used, always escaped, and no
+    studio script or storage key is part of this page.
+    """
+    slug = quote(str(share_slug), safe='')
+    name = escape(_share_text(title, 90) or SHARED_TITLE_FALLBACK, quote=True)
+    page = ('<!doctype html><html lang="en"><head>' + shared_game_head(share_slug, title, description) +
+            '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+            '<title>' + name + ' - OpenWorld</title>'
+            '<link rel="canonical" href="' + PUBLIC_ORIGIN + '/shared/' + slug + '">'
+            '<style>' + SHARED_PAGE_STYLE + '</style>'
+            '<script src="/static/js/share-link.js" defer></script><script src="/static/js/shared.js" defer></script>'
+            '</head><body>'
+            '<header class="ow-bar">'
+            '<a class="ow-made" href="/"><span>Made with <strong>OpenWorld</strong> - make your own</span></a>'
+            '<nav class="ow-actions" aria-label="This game">'
+            '<a class="ow-btn ow-remix" id="ow-remix" href="/remix/' + slug + '">Remix this</a>'
+            '<button type="button" class="ow-btn ow-share" id="ow-share">Share</button>'
+            '</nav></header>'
+            '<main class="ow-game"><iframe id="ow-game" title="' + name + '" src="/game/shared/' + slug + '" '
+            'allowfullscreen sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer"></iframe></main>'
+            '<div class="ow-copy" id="ow-copy" hidden><label for="ow-copy-link">Copy this link to share the game</label>'
+            '<div class="ow-copy-row"><input id="ow-copy-link" readonly>'
+            '<button type="button" class="ow-btn ow-share" id="ow-copy-done">Done</button></div></div>'
+            '<p class="ow-status" id="ow-status" role="status" aria-live="polite"></p>'
+            '</body></html>')
+    return HTMLResponse(page, headers={
+        "Content-Security-Policy": SHARED_PAGE_CSP,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+    })
+
+
+SHARED_PAGE_STYLE = (
+    "html,body{margin:0;height:100%;background:#0b0e14;color:#e8ecf0;font:14px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif}"
+    "body{display:flex;flex-direction:column;height:100dvh;overflow:hidden}"
+    ".ow-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:52px;box-sizing:border-box;"
+    "padding:4px max(8px,env(safe-area-inset-right)) 4px max(8px,env(safe-area-inset-left));background:#0b0e14;border-bottom:1px solid #232a36}"
+    ".ow-made{display:flex;align-items:center;min-height:44px;min-width:0;color:#c5cddb;font-size:13px;text-decoration:none}"
+    ".ow-made strong{color:#fff}.ow-made:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}"
+    ".ow-actions{display:flex;gap:8px;flex:none}"
+    ".ow-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;box-sizing:border-box;padding:0 14px;"
+    "border-radius:10px;border:0;font-weight:600;font-size:14px;line-height:1;font-family:inherit;text-decoration:none;cursor:pointer;white-space:nowrap}"
+    ".ow-remix{background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff}.ow-remix:hover{filter:brightness(1.12)}"
+    ".ow-share{background:#e0e4ea;color:#111}.ow-share:hover{background:#fff}"
+    "a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #a9c6ff;outline-offset:2px}"
+    ".ow-game{flex:1;min-height:0}.ow-game iframe{display:block;width:100%;height:100%;border:0}"
+    ".ow-copy{position:fixed;z-index:2;top:60px;right:8px;width:min(420px,calc(100vw - 16px));box-sizing:border-box;padding:12px;"
+    "background:#141923;border:1px solid #3a4456;border-radius:12px;box-shadow:0 10px 32px rgba(0,0,0,.5)}"
+    ".ow-copy[hidden]{display:none}.ow-copy label{display:block;margin-bottom:8px;color:#c5cddb}"
+    ".ow-copy-row{display:flex;gap:8px}.ow-copy-row input{flex:1;min-width:0;min-height:44px;box-sizing:border-box;padding:0 10px;"
+    "background:#0b0e14;border:1px solid #3a4456;border-radius:8px;color:#e8ecf0;font:13px ui-monospace,monospace}"
+    ".ow-status{position:fixed;z-index:3;top:60px;left:50%;transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;"
+    "background:#e0e4ea;color:#111;font-weight:600;pointer-events:none}.ow-status:empty{display:none}"
+    "@media(max-width:420px){.ow-made{font-size:12px}.ow-btn{padding:0 12px}}"
+)
+
+
 def game_response(path, head=''):
     html = Path(path).read_text(encoding='utf-8')
     legacy_store = """fetch('/api/store/random-slug').then(r=>r.json()).then(d=>{

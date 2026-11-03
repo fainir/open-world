@@ -88,11 +88,18 @@ class PrivateAccess(unittest.IsolatedAsyncioTestCase):
     async def test_sharing_exposes_only_game_and_public_metadata(self):
         r=await self.client.post('/api/versions/share',json={'version_id':self.version.id},headers=self.owner_headers)
         self.assertEqual(r.status_code,200);slug=r.json()['share_slug'];self.assertEqual(len(slug),32)
-        for path in ['/shared/'+slug,'/game/shared/'+slug,'/game/version/'+self.version.id]:
+        for path in ['/game/shared/'+slug,'/game/version/'+self.version.id]:
             r=await self.client.get(path);self.assertEqual(r.status_code,200)
             self.assertIn('sandbox allow-scripts allow-pointer-lock',r.headers['content-security-policy'])
             self.assertNotIn('allow-same-origin',r.headers['content-security-policy'])
             self.assertNotIn('ow_token',r.text);self.assertNotIn('ow_api_key',r.text)
+        # The shared page is a small first-party page: the game runs only in its opaque frame.
+        r=await self.client.get('/shared/'+slug);self.assertEqual(r.status_code,200);csp=r.headers['content-security-policy']
+        self.assertIn("script-src 'self';",csp);self.assertIn("frame-src 'self'",csp);self.assertIn("frame-ancestors 'none'",csp)
+        self.assertNotIn('PRIVATE_SYNTHETIC_GAME',r.text);self.assertNotIn('onlyGame',r.text)
+        self.assertIn('<iframe id="ow-game" title="A game made in OpenWorld" src="/game/shared/'+slug+'" allowfullscreen sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer">',r.text)
+        for leaked in ['ow_token','ow_api_key','allow-same-origin','overlay',self.version.id,self.session.id]:
+            self.assertNotIn(leaked,r.text)
         self.assertEqual((await self.client.get('/api/chat/history/'+self.session.id)).status_code,404)
         self.assertEqual((await self.client.get('/api/versions/'+self.session.id)).status_code,404)
 
@@ -406,12 +413,13 @@ class SharedGameCards(unittest.IsolatedAsyncioTestCase):
                     'twitter:card': 'summary_large_image'}
         for key, value in expected.items():
             self.assertEqual(doc.meta(key), [value], key)
-        self.assertIn('PRIVATE_SYNTHETIC_GAME', r.text)
-        self.assertLess(r.text.index('og:title'), r.text.index('PRIVATE_SYNTHETIC_GAME'))
+        self.assertIn('<title>Synthetic Lava Run - OpenWorld</title>', r.text)
+        self.assertIn('src="/game/shared/' + slug + '"', r.text)
         for private in ['PRIVATE_SYNTHETIC_CHAT', 'PRIVATE_SYNTHETIC_PROMPT', self.session.id, self.owner.username]:
             self.assertNotIn(private, r.text)
-        self.assertIn('sandbox allow-scripts allow-pointer-lock', r.headers['content-security-policy'])
-        self.assertNotIn('og:title', (await self.client.get('/game/shared/' + slug)).text)
+        game = await self.client.get('/game/shared/' + slug)
+        self.assertIn('PRIVATE_SYNTHETIC_GAME', game.text); self.assertNotIn('og:title', game.text)
+        self.assertIn('sandbox allow-scripts allow-pointer-lock', game.headers['content-security-policy'])
         landing = _Document((await self.client.get('/')).text)
         self.assertEqual(landing.meta('og:title'), ['Open World - a 3D browser game you can change with AI'])
 
@@ -427,8 +435,12 @@ class SharedGameCards(unittest.IsolatedAsyncioTestCase):
         doc = _Document(r.text)
         self.assertEqual(doc.meta('og:title'), [title]); self.assertEqual(doc.meta('twitter:title'), [title])
         self.assertEqual(doc.meta('og:description'), [description])
-        self.assertEqual([t for t, _ in doc.tags if t in ('script', 'img')], ['script', 'script'])
+        # Only the page's own two same-origin scripts; the hostile title stays text everywhere.
+        self.assertEqual([(t, a.get('src')) for t, a in doc.tags if t in ('script', 'img')],
+                         [('script', '/static/js/share-link.js'), ('script', '/static/js/shared.js')])
         self.assertFalse([a for _, a in doc.tags if 'onerror' in a])
+        self.assertEqual([a['title'] for t, a in doc.tags if t == 'iframe'], [title])
+        self.assertIn("script-src 'self';", r.headers['content-security-policy'])
 
     async def test_shared_game_without_title_uses_fallback_and_trims_description(self):
         r = await self.client.post('/api/versions/share', json={'version_id': self.version.id}, headers=self.owner_headers)

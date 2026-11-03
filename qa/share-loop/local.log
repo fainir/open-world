@@ -1,0 +1,9 @@
+# 2026-11-03T13:59:31Z local fixture: one published shared version that is the real base game (no provider)
+Public game: {"title":"Fixture Real City","slug":"228b93d3"}
+375: bar, 44px targets, game below bar, opaque frame, start/HUD and share sheet (http://127.0.0.1:8765/shared/228b93d3) pass
+375: Made with link to home, Remix to /v/3a2533fa-2143-410d-81f5-77e79a1ac32f with old chat cleared and game loaded pass
+375: copy fallback (real clipboard) and manual link box pass; zero page/console errors, zero writes
+1440: bar, 44px targets, game below bar, opaque frame, start/HUD and share sheet (http://127.0.0.1:8765/shared/228b93d3) pass
+1440: Made with link to home, Remix to /v/3a2533fa-2143-410d-81f5-77e79a1ac32f with old chat cleared and game loaded pass
+1440: copy fallback (real clipboard) and manual link box pass; zero page/console errors, zero writes
+Share loop accepted on http://127.0.0.1:8765

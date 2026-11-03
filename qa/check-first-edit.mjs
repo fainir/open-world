@@ -8,7 +8,9 @@ const browser=await chromium.launch({headless:true,executablePath:'/Applications
 const phone={viewport:{width:375,height:812},isMobile:true,hasTouch:true},desktop={viewport:{width:1440,height:900}};
 async function fresh(options,setup){
  const c=await browser.newContext(options),errors=[],posts=[],external=[];let hold=null,fail=null;
- await c.addInitScript(setup=>{if(window!==top)return;localStorage.setItem('openworld.analytics.v1','off');for(const [k,v] of Object.entries(setup||{}))localStorage.setItem(k,v);},setup);
+ // Headless Chrome exposes a share sheet that never opens or settles; check the copy-link dialog here
+ // (qa/check-share-prompt.mjs covers the share sheet with a recorder).
+ await c.addInitScript(setup=>{if(window!==top)return;Object.defineProperty(Navigator.prototype,'share',{configurable:true,value:undefined});localStorage.setItem('openworld.analytics.v1','off');for(const [k,v] of Object.entries(setup||{}))localStorage.setItem(k,v);},setup);
  await c.route('**/*',async route=>{const r=route.request(),u=new URL(r.url());if(u.origin!==base){external.push(u.hostname);return route.abort();}
   if(r.method()==='POST'&&u.pathname.startsWith('/api/')){posts.push({path:u.pathname,body:r.postData()?JSON.parse(r.postData()):null});
    if(u.pathname.startsWith('/api/chat')&&fail){const f=fail;fail=null;return route.fulfill({status:503,json:f});}

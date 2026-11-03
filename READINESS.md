@@ -51,6 +51,14 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 |---|---|---|---|
 | X4 | A new visitor reaches a first AI edit in one click and is asked to share it | verified | [Acceptance](qa/first-edit.md): PR #15 (625a53d) deployed as 97ea2a97 SUCCESS, live equals main. Live 375/1440 card over the real game; one real included edit via "Turn the sky purple" saved private version 2 in 15.3 s with the share prompt and 1 edit left. 73 unittest, 8 node, synthetic 375/1440 states. Weekly read: `POST /api/chat` plus `POST /api/chat/idea`. |
 
+## Share loop and portal - November 3
+
+| ID | Flow or gate | Status | Evidence / next action |
+|---|---|---|---|
+| X5 | A shared game page says "Made with OpenWorld - make your own", has Remix this and one-tap share; the post-edit share prompt uses the same share | built | [Notes](qa/share-loop.md): 81 unittest (6 new share-loop, 2 portal), 13 node; local real-game 375/1440 visitor check ([log](qa/share-loop/local.log)) and synthetic post-edit share prompt ([log](qa/share-loop/prompt.log)) pass with zero writes and zero page errors. Live 375/1440 acceptance is recorded after deploy. |
+| X6 | CrazyGames readiness: current rules read, honest verdict, base-game upload zip | verified | Go for Basic Launch. [release/crazygames/README.md](release/crazygames/README.md) cites docs.crazygames.com and the 18.08.2025 terms; `build.py` writes a 3-file, 444 KB zip with no editor, link out or open-world.gg call; [zip played offline and with SDK at 375/1440](qa/crazygames/zip.log). |
+| X7 | Create the CrazyGames developer account, upload the zip and submit Basic Launch | owner | Exact steps in [release/crazygames/README.md](release/crazygames/README.md#owner-steps-exact). New third-party account and terms, so the owner's click. |
+
 ## Remaining buildable work
 
 No buildable row remains in this scoped release. The limited included beta is deployed and its genuine model/parser/private-save result is accepted with the explicit browser-capture and generated-layout limits above. Earlier gameplay, private data, analytics, contacts and recovery proofs remain valid. Shared owner/provider actions stay in the portfolio ledger.
@@ -60,6 +68,8 @@ No buildable row remains in this scoped release. The limited included beta is de
 Shared inherited credential and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. Hosted CI no longer needs an allowance action. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+- 2026-11-03 - Growth X5/X6: shared game pages get Made with, Remix this (opens the editor on that version; first edit branches a private copy) and one-tap share; the post-edit share prompt uses the same share. CrazyGames research says go for Basic Launch; portal zip built and played offline. No AI edit, account, variable or spend.
 
 - 2026-11-01 - Growth X4: one-click AI edit ideas over the game for new visitors, plain free-edit count, progress and a share prompt. 73 unittest/8 node cases, synthetic 375/1440 states, hosted CI; deployed 97ea2a97 from 625a53d; live 375/1440 card and one real included edit saved privately. Caps and funding unchanged.
 

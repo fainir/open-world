@@ -16,3 +16,6 @@ app/versions/*
 
 .runtime/*.lock
 qa/**/*.webm
+
+# CrazyGames build cache (pinned Three.js files, rebuilt by release/crazygames/build.py)
+release/crazygames/.cache/

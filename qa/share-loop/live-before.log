@@ -1,0 +1,17 @@
+# 2026-11-03T14:02:03Z live https://open-world.gg vs origin/main 82b2e88 served by the same app on synthetic temp data
+SAME / source=afe54cbc46520f67 live=afe54cbc46520f67 bytes=76117
+SAME /terms source=abd6c4b0e49bbeff live=abd6c4b0e49bbeff bytes=2696
+SAME /privacy source=42a87ca0aa4cebf5 live=42a87ca0aa4cebf5 bytes=11457
+SAME /contact source=b75a9281239aa49b live=b75a9281239aa49b bytes=5427
+SAME /account source=1ea603f945db7059 live=1ea603f945db7059 bytes=2937
+SAME /rosebud-alternative source=7da8a694001ffe9e live=7da8a694001ffe9e bytes=12674
+SAME /static/analytics.js source=d4f630cd1bfd2bdd live=d4f630cd1bfd2bdd bytes=9268
+SAME /static/js/auth.js source=58bd1371a88a363b live=58bd1371a88a363b bytes=2090
+SAME /static/css/styles.css source=75ce12944fd83fe1 live=75ce12944fd83fe1 bytes=18771
+SAME /robots.txt source=f14a4785763c96a7 live=f14a4785763c96a7 bytes=67
+SAME /sitemap.xml source=792062c48b36f369 live=792062c48b36f369 bytes=331
+ALL SAME
+# before: live /shared/0cf0e229 is the bare game document
+HTTP/2 200 
+content-security-policy: sandbox allow-scripts allow-pointer-lock; default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'unsafe-inline'; img-src data: blob:; connect-src https://cdn.jsdelivr.net https://unpkg.com; font-src data:; media-src blob:; worker-src blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'self'
+# before: /remix/0cf0e229 -> 302 https://open-world.gg/
