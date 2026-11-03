@@ -39,7 +39,7 @@ from app.backend.auth import (
     verify_password,
 )
 from app.backend.access import guest_hash, require_session, require_version, claim_session
-from app.backend.game_security import game_response, studio_shell, game_error_response, shared_game_head, PUBLIC_ORIGIN
+from app.backend.game_security import game_response, studio_shell, game_error_response, shared_page_response, PUBLIC_ORIGIN
 from app.backend.request_limits import boundaries
 from app.backend.recovery import snapshot, health as recovery_health, PUBLICATION_LOCK, reconcile_deleted_accounts
 from app.backend.accounts import export_account, delete_account, account_action
@@ -1361,9 +1361,7 @@ def rosebud_alternative_page():
     return FileResponse(os.path.join(STATIC_DIR, 'rosebud-alternative.html'), media_type='text/html')
 
 
-@app.get("/shared/{share_slug}")
-def shared_page(share_slug: str, db: Session = Depends(get_db)):
-    """Serve the shared game as a standalone page (no overlay)."""
+def _shared_version(db, share_slug):
     version = (
         db.query(GameVersion)
         .filter(GameVersion.share_slug == share_slug, GameVersion.is_shared == True)
@@ -1371,13 +1369,24 @@ def shared_page(share_slug: str, db: Session = Depends(get_db)):
     )
     if not version:
         raise HTTPException(status_code=404, detail="Shared game not found")
-    path = os.path.join(VERSIONS_DIR, version.file_path)
-    if not os.path.exists(path):
+    if not os.path.exists(os.path.join(VERSIONS_DIR, version.file_path)):
         raise HTTPException(status_code=404, detail="Game file not found")
-    with open(path, "r", encoding="utf-8") as f:
-        game_html = f.read()
-    # Only this explicitly shared version's public title and description reach the share card.
-    return game_response(path, shared_game_head(version.share_slug, version.publish_title, version.description))
+    return version
+
+
+@app.get("/shared/{share_slug}")
+def shared_page(share_slug: str, db: Session = Depends(get_db)):
+    """A shared game with the Made with, Remix and Share bar; the game runs in its opaque frame."""
+    version = _shared_version(db, share_slug)
+    # Only this explicitly shared version's public title and description reach the page and card.
+    return shared_page_response(version.share_slug, version.publish_title, version.description)
+
+
+@app.get("/remix/{share_slug}")
+def remix_shared(share_slug: str, db: Session = Depends(get_db)):
+    """Open the editor on a shared game. The first edit branches a new private copy of it."""
+    version = _shared_version(db, share_slug)
+    return RedirectResponse(url=f"/v/{version.id}?remix=1", status_code=302)
 
 
 @app.get("/{path:path}")
