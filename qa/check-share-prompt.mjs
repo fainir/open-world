@@ -29,7 +29,7 @@ try{for(const [width,mode,options] of runs){
   assert.equal(await p.evaluate(()=>navigator.clipboard.readText()),link);
   assert.equal(await p.locator('#ow-share-native').isVisible(),false,'no Share button without a share sheet');
  }
- await p.screenshot({path:`${out}/share-prompt-${width}.png`});
+ await p.screenshot({path:`${out}/share-prompt-${width}.jpg`,type:'jpeg',quality:75});
  // The shared link it hands out opens the shared page with its bar.
  await p.goto(link);await p.getByRole('link',{name:'Remix this'}).waitFor();
  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await c.close();

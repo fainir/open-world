@@ -1,0 +1,16 @@
+# 2026-11-03T13:58:20Z unzip each zip into an empty folder, serve on 127.0.0.1, play at 375 (touch) and 1440
+# plain zip sha256 392bf122ec3cb4dcf2aa7dda97c4c3c6bf6d24443f3c39f7c8587163cfca6f03 size 443551
+# sdk zip   sha256 0e32b87a2e764f78e8a40ee1682d3369bba4048995568b777e3e1e2b547bd1a6 size 443938
+# served folder matches the committed plain zip
+# served folder matches the committed SDK zip
+## offline
+375 offline: start screen, one-tap/click start, HUD, vehicle menu, no portal marker, no fullscreen grab, no manifest; outside hosts: none; zero page/console errors
+1440 offline: start screen, one-tap/click start, HUD, movement, no portal marker, no fullscreen grab, no manifest; outside hosts: none; zero page/console errors
+## sdk-fake
+375 sdk-fake: start screen, one-tap/click start, HUD, touch play, no portal marker, no fullscreen grab, no manifest; outside hosts: sdk.crazygames.com; zero page/console errors
+1440 sdk-fake: start screen, one-tap/click start, HUD, movement, no portal marker, no fullscreen grab, no manifest; outside hosts: sdk.crazygames.com; zero page/console errors
+## sdk-real
+375: real SDK environment local
+375 sdk-real: start screen, one-tap/click start, HUD, touch play, no portal marker, no fullscreen grab, no manifest; outside hosts: sdk.crazygames.com; zero page/console errors
+1440: real SDK environment local
+1440 sdk-real: start screen, one-tap/click start, HUD, movement, no portal marker, no fullscreen grab, no manifest; outside hosts: sdk.crazygames.com; zero page/console errors

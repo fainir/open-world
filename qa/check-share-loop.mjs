@@ -55,7 +55,7 @@ try{for(const [width,options] of widths){
  const g=p.frameLocator('#ow-game');await g.locator('#overlay').waitFor({state:'visible'});await g.locator('canvas').waitFor({state:'attached'});
  assert.equal(await g.locator('body').evaluate(()=>{try{parent.localStorage.getItem('ow_token');return 'readable'}catch{return 'blocked'}}),'blocked');
  if(width===1440)await p.waitForFunction(()=>document.activeElement&&document.activeElement.id==='ow-game',null,{timeout:30000});// keys go to the game
- await p.screenshot({path:`${out}/shared-${width}.png`});
+ await p.screenshot({path:`${out}/shared-${width}.jpg`,type:'jpeg',quality:75});
  await share.click();await p.waitForFunction(()=>window.__shares.length===1);
  const sent=await p.evaluate(()=>window.__shares[0]);assert.equal(sent.url,shareUrl);assert.equal(sent.title,game.title||'A game made in OpenWorld');
  assert.equal(await p.locator('#ow-copy').isVisible(),false);
@@ -64,7 +64,7 @@ try{for(const [width,options] of widths){
  else await g.locator('#overlay').click();
  await g.locator('#overlay').waitFor({state:'hidden'});assert.equal(await g.locator('#hud').evaluate(el=>getComputedStyle(el).display),'block');
  if(await g.locator('body').evaluate(()=>!!document.fullscreenElement))await g.locator('body').evaluate(()=>document.exitFullscreen());
- await p.waitForTimeout(1500);await p.screenshot({path:`${out}/shared-playing-${width}.png`});
+ await p.waitForTimeout(1500);await p.screenshot({path:`${out}/shared-playing-${width}.jpg`,type:'jpeg',quality:75});
  console.log(`${width}: bar, 44px targets, game below bar, opaque frame, start/HUD and share sheet (${sent.url}) pass`);
  // 2. Made with OpenWorld goes to the home page.
  await p.getByRole('link',{name:'Made with OpenWorld - make your own'}).click();await p.waitForURL(base+'/');
@@ -76,20 +76,20 @@ try{for(const [width,options] of widths){
  await p.locator('#ow-toast.ow-show',{hasText:'Remix: describe a change and it becomes your own copy.'}).waitFor();
  await p.frameLocator('#ow-game').locator('canvas').waitFor({state:'attached'});
  await p.locator('#ow-vdrop-btn',{hasText:game.title||game.description}).waitFor();
- await p.screenshot({path:`${out}/remix-${width}.png`});
+ await p.screenshot({path:`${out}/remix-${width}.jpg`,type:'jpeg',quality:75});
  assert.deepEqual(a.writes,[],'no writes');assert.deepEqual([...a.external],[]);
  assert.deepEqual(a.errors,[],'no page or console errors');await a.c.close();
  console.log(`${width}: Made with link to home, Remix to /v/${game.id} with old chat cleared and game loaded pass`);
  // 4. No share sheet: the link is copied (real clipboard).
  const b=await open(options,'copy');await bar(b.p,width);await b.p.getByRole('button',{name:'Share',exact:true}).click();
  await b.p.locator('#ow-status',{hasText:'Link copied'}).waitFor();assert.equal(await b.p.evaluate(()=>navigator.clipboard.readText()),shareUrl);
- await b.p.screenshot({path:`${out}/copied-${width}.png`});assert.deepEqual(b.errors,[]);assert.deepEqual(b.writes,[]);await b.c.close();
+ await b.p.screenshot({path:`${out}/copied-${width}.jpg`,type:'jpeg',quality:75});assert.deepEqual(b.errors,[]);assert.deepEqual(b.writes,[]);await b.c.close();
  // 5. Clipboard blocked too: the link is shown, selected, to copy by hand.
  const d=await open(options,'blocked');await bar(d.p,width);await d.p.getByRole('button',{name:'Share',exact:true}).click();
  await d.p.locator('#ow-copy').waitFor({state:'visible'});assert.equal(await d.p.locator('#ow-copy-link').inputValue(),shareUrl);
  assert.equal(await d.p.evaluate(()=>document.activeElement.id),'ow-copy-link');
  const box=await d.p.locator('#ow-copy').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width,'copy box fits');
- await d.p.screenshot({path:`${out}/copy-box-${width}.png`});await d.p.keyboard.press('Escape');await d.p.locator('#ow-copy').waitFor({state:'hidden'});
+ await d.p.screenshot({path:`${out}/copy-box-${width}.jpg`,type:'jpeg',quality:75});await d.p.keyboard.press('Escape');await d.p.locator('#ow-copy').waitFor({state:'hidden'});
  assert.deepEqual(d.errors,[]);assert.deepEqual(d.writes,[]);await d.c.close();
  console.log(`${width}: copy fallback (real clipboard) and manual link box pass; zero page/console errors, zero writes`);
 }}finally{await browser.close();}
