@@ -104,6 +104,7 @@ try {
       assert.equal(await iframe.getAttribute('sandbox'), 'allow-scripts allow-pointer-lock');
       const status = delayed.frame.getByText('Loading game…', { exact: true });
       await status.waitFor({ state: 'visible' });
+      assert.equal(await status.evaluate(element => getComputedStyle(element).color), 'rgb(255, 255, 255)');
       assert.equal(await delayed.frame.locator('#ow-base-play').isVisible(), false);
       assert.equal(await delayed.frame.locator('#ow-base-retry').isVisible(), false);
       if (width === 375) await status.tap();
@@ -125,7 +126,9 @@ try {
       await failed.page.goto(origin, { waitUntil: 'commit' });
       const retry = failed.frame.getByRole('button', { name: 'Retry', exact: true });
       await retry.waitFor({ state: 'visible' });
-      assert.equal(await failed.frame.getByText('The game could not load.', { exact: true }).isVisible(), true);
+      const errorMessage = failed.frame.getByText('The game could not load.', { exact: true });
+      assert.equal(await errorMessage.isVisible(), true);
+      assert.equal(await errorMessage.evaluate(element => getComputedStyle(element).color), 'rgb(255, 255, 255)');
       assert.equal(await failed.frame.locator('#ow-base-play').isVisible(), false);
       if (width === 375) await failed.page.screenshot({ path: join(evidenceDir, 'game-retry-375.jpg'), type: 'jpeg', quality: 80 });
       if (width === 375) await retry.tap();

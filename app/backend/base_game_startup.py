@@ -8,6 +8,7 @@ MODULE_END = '</script>\n</body>\n</html>'
 
 STARTUP = '''<style>
 #overlay:has(#ow-base-status:not([hidden])){cursor:default}
+#overlay #ow-base-status{color:#fff;text-align:center;margin:0 16px 12px}
 #overlay .ow-base-action{min-height:44px;padding:8px 16px;border:1px solid #8396af;
 border-radius:8px;background:#203550;color:#fff;font:inherit;cursor:pointer;animation:none}
 #overlay .ow-base-action:focus-visible{outline:3px solid #a9c6ff;outline-offset:3px}
