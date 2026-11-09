@@ -4,6 +4,8 @@ from pathlib import Path
 from urllib.parse import quote
 from fastapi.responses import HTMLResponse
 
+from app.backend.base_game_startup import with_base_startup
+
 PUBLIC_ORIGIN = 'https://open-world.gg'
 # No per-game screenshot is stored yet, so every shared game uses the landing card.
 SHARE_IMAGE = PUBLIC_ORIGIN + '/static/og-card.png'
@@ -115,8 +117,10 @@ SHARED_PAGE_STYLE = (
 )
 
 
-def game_response(path, head=''):
+def game_response(path, head='', *, base_demo=False):
     html = Path(path).read_text(encoding='utf-8')
+    if base_demo:
+        html = with_base_startup(html)
     legacy_store = """fetch('/api/store/random-slug').then(r=>r.json()).then(d=>{
           if(d.share_slug)window.location.href='/shared/'+d.share_slug;
           else showTip('No published games yet!');
