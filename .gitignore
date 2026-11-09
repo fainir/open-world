@@ -9,6 +9,7 @@ CLAUDE.local.md
 app/.env
 .mcp.json
 app/venv/
+.venv-ci/
 **/__pycache__/
 app/data/
 app/versions/*

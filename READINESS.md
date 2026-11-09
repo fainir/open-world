@@ -6,7 +6,7 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 
 | ID | Flow or gate | Status | Evidence / next action |
 |---|---|---|---|
-| F1 | Start/play the base and Sonnet-generated game, move and use vehicle selector | verified | A/openworld-production-browser-playback.json |
+| F1 | Start and play the base and Sonnet-generated game, move and use the vehicle selector | verified | A/openworld-production-browser-playback.json. [Base startup regression](qa/check-game-startup.mjs) exercises delayed dependencies, failed imports and Retry, one first tap and keyboard play at 375 px and 1440 px. |
 | F2 | Private sessions, versions and chat belong only to their caller | verified | A/openworld-live-canary.json; A/openworld-security-tests.log |
 | F3 | Generate a complete edit, retain prior version, reload and explicitly share | verified | A/openworld-sonnet-live-canary.json; A/openworld-production-browser-playback.json |
 | F4 | Game sandbox cannot access studio credentials/storage or privileged actions | verified | A/openworld-production-recovery.json; A/openworld-live-canary.json |

@@ -1,0 +1,60 @@
+"""Expose the first-party game's Start control after its module initializes."""
+
+PROMPT = '<div class="click">Click or press anything to start</div>'
+MODULE = '<script type="module">'
+START_GAME = 'function startGame(){\n'
+KEYBOARD_START = "document.addEventListener('keydown',()=>{if(overlay.style.display!=='none'&&!gameStarted)startGame()},{once:true});"
+MODULE_END = '</script>\n</body>\n</html>'
+
+STARTUP = '''<style>
+#overlay:has(#ow-base-status:not([hidden])){cursor:default}
+#overlay .ow-base-action{min-height:44px;padding:8px 16px;border:1px solid #8396af;
+border-radius:8px;background:#203550;color:#fff;font:inherit;cursor:pointer;animation:none}
+#overlay .ow-base-action:focus-visible{outline:3px solid #a9c6ff;outline-offset:3px}
+</style>
+<p id="ow-base-status" role="status">Loading game…</p>
+<button type="button" id="ow-base-play" class="click ow-base-action" hidden>Start game</button>
+<button type="button" id="ow-base-retry" class="ow-base-action" hidden>Retry</button>
+<script>
+(() => {
+  const status = document.getElementById('ow-base-status');
+  const play = document.getElementById('ow-base-play');
+  const retry = document.getElementById('ow-base-retry');
+  window.addEventListener('error', event => {
+    if (play.hidden && (event.target?.id === 'ow-base-module' || event instanceof ErrorEvent)) {
+      status.textContent = 'The game could not load.';
+      retry.hidden = false;
+    }
+  }, true);
+  document.addEventListener('ow-base-ready', () => {
+    status.hidden = true;
+    retry.hidden = true;
+    play.hidden = false;
+  }, { once: true });
+  const stopGameInput = event => event.stopPropagation();
+  play.addEventListener('keydown', stopGameInput);
+  retry.addEventListener('keydown', stopGameInput);
+  retry.addEventListener('touchstart', stopGameInput);
+  retry.addEventListener('click', event => {
+    event.stopPropagation();
+    location.reload();
+  });
+})();
+</script>'''
+
+
+def with_base_startup(html: str) -> str:
+    # The persisted owner template can predate a deploy. Match its known
+    # startup shape before inserting anything into the response.
+    markers = (PROMPT, MODULE, START_GAME, KEYBOARD_START, MODULE_END)
+    if any(html.count(marker) != 1 for marker in markers):
+        return html
+    prompt, module, start, keys, end = (html.index(marker) for marker in markers)
+    if not prompt < module < start < keys < end or html.find('</script>', module) != end:
+        return html
+    html = html.replace(PROMPT, STARTUP, 1)
+    html = html.replace(MODULE, '<script type="module" id="ow-base-module">', 1)
+    html = html.replace(START_GAME, START_GAME + "  if(document.getElementById('ow-base-play').hidden)return;\n", 1)
+    # The native button handles Enter and Space without catching Tab or Escape.
+    html = html.replace(KEYBOARD_START, '', 1)
+    return html.replace(MODULE_END, "document.dispatchEvent(new Event('ow-base-ready'));\n" + MODULE_END, 1)

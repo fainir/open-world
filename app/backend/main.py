@@ -1185,7 +1185,7 @@ def serve_base_game():
     path = get_base_game_path()
     if not os.path.exists(path):
         return game_error_response()
-    return game_response(path)
+    return game_response(path, base_demo=True)
 
 
 @app.get("/game/version/{version_id}")
