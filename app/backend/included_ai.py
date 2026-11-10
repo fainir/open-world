@@ -41,8 +41,12 @@ def digest(kind, value):
     return hmac.new(SECRET_KEY.encode(), ('openworld:' + kind + ':' + value).encode(), hashlib.sha256).hexdigest()
 
 
+def actor_id(user, guest):
+    return digest('actor', 'account:' + user.id if user else 'guest:' + guest)
+
+
 def identities(request, user, guest):
-    actor = digest('actor', 'account:' + user.id if user else 'guest:' + guest)
+    actor = actor_id(user, guest)
     address = request.client.host if request.client else 'unknown'
     if os.environ.get('RAILWAY_ENVIRONMENT_ID'):
         # Public Railway ingress overwrites this header. Private/internal hosts

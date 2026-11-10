@@ -26,6 +26,7 @@ from app.backend.models import (
     ChatMessage,
     GameVersion,
     ContactMessage,
+    IncludedCreation,
     Star,
 )
 from app.backend.auth import (
@@ -582,6 +583,35 @@ def creation_allowance(request: Request, db: Session = Depends(get_db), user: Op
     return JSONResponse({'enabled': enabled, 'remaining': remaining,
         'daily_limit': included_ai.ACTOR_LIMIT, 'shared_availability': True, 'text_only': True},
         headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/creation-result')
+def creation_result(request: Request, db: Session = Depends(get_db),
+                    user: Optional[User] = Depends(get_current_user_optional)):
+    headers = {'Cache-Control': 'no-store'}
+    missing = HTTPException(404, 'Creation not found', headers=headers)
+    proof = guest_hash(request)
+    if not user and not proof:
+        raise missing
+    try:
+        reference = uuid.UUID(request.headers.get('x-openworld-creation', ''))
+    except ValueError:
+        raise missing from None
+    if reference.version != 4:
+        raise missing
+    record = db.get(IncludedCreation, str(reference))
+    if not record or record.actor != included_ai.actor_id(user, proof):
+        raise missing
+    result = {'status': record.status}
+    if record.status == 'complete' and record.version_id:
+        try:
+            version = require_version(db, record.version_id, request, user)
+        except HTTPException:
+            raise missing from None
+        if version.session_id != record.session_id:
+            raise missing
+        result['version_id'] = version.id
+    return JSONResponse(result, headers=headers)
 
 
 async def _api_chat_impl(
