@@ -6,7 +6,8 @@ from unittest.mock import patch
 import test_security
 import httpx
 from app.backend.database import init_db,SessionLocal
-from app.backend.models import IncludedCreation,ChatSession,GameVersion
+from app.backend.models import IncludedCreation,ChatSession,GameVersion,User
+from app.backend.auth import create_access_token
 from app.backend.main import app
 from app.backend import included_ai as beta
 from app.backend.request_limits import _buckets
@@ -24,6 +25,11 @@ class IncludedBeta(unittest.IsolatedAsyncioTestCase):
     def answer(self,reason='end_turn'):
         return SimpleNamespace(stop_reason=reason,content=[SimpleNamespace(type='text',text='<<<SEARCH\nOLD_BETA_MARKER\n===\nNEW_BETA_MARKER\n>>>SEARCH\n<description>A small blue building appeared.</description><suggestions>[]</suggestions>')])
     async def post(self,payload=None,headers=None):return await self.client.post('/api/chat',json=payload or self.payload,headers=headers or self.headers)
+    async def lookup(self,guest=None,reference=None):
+        return await self.client.get('/api/creation-result',headers={
+            'X-OpenWorld-Guest':self.guest if guest is None else guest,
+            'X-OpenWorld-Creation':self.payload['request_id'] if reference is None else reference,
+        })
     async def test_default_off_never_calls_or_consumes(self):
         with patch.object(beta,'generate') as provider,patch('app.backend.agent.anthropic.Anthropic') as direct:
             self.assertFalse((await self.client.get('/api/creation-allowance',headers=self.headers)).json()['enabled'])
@@ -78,12 +84,33 @@ class IncludedBeta(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(provider.call_count,4)
     async def test_unknown_outcome_held_and_never_falls_back(self):
         with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',side_effect=beta.IncludedError('uncertain','Result unknown')) as provider,patch('app.backend.agent.anthropic.Anthropic') as direct:
-            self.assertEqual((await self.post()).status_code,503);self.assertEqual((await self.post()).status_code,409);self.assertEqual(provider.call_count,1);direct.assert_not_called()
+            self.assertEqual((await self.post()).status_code,503)
+            result=await self.lookup()
+            self.assertEqual(result.status_code,200)
+            self.assertEqual(result.json(),{'status':'unknown'})
+            self.assertEqual(result.headers['cache-control'],'no-store')
+            self.assertEqual((await self.post()).status_code,409)
+            self.assertEqual(provider.call_count,1);direct.assert_not_called()
         self.db.expire_all();self.assertEqual(self.db.get(IncludedCreation,self.payload['request_id']).status,'unknown')
     async def test_pre_dispatch_refusal_does_not_consume(self):
         with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',side_effect=beta.IncludedError('budget','Shared beta budget unavailable',dispatched=False)) as provider:
             response=await self.post();self.assertEqual(response.status_code,503);self.assertEqual(response.json()['included_remaining'],2)
             self.assertEqual((await self.post()).status_code,409);self.assertEqual(provider.call_count,1)
+    async def test_saved_result_requires_its_account_and_live_version(self):
+        key=secrets.token_hex(8)
+        owner=User(username='editor'+key,email=key+'@example.invalid',password_hash='unused')
+        self.db.add(owner);self.db.commit()
+        headers={**self.headers,'Authorization':'Bearer '+create_access_token(owner.id),
+                 'X-OpenWorld-Creation':self.payload['request_id']}
+        with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',return_value=self.answer()) as provider:
+            saved=await self.post(headers=headers)
+            self.assertEqual(saved.status_code,200,saved.text)
+            result=await self.client.get('/api/creation-result',headers=headers)
+            self.assertEqual(result.json(),{'status':'complete','version_id':saved.json()['version_id']})
+            self.assertEqual((await self.lookup()).status_code,404)
+            self.db.expire_all();self.db.query(GameVersion).filter_by(id=saved.json()['version_id']).delete();self.db.commit()
+            self.assertEqual((await self.client.get('/api/creation-result',headers=headers)).status_code,404)
+            self.assertEqual(provider.call_count,1)
     async def test_context_boundary_and_refusal_do_not_save_game(self):
         with self.assertRaises(beta.IncludedError) as error:beta.generate('x'*(beta.MAX_CONTEXT_BYTES+1),[{'role':'user','content':'small edit'}],request_id=str(uuid.uuid4()),actor='a'*64,network='b'*64)
         self.assertEqual(error.exception.code,'context_limit');self.assertFalse(error.exception.dispatched)
@@ -103,6 +130,9 @@ class IncludedBeta(unittest.IsolatedAsyncioTestCase):
         with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',side_effect=generate) as provider:
             request=asyncio.create_task(self.post())
             while not started.is_set():await asyncio.sleep(.01)
+            pending=await self.lookup()
+            self.assertEqual(pending.status_code,200)
+            self.assertEqual(pending.json(),{'status':'reserved'})
             request.cancel();release.set()
             try:await request
             except asyncio.CancelledError:pass
@@ -111,6 +141,13 @@ class IncludedBeta(unittest.IsolatedAsyncioTestCase):
                 if record.status=='complete':break
                 await asyncio.sleep(.01)
             self.assertEqual(record.status,'complete')
+            completed=await self.lookup()
+            self.assertEqual(completed.json(),{'status':'complete','version_id':record.version_id})
+            for denied in (await self.lookup(guest=''),await self.lookup(guest=secrets.token_urlsafe(32)),
+                           await self.lookup(reference='bad'),await self.lookup(reference=str(uuid.uuid4()))):
+                self.assertEqual(denied.status_code,404)
+                self.assertEqual(denied.json(),{'detail':'Creation not found'})
+                self.assertEqual(denied.headers['cache-control'],'no-store')
             replay=await self.post();self.assertEqual(replay.status_code,200);self.assertEqual(provider.call_count,1)
 
     async def test_closed_session_is_not_recreated_after_included_call(self):

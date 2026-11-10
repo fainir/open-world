@@ -9,9 +9,10 @@
 </p>
 
 - **Play first.** The game runs without an account.
-- **Change it in plain words.** Each request becomes a new version, private until you share it.
+- **Change it in plain words.** Try an included text edit when the shared allowance is available. Saved changes stay private until you share them.
+- **Pick up an interrupted edit.** Open **Edit Game** and choose **Check previous edit**. If a version saved, open it from the result.
 - **Share and play others' games.** Public games can be played and starred without exposing your chat.
-- **Your own key.** Editing uses your own Anthropic API key, so there is no subscription.
+- **Optional own-key mode.** Choose your own Anthropic key to use provider billing for your edits.
 
 Made by [Nir Feinstein](https://nirfeinste.in). Feedback and bug reports are welcome in [Issues](https://github.com/fainir/open-world/issues).
 
@@ -19,7 +20,7 @@ Made by [Nir Feinstein](https://nirfeinste.in). Feedback and bug reports are wel
 
 Describe a change to the existing browser game, preview a private saved version and explicitly share the game you choose. Live: https://open-world.gg.
 
-The studio uses FastAPI/Python, SQLite, static JavaScript and the existing Three.js game. Normal edits use the existing Sonnet 5.5 configuration with an explicit Opus override; no automatic expensive retry occurs. Users bring their own Anthropic key. Executable games run in an opaque sandbox and cannot read studio credentials, storage or private APIs.
+The studio uses FastAPI/Python, SQLite, static JavaScript and the existing Three.js game. Included text edits use the shared Claude gateway. Own-key edits use the configured Sonnet model or its explicit Opus override. Executable games run in an opaque sandbox separate from studio credentials, storage and private APIs.
 
 ## Run and verify
 
@@ -66,7 +67,7 @@ The persistent account-ID-only deletion log is included in new snapshots. An old
 | SEED_DEMO_STORE | Keep disabled on production; no automatic reseeding |
 | PORT | Existing hosting listener port |
 
-No provider key belongs in source, public metadata, logs or account exports. The source-check workflow runs Python compile, dependency consistency and synthetic tests on pull requests/main changes. Its first hosted run still depends on the existing shared GitHub Actions allowance; no budget increase is made here. Local checks remain the recorded validation until that owner action is complete.
+Keep provider keys private. Run `bash scripts/ci-local.sh` for local dependency checks, Python compilation and synthetic tests.
 
 Current scope and evidence are in [PRODUCT.md](PRODUCT.md) and [READINESS.md](READINESS.md).
 
@@ -77,7 +78,7 @@ Public `/` and `/privacy` have an accessible Analytics choices dialog, off by de
 The analytics script is never included in admin/account/contact or standalone games. Version-editor paths also suppress analytics. `node --test qa/analytics.test.cjs` checks consent, routes, withdrawal and pending-script races without real provider calls. `node qa/check-analytics.mjs <loopback-origin> <installed-playwright-entry>` checks the real public shell with synthetic vendor responses. The coordinator owns public identifier configuration and existing-service rollout; preserve volume, stored games and mirror configuration.
 
 
-Contact, Privacy and Terms/current costs are available from the studio. Play and account features are free; AI edits are bring your own Anthropic key and provider billing, with no OpenWorld paid plan. New contact forms are saved and queued for an operator email; notification state is visible in the existing admin inbox. [Delivery/retry operation](OPERATIONS.md#contact-notifications) keeps historical inbox messages separate and never treats storage as email delivery.
+Contact, Privacy and Terms/current costs are available from the studio. Play and account features are free. Choose an available included text edit or use your own Anthropic key with provider billing. New contact forms are saved and queued for an operator email. The admin inbox shows notification state. [Delivery and retry details](OPERATIONS.md#contact-notifications)
 
 ## License
 
