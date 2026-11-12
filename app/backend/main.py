@@ -1338,6 +1338,13 @@ def serve_home(request: Request):
     return _revalidated_html(request, studio_shell(_load_overlay_html()))
 
 
+@app.get("/play/from-indie-hackers", include_in_schema=False)
+@app.get("/play/from-x", include_in_schema=False)
+def play_from_campaign():
+    """Give each public placement a countable entry into the same guest game."""
+    return RedirectResponse(url="/", status_code=302, headers={"Cache-Control": "no-store"})
+
+
 @app.get("/v/{version_id}")
 def serve_version_with_overlay(version_id: str, request: Request):
     # The shell contains no private game or metadata; the owner-authenticated fetch loads it.

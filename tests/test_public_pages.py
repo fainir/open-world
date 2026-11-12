@@ -21,6 +21,20 @@ class RosebudAlternative(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.client.aclose()
 
+    async def test_campaign_links_open_the_same_public_game(self):
+        for source in ('indie-hackers', 'x'):
+            with self.subTest(source=source):
+                entry = f'/play/from-{source}?next=https://example.com/'
+                response = await self.client.get(entry)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.headers['location'], '/')
+                self.assertEqual(response.headers['cache-control'], 'no-store')
+                self.assertNotIn('set-cookie', response.headers)
+                home = await self.client.get(entry, follow_redirects=True)
+                self.assertEqual(home.status_code, 200)
+                self.assertEqual(home.url.path, '/')
+                self.assertIn('/game/base', home.text)
+
     async def test_page_has_its_own_canonical_metadata_and_required_sections(self):
         r = await self.client.get('/rosebud-alternative')
         self.assertEqual(r.status_code, 200)
