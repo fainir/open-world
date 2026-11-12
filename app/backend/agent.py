@@ -343,7 +343,9 @@ Remember: Use SEARCH/REPLACE blocks to make changes. Then add <description> and 
         current_text += (
             "\nThe current_game_code block is the exact original source. Copy SEARCH text literally, "
             "including indentation and comments; use enough context to occur exactly once inside that block. "
-            "Do not normalize whitespace or replace an abbreviated/imagined CSS section."
+            "Do not normalize whitespace or replace an abbreviated/imagined CSS section. "
+            "For game changes, use the shortest exact unique SEARCH anchors and keep each REPLACE block compact. "
+            "Reuse existing helpers and assets. When editing, return only complete patches and the required tags."
         )
         unique_anchors = [anchor for anchor in ('</head>', '</body>', '</html>') if game_code.count(anchor) == 1]
         if unique_anchors:

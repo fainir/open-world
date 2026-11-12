@@ -598,7 +598,7 @@ document.querySelectorAll('.ow-modal-overlay').forEach((modal,index)=>{
 const funding=$('ow-funding'),includedStatus=$('ow-included-status');
 const previousEditKey='ow_included_request',checkPrevious=$('ow-check-previous'),openPrevious=$('ow-open-previous');
 funding.value=localStorage.getItem(SK.FUNDING)==='byok'?'byok':'included';
-let includedEnabled=false,includedRemaining=0,includedReason='',creationWait=null,recoveredEdit=null;
+let includedEnabled=false,includedRemaining=0,includedReason='',creationWait=null,recoveredEdit=null,failedEdit=null;
 let recoveryViewer=editViewer();
 $('ow-stop-waiting').onclick=()=>creationWait?.abort();
 function previousEdit(){
@@ -609,7 +609,7 @@ function resetEditRecovery(){
   const viewer=editViewer();
   if(viewer===recoveryViewer)return;
   recoveryViewer=viewer;
-  writeStore(sessionStorage,previousEditKey,null);recoveredEdit=null;includedReason='';renderFunding();
+  writeStore(sessionStorage,previousEditKey,null);recoveredEdit=null;failedEdit=null;includedReason='';renderFunding();
 }
 addEventListener('storage',event=>{
   if(event.key===SK.TOKEN||event.key===SK.GUEST||event.key===null)resetEditRecovery();
@@ -618,7 +618,7 @@ function renderFunding(){
   apiKeyInput.closest('.ow-apikey').hidden=funding.value!=='byok';
   includedStatus.textContent=funding.value==='byok'?'Your Anthropic account pays for these requests. Included allowance is untouched.':includedReason||(!includedEnabled?'Included Claude creation is currently unavailable. Play stays free; using your own key is optional.':includedRemaining+' included attempts left in the rolling 24-hour allowance. Text only; shared budget and size limits apply. No signup needed for a guest demo.');
   const reference=previousEdit()?.id;
-  checkPrevious.hidden=funding.value!=='included'||!reference||isProcessing;
+  checkPrevious.hidden=funding.value!=='included'||!reference||failedEdit===reference||isProcessing;
   openPrevious.hidden=checkPrevious.hidden||recoveredEdit?.reference!==reference||recoveredEdit.viewer!==editViewer();
   if(!openPrevious.hidden)openPrevious.href='/v/'+encodeURIComponent(recoveredEdit.version);
   else openPrevious.removeAttribute('href');
@@ -629,6 +629,7 @@ checkPrevious.onclick=async()=>{
   if(!reference||isProcessing||checkPrevious.disabled)return;
   let viewer=editViewer();
   const stillCurrent=()=>previousEdit()?.id===reference&&editViewer()===viewer&&funding.value==='included'&&!isProcessing;
+  const heldFocus=document.activeElement===checkPrevious;
   checkPrevious.disabled=true;recoveredEdit=null;includedReason='Checking your previous edit…';renderFunding();
   try{
     const headers={...Auth.headers(),'X-OpenWorld-Creation':reference};
@@ -646,15 +647,25 @@ checkPrevious.onclick=async()=>{
         reserved:'The previous edit is still in progress. Check again shortly.',
         unknown:'The previous result is unconfirmed. You can keep playing or start a different edit.',
         rejected:'The previous edit stopped before model use. You can try it again.',
-        failed:'The previous edit ended before saving a version. Check your allowance before starting another.',
+        failed:'The previous edit ended before saving. Check your included attempts and try a smaller change.',
         complete:'The previous request finished without a saved edit.'
       };
       includedReason=outcomes[data.status]||'The previous edit status is unavailable.';
-      if(data.status==='rejected'){sessionStorage.removeItem(previousEditKey);if(document.activeElement===checkPrevious)input.focus();}
+      if(data.status==='rejected')sessionStorage.removeItem(previousEditKey);
+      if(data.status==='failed'){
+        failedEdit=reference;
+        if(ideasMode==='failed')ideasEnded(includedReason);
+      }
     }
   }catch{
     if(stillCurrent())includedReason='The previous edit could not be checked. You can check again.';
-  }finally{checkPrevious.disabled=false;renderFunding();}
+  }finally{
+    checkPrevious.disabled=false;renderFunding();
+    const active=document.activeElement;
+    if(heldFocus&&panelOpen&&!isProcessing&&editViewer()===viewer&&(active===checkPrevious||active===document.body)){
+      (checkPrevious.hidden?input:checkPrevious).focus({preventScroll:true});
+    }
+  }
 };
 async function refreshAllowance(){
   try{const response=await fetch('/api/creation-allowance',{headers:Auth.headers(),cache:'no-store'});if(!response.ok)throw Error();const data=await response.json();includedEnabled=data.enabled===true;includedRemaining=Number(data.remaining)||0;}
@@ -670,7 +681,10 @@ async function includedRequestId(message){
   const material=JSON.stringify({message,session_id:sessionId,current_version_id:currentVersionId});
   const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(material)),hash=[...new Uint8Array(bytes)].map(n=>n.toString(16).padStart(2,'0')).join('');
   const previous=previousEdit();
-  if(previous?.hash===hash&&typeof previous.id==='string')return previous.id;
+  if(previous?.hash===hash&&typeof previous.id==='string'){
+    if(failedEdit===previous.id)throw Error('Revise your draft before sending this edit again.');
+    return previous.id;
+  }
   const id=crypto.randomUUID();try{sessionStorage.setItem(previousEditKey,JSON.stringify({id,hash}));}catch{throw Error('This browser cannot preserve a safe creation reference. Enable session storage or choose your own key.');}return id;
 }
 
@@ -823,13 +837,24 @@ async function sendMessage(){
 
   try{
     const headers={'Content-Type':'application/json',...Auth.headers()};
+    const viewer=editViewer();
     const body={message,session_id:sessionId,current_version_id:currentVersionId,funding:included?'included':'byok'};
     if(included)body.request_id=await includedRequestId(message);else body.api_key=apiKey;
     if(imgB64)body.image={data:imgB64,media_type:imgType};
     creationWait=new AbortController();$('ow-stop-waiting').hidden=false;
     const r=await fetch(source==='idea'?'/api/chat/idea':'/api/chat',{method:'POST',headers,body:JSON.stringify(body),signal:creationWait.signal});
     const data=await r.json();
-    if(!r.ok){if(included){includedReason=data.detail||'Included creation could not complete.';if(data.dispatched===false)sessionStorage.removeItem(previousEditKey);renderFunding();}throw new Error(typeof data.detail==='string'?data.detail:'Request failed');}
+    if(!r.ok){
+      if(included&&editViewer()===viewer){
+        includedReason=data.detail||'Included creation could not complete.';
+        if(previousEdit()?.id===body.request_id){
+          if(data.dispatched===false)sessionStorage.removeItem(previousEditKey);
+          else if(r.status===502&&data.code==='invalid_result'&&data.dispatched===true)failedEdit=body.request_id;
+        }
+        renderFunding();
+      }
+      throw new Error(typeof data.detail==='string'?data.detail:'Request failed');
+    }
     if(included)sessionStorage.removeItem(previousEditKey);
 
     thinkEl.remove();
@@ -861,7 +886,8 @@ async function sendMessage(){
     if(imgB64&&!pendingImageB64){pendingImageB64=imgB64;pendingImageType=imgType;imgThumb.src='data:'+imgType+';base64,'+imgB64;imgPreview.style.display='block';}
     if(err.name==='AbortError'){includedReason='Stopped waiting. An already-sent attempt may still finish and count. Keep this draft and check its saved result before a new attempt.';renderFunding();}
     addMsg('assistant','Error: '+(err.name==='AbortError'?'Stopped waiting; this does not cancel or refund an already-dispatched attempt.':err.message));
-    const recovery= included&&previousEdit()?.id?' Open Edit Game and choose Check previous edit.':'';
+    const previous=previousEdit()?.id;
+    const recovery=included&&previous&&failedEdit!==previous?' Open Edit Game and choose Check previous edit.':'';
     ideasEnded((err.name==='AbortError'?'Stopped waiting. The edit may still finish and count.':err.message)+recovery);
     setStatus('Failed','ow-error');setTimeout(()=>setStatus(''),3000);
   }finally{

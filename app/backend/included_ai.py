@@ -138,6 +138,13 @@ def generate(system, messages, *, request_id, actor, network):
         raise IncludedError('outcome_unknown', 'The creation result is uncertain. Check saved versions; this reference will not be sent again.')
     if status != 200 or result.get('ok') is not True:
         code = result.get('error', {}).get('code', 'outcome_unknown')
+        if (status == 502 and result.get('ok') is False and code == 'invalid_result'
+                and result.get('request_id') == request_id and result.get('dispatched') is True):
+            raise IncludedError(
+                'invalid_result',
+                'The included editor could not finish this change. The attempt counted. Try one object or game rule at a time.',
+                dispatched=True, status=502,
+            )
         safe = {
             'invalid_request': 'This request cannot use the included beta. Try a smaller text edit or use your own key.',
             'invalid_signature': 'Included creation is temporarily unavailable. Play stays free.',
