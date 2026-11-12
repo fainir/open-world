@@ -92,6 +92,39 @@ class IncludedBeta(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await self.post()).status_code,409)
             self.assertEqual(provider.call_count,1);direct.assert_not_called()
         self.db.expire_all();self.assertEqual(self.db.get(IncludedCreation,self.payload['request_id']).status,'unknown')
+    async def test_terminal_gateway_failure_is_counted_without_a_saved_version(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+
+        gateway_body = {
+            'ok': False, 'dispatched': True, 'request_id': self.payload['request_id'],
+            'error': {'code': 'invalid_result', 'message': 'PRIVATE_GATEWAY_TEXT'},
+        }
+        version_count = self.db.query(GameVersion).filter_by(session_id=self.payload['session_id']).count()
+        error = HTTPError(beta.GATEWAY, 502, 'Bad gateway', {}, BytesIO(json.dumps(gateway_body).encode()))
+        with (patch.object(beta, 'ready', return_value=True),
+              patch.object(beta, 'build_opener') as opener,
+              patch('app.backend.agent.anthropic.Anthropic') as direct):
+            opener.return_value.open.side_effect = error
+            result = await self.post()
+            self.assertEqual(result.status_code, 502)
+            self.assertEqual(result.json()['code'], 'invalid_result')
+            self.assertIs(result.json()['dispatched'], True)
+            self.assertEqual(result.json()['included_remaining'], 1)
+            self.assertIn('Try one object or game rule at a time', result.json()['detail'])
+            self.assertNotIn('PRIVATE_GATEWAY_TEXT', result.text)
+            lookup = await self.lookup()
+            self.assertEqual(lookup.status_code, 200)
+            self.assertEqual(lookup.json(), {'status': 'failed'})
+            self.assertEqual((await self.post()).status_code, 409)
+            opener.return_value.open.assert_called_once()
+            direct.assert_not_called()
+            signed_request = opener.return_value.open.call_args.args[0]
+            messages = json.loads(signed_request.data)['input']['messages']
+            self.assertIn('shortest exact unique SEARCH anchors', messages[-1]['content'])
+        self.db.expire_all()
+        self.assertEqual(self.db.query(GameVersion).filter_by(session_id=self.payload['session_id']).count(), version_count)
+
     async def test_pre_dispatch_refusal_does_not_consume(self):
         with patch.object(beta,'ready',return_value=True),patch.object(beta,'generate',side_effect=beta.IncludedError('budget','Shared beta budget unavailable',dispatched=False)) as provider:
             response=await self.post();self.assertEqual(response.status_code,503);self.assertEqual(response.json()['included_remaining'],2)
@@ -207,6 +240,25 @@ class GatewayTransport(unittest.TestCase):
         self.assertEqual(set(body),{'version','app','feature','request_id','actor','actor_ip','input'});self.assertEqual(body['input']['messages'][0]['content'],'Synthetic request');self.assertNotIn('model',body);self.assertEqual(result.content[0].text,'Synthetic text')
         self.assertIsNone(opener.call_args.args[0].redirect_request(None,None,None,None,None,None))
         self.assertTrue(request.get_header('X-portfolio-signature'));self.assertTrue(request.get_header('X-portfolio-timestamp'))
+    def test_terminal_gateway_failure_requires_matching_dispatched_proof(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+
+        request_id = str(uuid.uuid4())
+        for reference, dispatched in ((str(uuid.uuid4()), True), (request_id, None), (request_id, False)):
+            with self.subTest(reference_matches=reference == request_id, dispatched=dispatched):
+                body = {'ok': False, 'dispatched': dispatched, 'request_id': reference,
+                        'error': {'code': 'invalid_result'}}
+                error = HTTPError(beta.GATEWAY, 502, 'Bad gateway', {}, BytesIO(json.dumps(body).encode()))
+                with (patch.object(beta, 'ready', return_value=True),
+                      patch.object(beta, 'build_opener') as opener):
+                    opener.return_value.open.side_effect = error
+                    with self.assertRaises(beta.IncludedError) as caught:
+                        beta.generate('system', [{'role': 'user', 'content': 'request'}],
+                                      request_id=request_id, actor='a'*64, network='b'*64)
+                self.assertEqual(caught.exception.code, 'outcome_unknown')
+                self.assertEqual(caught.exception.status, 503)
+
     def test_typed_dispatch_proof_and_timeout_hold(self):
         from urllib.error import HTTPError
         import io

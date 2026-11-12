@@ -735,7 +735,12 @@ async def _api_chat_impl(
                 result = await work
         else:result = await operation
     except included_ai.IncludedError as error:
-        included_ai.finish(db, record, 'rejected' if error.dispatched is False else 'unknown', saved_session_id)
+        status = 'unknown'
+        if error.dispatched is False:
+            status = 'rejected'
+        elif error.code == 'invalid_result' and error.dispatched is True:
+            status = 'failed'
+        included_ai.finish(db, record, status, saved_session_id)
         raise
     except Exception:
         if not included:raise
