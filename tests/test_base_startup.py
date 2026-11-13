@@ -20,6 +20,7 @@ class BaseStartupTests(unittest.TestCase):
             self.assertIn(b'id="ow-base-module"', base.body)
             self.assertIn(b"document.dispatchEvent(new Event('ow-base-ready'))", base.body)
             self.assertIn(b"matchMedia('(pointer: coarse)').matches", base.body)
+            self.assertIn(b"canvas.requestPointerLock()?.catch", base.body)
             self.assertIn(b'Click or press anything to start', shared.body)
             self.assertIn(MOBILE_INPUT.encode(), shared.body)
             self.assertNotIn(b'ow-base-ready', shared.body)

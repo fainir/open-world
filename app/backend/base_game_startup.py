@@ -66,4 +66,7 @@ def with_base_startup(html: str) -> str:
     # The opaque Remix frame can report a touchscreen without exposing ontouchstart.
     html = html.replace(MOBILE_INPUT,
                         "const isMobile=navigator.maxTouchPoints>0&&('ontouchstart' in window||matchMedia('(pointer: coarse)').matches);", 1)
+    # Some browsers reject pointer lock asynchronously. The canvas can retry on a click.
+    html = html.replace("try{canvas.requestPointerLock()}catch(e){}",
+                        "try{canvas.requestPointerLock()?.catch?.(()=>{})}catch(e){}")
     return html.replace(MODULE_END, "document.dispatchEvent(new Event('ow-base-ready'));\n" + MODULE_END, 1)
