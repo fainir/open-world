@@ -60,7 +60,7 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | X6 | CrazyGames readiness: current rules read, honest verdict, base-game upload zip | verified | Go for Basic Launch. [release/crazygames/README.md](release/crazygames/README.md) cites docs.crazygames.com and the 18.08.2025 terms; `build.py` writes a 3-file, 444 KB zip with no editor, link out or open-world.gg call; [zip played offline and with SDK at 375/1440](qa/crazygames/zip.log). |
 | X7 | Create the CrazyGames developer account, upload the zip and submit Basic Launch | owner | Exact steps in [release/crazygames/README.md](release/crazygames/README.md#owner-steps-exact). New third-party account and terms, so the owner's click. |
 | X8 | Remix landing toast does not cover the ideas card | open | At 375 the 3 s "Remix: describe a change..." toast sits over two idea buttons ([screenshot](qa/share-loop/live/remix-375.jpg)). Fix: show the toast only when the ideas card stays hidden after the allowance check. |
-| X9 | Let recipients start the published OpenWorld demos when the game is ready | building | On the live Enchanted Forest page a touch during a delayed module load was ignored. Use the existing native Start and Retry controls in both the shared and Remix game frames. Verify normal, slow and failed loads at 375px and 1440px, with the opaque frame intact. [Module execution](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script) · [Native button behavior](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button). |
+| X9 | Let recipients start the published OpenWorld demos when the game is ready | verified | All five first-party shared demos now have a guarded Start and Retry. [PR #24](https://github.com/fainir/open-world/pull/24) passed 88 tests and is live. Enchanted Forest passed normal, delayed and failed loads in both the shared page and Remix on 375px and 1440px. The opaque sandbox remains in place. [Live game](https://open-world.gg/shared/0cf0e229) · [Provider readback](https://railway.com/project/0715cb1d-44c0-48c3-94e7-bedc0de00ede/service/f913ee3a-6dee-4891-8dd1-80dd849e6681?id=c9c3d130-905c-4fae-a306-766c8cc49d3f) · [Browser evidence](qa/shared-demo-startup.md). |
 
 ## Remaining buildable work
 
@@ -71,6 +71,8 @@ No buildable row remains in this scoped release. The limited included beta is de
 Shared inherited credential and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. Hosted CI no longer needs an allowance action. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+- 2026-11-13 - Growth X9: shared Start and Retry verified on mobile and desktop. Remix shows touch controls on phones. The portfolio route opens the existing Enchanted Forest demo without signing in. The production check made zero writes. [Live checks](qa/shared-demo-startup.md).
 
 - 2026-11-03 - Growth X5/X6: shared game pages get Made with, Remix this (opens the editor on that version; first edit branches a private copy) and one-tap share; the post-edit share prompt uses the same share. PR #18 (799e077) deployed as f87ceabd SUCCESS; live 375/1440 check passes. CrazyGames research says go for Basic Launch; portal zip built and played offline. No AI edit, account, variable or spend. X8 toast overlap left open.
 
