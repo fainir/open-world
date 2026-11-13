@@ -98,6 +98,9 @@ async def redirect_www(request: Request, call_next):
 # ── Startup ──
 
 
+DEMO_OWNER_EMAIL = "demo@openworld.game"
+
+
 def _seed_store():
     """Seed the store with demo published versions with unique visual themes."""
     from app.backend.database import SessionLocal
@@ -109,7 +112,7 @@ def _seed_store():
         demo_user = db.query(User).filter(User.username == "OpenWorld").first()
         if not demo_user:
             demo_user = User(
-                email="demo@openworld.game",
+                email=DEMO_OWNER_EMAIL,
                 username="OpenWorld",
                 password_hash=hash_password(str(uuid.uuid4())),
             )
@@ -1223,6 +1226,16 @@ def serve_base_game():
     return game_response(path, base_demo=True)
 
 
+def _is_published_demo(version: GameVersion) -> bool:
+    return bool(
+        version.is_shared
+        and version.is_published
+        and version.user
+        and version.user.email == DEMO_OWNER_EMAIL
+        and version.user.username == "OpenWorld"
+    )
+
+
 @app.get("/game/version/{version_id}")
 def serve_game_version(version_id: str, request: Request, db: Session = Depends(get_db),
                        user: Optional[User] = Depends(get_current_user_optional)):
@@ -1230,7 +1243,7 @@ def serve_game_version(version_id: str, request: Request, db: Session = Depends(
     path = os.path.join(VERSIONS_DIR, version.file_path)
     if not os.path.isfile(path):
         raise HTTPException(404, "Version not found")
-    return game_response(path)
+    return game_response(path, base_demo=_is_published_demo(version))
 
 
 @app.get("/game/shared/{share_slug}")
@@ -1245,7 +1258,7 @@ def serve_shared_game(share_slug: str, db: Session = Depends(get_db)):
     path = os.path.join(VERSIONS_DIR, version.file_path)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Game file not found")
-    return game_response(path)
+    return game_response(path, base_demo=_is_published_demo(version))
 
 
 # ── Chat history ──
