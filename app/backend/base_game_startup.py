@@ -4,6 +4,7 @@ PROMPT = '<div class="click">Click or press anything to start</div>'
 MODULE = '<script type="module">'
 START_GAME = 'function startGame(){\n'
 KEYBOARD_START = "document.addEventListener('keydown',()=>{if(overlay.style.display!=='none'&&!gameStarted)startGame()},{once:true});"
+MOBILE_INPUT = "const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;"
 MODULE_END = '</script>\n</body>\n</html>'
 
 STARTUP = '''<style>
@@ -12,6 +13,10 @@ STARTUP = '''<style>
 #overlay .ow-base-action{min-height:44px;padding:8px 16px;border:1px solid #8396af;
 border-radius:8px;background:#203550;color:#fff;font:inherit;cursor:pointer;animation:none}
 #overlay .ow-base-action:focus-visible{outline:3px solid #a9c6ff;outline-offset:3px}
+@media(max-width:500px){
+  #overlay h1{max-width:calc(100% - 32px);font-size:clamp(1.5rem,7vw,2.5rem);
+  letter-spacing:.12em;text-align:center;overflow-wrap:anywhere}
+}
 </style>
 <p id="ow-base-status" role="status">Loading game…</p>
 <button type="button" id="ow-base-play" class="click ow-base-action" hidden>Start game</button>
@@ -58,4 +63,7 @@ def with_base_startup(html: str) -> str:
     html = html.replace(START_GAME, START_GAME + "  if(document.getElementById('ow-base-play').hidden)return;\n", 1)
     # The native button handles Enter and Space without catching Tab or Escape.
     html = html.replace(KEYBOARD_START, '', 1)
+    # The opaque Remix frame can report a touchscreen without exposing ontouchstart.
+    html = html.replace(MOBILE_INPUT,
+                        "const isMobile=navigator.maxTouchPoints>0&&('ontouchstart' in window||matchMedia('(pointer: coarse)').matches);", 1)
     return html.replace(MODULE_END, "document.dispatchEvent(new Event('ow-base-ready'));\n" + MODULE_END, 1)

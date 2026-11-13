@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from app.backend.base_game_startup import with_base_startup
+from app.backend.base_game_startup import MOBILE_INPUT, with_base_startup
 from app.backend.game_security import GAME_CSP, game_response
 
 
@@ -19,7 +19,9 @@ class BaseStartupTests(unittest.TestCase):
             self.assertIn(b'Loading game', base.body)
             self.assertIn(b'id="ow-base-module"', base.body)
             self.assertIn(b"document.dispatchEvent(new Event('ow-base-ready'))", base.body)
+            self.assertIn(b"matchMedia('(pointer: coarse)').matches", base.body)
             self.assertIn(b'Click or press anything to start', shared.body)
+            self.assertIn(MOBILE_INPUT.encode(), shared.body)
             self.assertNotIn(b'ow-base-ready', shared.body)
             self.assertEqual(base.headers['Content-Security-Policy'], GAME_CSP)
             self.assertEqual(dict(base.headers.items()) | {'content-length': ''},

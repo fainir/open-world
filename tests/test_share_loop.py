@@ -10,7 +10,7 @@ from app.backend.database import init_db,SessionLocal
 from app.backend.models import User,ChatSession,GameVersion
 from app.backend.auth import create_access_token
 from app.backend.game_security import GAME_CSP
-from app.backend.main import DEMO_OWNER_EMAIL,app
+from app.backend.main import DEMO_OWNER_EMAIL, DEMO_OWNER_NAME, app
 from app.backend.request_limits import _buckets
 
 DASHES=['–','—','&ndash;','&mdash;','&#8211;','&#8212;','&#x2013;','&#x2014;']
@@ -69,13 +69,14 @@ class ShareLoop(unittest.IsolatedAsyncioTestCase):
         original = '<!-- THEME: Test demo -->\n' + Path('index.html').read_text(encoding='utf-8')
         self.file.write_text(original, encoding='utf-8')
         paths = ('/game/shared/' + self.slug, '/game/version/' + self.version.id)
-        email, username = self.owner.email, self.owner.username
+        email, username, title = self.owner.email, self.owner.username, self.version.publish_title
+        self.version.publish_title = 'Enchanted Forest'
         try:
             for owner_email, owner_name, published, expected in (
                 (email, username, True, False),
-                (email, 'OpenWorld', True, False),
-                (DEMO_OWNER_EMAIL, 'OpenWorld', False, False),
-                (DEMO_OWNER_EMAIL, 'OpenWorld', True, True),
+                (email, DEMO_OWNER_NAME, True, False),
+                (DEMO_OWNER_EMAIL, DEMO_OWNER_NAME, False, False),
+                (DEMO_OWNER_EMAIL, DEMO_OWNER_NAME, True, True),
             ):
                 self.owner.email, self.owner.username = owner_email, owner_name
                 self.version.is_published = published
@@ -88,9 +89,14 @@ class ShareLoop(unittest.IsolatedAsyncioTestCase):
                         self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
                         self.assertEqual('ow-base-ready' in response.text, expected)
                         self.assertEqual('Click or press anything to start' in response.text, not expected)
+                entry = await self.client.get('/play/from-portfolio?next=https://example.com/')
+                self.assertEqual(entry.status_code, 302)
+                self.assertEqual(entry.headers['location'], '/shared/' + self.slug if expected else '/')
+                self.assertEqual(entry.headers['cache-control'], 'no-store')
                 self.assertEqual(self.file.read_text(encoding='utf-8'), original)
         finally:
             self.owner.email, self.owner.username = email, username
+            self.version.publish_title = title
             self.version.is_published = False
             self.file.write_text('<!doctype html><html><body>' + self.marker + '</body></html>', encoding='utf-8')
             self.db.commit()
