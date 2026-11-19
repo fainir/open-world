@@ -1360,7 +1360,8 @@ def play_from_campaign():
 
 
 @app.get("/play/from-portfolio", include_in_schema=False)
-def play_from_portfolio(db: Session = Depends(get_db)):
+@app.get("/play/from-agent-guide", include_in_schema=False)
+def play_shared_demo(db: Session = Depends(get_db)):
     demo = (
         db.query(GameVersion)
         .join(GameVersion.user)
