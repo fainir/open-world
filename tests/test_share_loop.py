@@ -89,10 +89,12 @@ class ShareLoop(unittest.IsolatedAsyncioTestCase):
                         self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
                         self.assertEqual('ow-base-ready' in response.text, expected)
                         self.assertEqual('Click or press anything to start' in response.text, not expected)
-                entry = await self.client.get('/play/from-portfolio?next=https://example.com/')
-                self.assertEqual(entry.status_code, 302)
-                self.assertEqual(entry.headers['location'], '/shared/' + self.slug if expected else '/')
-                self.assertEqual(entry.headers['cache-control'], 'no-store')
+                for source in ('portfolio', 'agent-guide'):
+                    entry = await self.client.get(f'/play/from-{source}?next=https://example.com/')
+                    self.assertEqual(entry.status_code, 302)
+                    self.assertEqual(entry.headers['location'], '/shared/' + self.slug if expected else '/')
+                    self.assertEqual(entry.headers['cache-control'], 'no-store')
+                    self.assertNotIn('set-cookie', entry.headers)
                 self.assertEqual(self.file.read_text(encoding='utf-8'), original)
         finally:
             self.owner.email, self.owner.username = email, username
