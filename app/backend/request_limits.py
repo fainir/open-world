@@ -6,6 +6,7 @@ from collections import OrderedDict, deque
 from fastapi.responses import JSONResponse
 
 _buckets = OrderedDict()
+_body_limits = {'/api/contact': 32 * 1024, '/api/island/place-design': 192 * 1024}
 
 
 async def boundaries(request, call_next):
@@ -24,7 +25,7 @@ async def boundaries(request, call_next):
             category, limit, window = ('write', 60, 60)
         if path.startswith('/api/auth/') and request.method == 'POST':
             category, limit, window = ('auth', 20, 3600)
-        elif path in ('/api/chat', '/api/chat/idea'):
+        elif path in ('/api/chat', '/api/chat/idea', '/api/island/place-design'):
             category, limit, window = ('generation', 10, 3600)
         elif path == '/api/contact':
             category, limit, window = ('contact', 5, 3600)
@@ -42,12 +43,13 @@ async def boundaries(request, call_next):
         bucket.append(now)
         if request.method == 'POST':
             try:
+                body_limit = _body_limits.get(path, 8 * 1024 * 1024)
                 chunks = []
                 size = 0
                 async with asyncio.timeout(15):
                     async for chunk in request.stream():
                         size += len(chunk)
-                        if size > (32 * 1024 if path == '/api/contact' else 8 * 1024 * 1024):
+                        if size > body_limit:
                             return JSONResponse({'detail': 'Request too large'}, status_code=413)
                         chunks.append(chunk)
                 request._body = b''.join(chunks)

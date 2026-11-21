@@ -42,6 +42,12 @@ env -i HOME="$HOME" PATH=/usr/local/bin:/usr/bin:/bin TMPDIR=/tmp \
 
 This lightweight mode verifies the real studio/account UI only, not gameplay or performance. Omit that flag for the unchanged real base game. The fixture prints its loopback URL and a private credential-file path, then removes its data on shutdown. Do not put that file in a repository or run QA against owner accounts.
 
+### Island place previews
+
+The separate island studio calls `POST /api/island/place-design` with a UUIDv4 `Idempotency-Key`, its player’s opaque guest proof and a JSON body containing `prompt`, `title` and `scene`. Open World uses its existing included text allowance. The response contains only the proposed title, summary and local shapes, with limits of 256 parts and an 8-by-8-tile footprint. Accepting or publishing a proposal happens in the island studio.
+
+The existing allowance ledger records only the request fingerprint, pseudonymous actor, network and outcome. Generated changes can be retrieved with the same reference for up to 15 minutes while this process is running. After that, an old reference cannot trigger a new model call. The public island, original game assets and private player drafts are untouched by this endpoint.
+
 ## Existing production deployment
 
 `railway up --detach` uploads this source to the already-linked OpenWorld service. Confirm the project/service with `railway status` first, keep one worker/replica, and preserve the DATA_DIR/VERSIONS_DIR persistent volume. This task does not create another service, volume, account, key or provider commitment.

@@ -46,6 +46,7 @@ from app.backend.recovery import snapshot, health as recovery_health, PUBLICATIO
 from app.backend.accounts import export_account, delete_account, account_action
 from app.backend import contact_delivery
 from app.backend import included_ai
+from app.backend.island_design import router as island_design_router
 from app.backend.agent import (
     run_agent,
     GAME_MODEL,
@@ -56,6 +57,7 @@ from app.backend.agent import (
 
 app = FastAPI(title="Open World Game Studio", version="1.0.0")
 app.middleware("http")(boundaries)
+app.include_router(island_design_router)
 
 app.add_middleware(
     CORSMiddleware,
