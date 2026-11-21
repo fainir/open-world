@@ -6,8 +6,8 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 
 | ID | Flow or gate | Status | Evidence / next action |
 |---|---|---|---|
-| I1 | Opt into the separate Open World Island at /island and keep the original game at / | source verified, rollout pending | [Public route regression](tests/test_public_pages.py) covers the fixed redirect and the original game shell. |
-| I2 | Preview private island pieces with the shared Open World text allowance | source verified, rollout pending | [Place API regressions](tests/test_island_design.py) cover signed transport, actor and network limits, idempotency, strict geometry and original game preservation. Live release check uses an invalid body and invokes no provider. |
+| I1 | Opt into the separate Open World Island at /island and keep the original game at / | verified | [Live Chrome checks](qa/island-entry.md) played the original game and opened the island atlas at 375 and 1200 px. [Public route regression](tests/test_public_pages.py) covers the fixed destination. |
+| I2 | Preview private island pieces with the shared Open World text allowance | verified with simulated provider | [Place API regressions](tests/test_island_design.py) cover signed transport, quotas, idempotency, strict geometry and original game preservation. [Production validation](qa/island-entry.md) returned 422 before dispatch. |
 | F1 | Start and play the base and Sonnet-generated game, move and use the vehicle selector | verified | A/openworld-production-browser-playback.json. [Base startup regression](qa/check-game-startup.mjs) exercises delayed dependencies, failed imports and Retry, one first tap and keyboard play at 375 px and 1440 px. |
 | F2 | Private sessions, versions and chat belong only to their caller | verified | A/openworld-live-canary.json; A/openworld-security-tests.log |
 | F3 | Generate a complete edit, retain prior version, reload and explicitly share | verified | A/openworld-sonnet-live-canary.json; A/openworld-production-browser-playback.json |
