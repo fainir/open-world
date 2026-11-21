@@ -35,6 +35,19 @@ class RosebudAlternative(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(original.status_code, 200)
         self.assertIn('/game/base', original.text)
 
+    async def test_place_links_open_from_the_existing_game(self):
+        home = _Document((await self.client.get('/')).text)
+        for href in ('/island/resort', '/island#studio'):
+            links = [a for tag, a in home.tags if tag == 'a' and a.get('href') == href]
+            self.assertEqual(len(links), 1)
+            self.assertEqual(links[0].get('target'), '_blank')
+            self.assertIn('noopener', links[0].get('rel', '').split())
+        for method in ('GET', 'HEAD'):
+            for path in ('/island/resort', '/island/resort/', '/island/resort?next=https://example.com'):
+                response = await self.client.request(method, path, follow_redirects=False)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.headers['location'], 'https://tidefall-island.fainir2006.workers.dev/resort/')
+
     async def test_campaign_links_open_the_same_public_game(self):
         for source in ('indie-hackers', 'x'):
             with self.subTest(source=source):

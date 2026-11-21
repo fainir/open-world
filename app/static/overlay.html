@@ -186,6 +186,7 @@
   color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;
   font-family:inherit;font-weight:500;transition:opacity .15s;margin-bottom:12px}
 .ow-store-random:hover{opacity:.85}
+.ow-place-links{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .ow-store-grid{display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;padding-right:4px}
 .ow-store-grid::-webkit-scrollbar{width:5px}
 .ow-store-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
@@ -416,6 +417,10 @@
         </div>
       </div>
       <button class="ow-store-random" id="ow-store-random">&#127922; Random Game</button>
+      <nav class="ow-place-links" aria-label="Island places">
+        <a class="ow-hdr-btn" href="/island/resort" target="_blank" rel="noopener" title="Opens in a new tab">Visit Hangar Lake Resort</a>
+        <a class="ow-hdr-btn" href="/island#studio" target="_blank" rel="noopener" title="Opens in a new tab">Create a place</a>
+      </nav>
       <div class="ow-store-grid" id="ow-store-grid"></div>
       <button class="ow-store-more" id="ow-store-more" style="display:none">Load More</button>
     </div>

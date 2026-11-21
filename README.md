@@ -4,7 +4,7 @@
 
 **Play it now: [open-world.gg](https://open-world.gg)** (no install, runs in the browser)
 
-[Explore Open World Island](https://open-world.gg/island), the separate shared island with skiing and player-built places.
+Use the **Open World** menu during play to visit [Hangar Lake Resort](https://open-world.gg/island/resort) or [create a place](https://open-world.gg/island#studio). Both open in a new tab so you can return to your city session.
 
 <p align="center">
   <a href="https://open-world.gg"><img src="app/static/og-card.png" width="800" alt="OpenWorld: a 3D browser game you can change with AI"></a>

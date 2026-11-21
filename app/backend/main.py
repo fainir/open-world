@@ -1356,9 +1356,14 @@ def serve_home(request: Request):
 
 @app.api_route("/island", methods=["GET", "HEAD"], include_in_schema=False)
 @app.api_route("/island/", methods=["GET", "HEAD"], include_in_schema=False)
-def open_world_island():
+@app.api_route("/island/resort", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/island/resort/", methods=["GET", "HEAD"], include_in_schema=False)
+def open_world_island(request: Request):
+    destination = "https://tidefall-island.fainir2006.workers.dev/"
+    if request.url.path.rstrip("/") == "/island/resort":
+        destination += "resort/"
     return RedirectResponse(
-        url="https://tidefall-island.fainir2006.workers.dev/",
+        url=destination,
         status_code=302,
         headers={"Cache-Control": "no-store"},
     )
