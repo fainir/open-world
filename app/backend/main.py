@@ -1352,6 +1352,16 @@ def serve_home(request: Request):
     return _revalidated_html(request, studio_shell(_load_overlay_html()))
 
 
+@app.api_route("/island", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/island/", methods=["GET", "HEAD"], include_in_schema=False)
+def open_world_island():
+    return RedirectResponse(
+        url="https://tidefall-island.fainir2006.workers.dev/",
+        status_code=302,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @app.get("/play/from-indie-hackers", include_in_schema=False)
 @app.get("/play/from-x", include_in_schema=False)
 def play_from_campaign():

@@ -4,6 +4,8 @@
 
 **Play it now: [open-world.gg](https://open-world.gg)** (no install, runs in the browser)
 
+[Explore Open World Island](https://open-world.gg/island), the separate shared island with skiing and player-built places.
+
 <p align="center">
   <a href="https://open-world.gg"><img src="app/static/og-card.png" width="800" alt="OpenWorld: a 3D browser game you can change with AI"></a>
 </p>

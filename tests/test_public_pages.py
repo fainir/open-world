@@ -21,6 +21,20 @@ class RosebudAlternative(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.client.aclose()
 
+    async def test_island_entry_is_opt_in_and_has_a_fixed_destination(self):
+        for path in ('/island', '/island/', '/island?next=https://example.com/&invite=private'):
+            for method in ('GET', 'HEAD'):
+                with self.subTest(path=path, method=method):
+                    response = await self.client.request(method, path, follow_redirects=False)
+                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(response.headers['location'], 'https://tidefall-island.fainir2006.workers.dev/')
+                    self.assertEqual(response.headers['cache-control'], 'no-store')
+                    self.assertEqual(response.headers['referrer-policy'], 'no-referrer')
+                    self.assertNotIn('set-cookie', response.headers)
+        original = await self.client.get('/')
+        self.assertEqual(original.status_code, 200)
+        self.assertIn('/game/base', original.text)
+
     async def test_campaign_links_open_the_same_public_game(self):
         for source in ('indie-hackers', 'x'):
             with self.subTest(source=source):
