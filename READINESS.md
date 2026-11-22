@@ -9,7 +9,7 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | I1 | Opt into the separate Open World Island at /island and keep the original game at / | verified | [Live Chrome checks](qa/island-entry.md) played the original game and opened the island atlas at 375 and 1200 px. [Public route regression](tests/test_public_pages.py) covers the fixed destination. |
 | I3 | Visit Hangar Lake Resort or start one private place from the running city | verified on the public game at desktop and phone widths | [Live round trip](qa/island-entry.md) opened the playable resort and private Studio, then mounted a bike in the original city. [Link and destination checks](tests/test_public_pages.py) |
 | I2 | Preview private island pieces with the shared Open World text allowance | verified with simulated provider | [Place API regressions](tests/test_island_design.py) cover signed transport, quotas, idempotency, strict geometry and original game preservation. [Production validation](qa/island-entry.md) returned 422 before dispatch. |
-| F1 | Start and play the base and Sonnet-generated game, move and use the vehicle selector | verified | A/openworld-production-browser-playback.json. [Base startup regression](qa/check-game-startup.mjs) exercises delayed dependencies, failed imports and Retry, one first tap and keyboard play at 375 px and 1440 px. |
+| F1 | Open home directly into the city and use keyboard or landscape touch controls. Start and play Sonnet-generated games | verified | [Live homepage and control checks](qa/city-home.md) exercise direct play, loading and Retry at 375 px and 1440 px plus touch at 812 × 375. Generated game evidence is A/openworld-production-browser-playback.json. |
 | F2 | Private sessions, versions and chat belong only to their caller | verified | A/openworld-live-canary.json; A/openworld-security-tests.log |
 | F3 | Generate a complete edit, retain prior version, reload and explicitly share | verified | A/openworld-sonnet-live-canary.json; A/openworld-production-browser-playback.json |
 | F4 | Game sandbox cannot access studio credentials/storage or privileged actions | verified | A/openworld-production-recovery.json; A/openworld-live-canary.json |
@@ -74,6 +74,8 @@ No buildable row remains in this scoped release. The limited included beta is de
 Shared inherited credential and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. Hosted CI no longer needs an allowance action. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+- 2026-11-22. The public homepage starts directly in the city. Live Chrome verified keyboard focus, Retry and the landscape touch layout before and after turning the phone. [City home checks](qa/city-home.md)
 
 - 2026-11-13 - Growth X9: shared Start and Retry verified on mobile and desktop. Remix shows touch controls on phones. The portfolio route opens the existing Enchanted Forest demo without signing in. The production check made zero writes. [Live checks](qa/shared-demo-startup.md).
 
