@@ -37,10 +37,10 @@ document.addEventListener('keydown',event=>{
   if(event.code==='KeyG'){
     event.preventDefault();void toggleGameFullscreen();
   }
-  if(event.code==='KeyX'&&!gamePaused&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen)keys['_shooting']=true;
+  if(event.code==='KeyX'&&!gamePaused&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen)keys._keyboardShoot=keys['_shooting']=true;
 });
-document.addEventListener('keyup',event=>{if(event.code==='KeyX')keys['_shooting']=false;});
-window.addEventListener('blur',()=>{keys.KeyX=false;keys['_shooting']=false;});
+document.addEventListener('keyup',event=>{if(event.code==='KeyX')keys._keyboardShoot=keys['_shooting']=false;});
+window.addEventListener('blur',()=>{keys._keyboardShoot=keys['_shooting']=false;});
 """
 
 STARTUP = '''<style>
@@ -50,12 +50,15 @@ STARTUP = '''<style>
 border-radius:8px;background:#203550;color:#fff;font:inherit;cursor:pointer;animation:none}
 #overlay .ow-base-action:focus-visible{outline:3px solid #a9c6ff;outline-offset:3px}
 .mobile.playing #btn-fs{display:grid!important;place-items:center;position:fixed;z-index:9;
-top:12px;right:104px;width:44px;height:44px;border:2px solid #ffffff40;border-radius:50%;
+top:12px;right:154px;width:44px;height:44px;border:2px solid #ffffff40;border-radius:50%;
 color:#fff;background:#0009;font-size:20px;touch-action:manipulation}
-.mobile.playing #btn-pause{width:44px;height:44px}
+.mobile.playing #btn-pause{right:62px;width:44px;height:44px}
+.mobile.playing #pwa-install{right:112px}
 .mobile.playing .mc-btn{box-sizing:border-box;min-width:44px;min-height:44px}
 .mobile.playing :is(#veh-menu,#wpn-menu,#char-menu){box-sizing:border-box;max-width:calc(100% - 24px);max-height:calc(100% - 24px)}
 .mobile.playing :is(#veh-close,#wpn-close,#char-close){min-width:44px;min-height:44px;display:grid;place-items:center}
+.mobile.playing #char-close{left:6px;right:auto;margin:0}
+.mobile.playing #char-menu h2{min-height:32px;padding-inline:46px 6px}
 @media(pointer:fine){.mobile.playing #bottom-bar{display:flex!important}}
 @media(max-width:500px){
   #overlay h1{max-width:calc(100% - 32px);font-size:clamp(1.5rem,7vw,2.5rem);
@@ -129,9 +132,9 @@ def with_base_startup(html: str, *, autoplay: bool = False) -> str:
         html = html.replace('<div id="controls-bar">', '<div id="controls-bar">\n'
                             '<span class="ctrl-key"><kbd>G</kbd><span class="cl">Full screen</span></span>'
                             '<span class="ctrl-key"><kbd>Esc</kbd><span class="cl">Pause</span></span>', 1)
-        html = html.replace('<kbd>Click</kbd>', '<kbd>X</kbd> / <kbd>Click</kbd>', 1)
+        html = html.replace('<kbd>Click</kbd>', '<kbd>X</kbd> / <kbd>Click</kbd>')
         html = html.replace('if(shooting&&fireCooldown<=0&&locked){',
-                            'if((shooting||keys.KeyX)&&fireCooldown<=0&&locked&&!gamePaused&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen){', 1)
+                            'if((shooting||keys._keyboardShoot)&&fireCooldown<=0&&locked&&!gamePaused&&!menuOpen&&!wpnMenuOpen&&!charMenuOpen){', 1)
         html = html.replace(MODULE_END, PLAY_KEYS + MODULE_END, 1)
     # Some browsers reject pointer lock asynchronously. The canvas can retry on a click.
     html = html.replace("try{canvas.requestPointerLock()}catch(e){}",

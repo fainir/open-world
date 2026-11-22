@@ -79,8 +79,17 @@ async function verifyReady(game, width, label) {
     await frame.locator('body').evaluate(async () => {
       if (document.fullscreenElement) await document.exitFullscreen();
     });
+    await page.setViewportSize({ width: 812, height: 375 });
+    await frame.locator('#btn-char-m').tap();
+    await frame.locator('#char-close').tap();
+    await frame.locator('#char-menu.open').waitFor({ state: 'hidden' });
+    await frame.locator('#btn-pause').tap();
+    await frame.locator('#pause-screen').waitFor({ state: 'visible' });
+    await frame.locator('#pause-screen').tap();
+    await frame.locator('#pause-screen').waitFor({ state: 'hidden' });
   } else {
     await frame.locator('#bottom-bar').waitFor({ state: 'visible' });
+    assert.equal(await frame.locator('#controls-bar kbd').getByText('X',{exact:true}).count(), 1);
     await page.waitForFunction(() => document.activeElement?.id === 'ow-game');
     await page.keyboard.press('v');
     await frame.locator('#veh-menu.open').waitFor();
