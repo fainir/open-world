@@ -4,7 +4,7 @@ import { lstat, mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const [fixtureFile, entry, evidenceDir = 'qa/perf'] = process.argv.slice(2);
+const [fixtureFile, entry, evidenceDir = 'qa/perf', scope] = process.argv.slice(2);
 let origin = 'https://open-world.gg';
 if (fixtureFile !== '--live') {
   const stat = await lstat(fixtureFile);
@@ -91,7 +91,14 @@ async function verifyReady(game, width, label) {
     });
     await frame.locator('body:not([style*="rotate(90deg)"])').waitFor();
     assert.deepEqual(await frame.locator('#game').evaluate(canvas => [canvas.clientWidth, canvas.clientHeight]), [812, 375]);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await frame.locator('#btn-char-m').tap();
+    try {
+      await frame.locator('#char-menu.open').waitFor({timeout:10000});
+    } catch (error) {
+      await page.screenshot({path:join(evidenceDir,'style-menu-touch-failure.jpg'),quality:80});
+      throw error;
+    }
     await frame.locator('#char-menu .subtitle').filter({hasText:'Tap a choice'}).waitFor();
     await frame.locator('#char-close').tap();
     await frame.locator('#char-menu.open').waitFor({ state: 'hidden' });
@@ -133,7 +140,7 @@ window.guideActivityReady = () => !!zoneManager.activeZone && !zoneManager.trans
   await page.goto(origin, {waitUntil:'commit'});
   await guide.waitFor();
   await frame.locator('body').evaluate((_,id) => window.approachGuideTest(id),id);
-  await guide.getByText('Choose Enter to start '+label+'.',{exact:true}).waitFor();
+  await guide.locator('p').filter({hasText:'Choose Enter to start '+label+'.'}).waitFor();
   if (touch) await frame.locator('#btn-enter').tap();
   else await page.keyboard.press('e');
   await guide.locator('strong').getByText(label,{exact:true}).waitFor();
@@ -147,6 +154,7 @@ async function verifyActivityGuide(touch) {
   const { context, page, frame } = game;
   try {
     const guide=await startActivity(game,'diving-contest','Diving Contest',touch);
+    assert.equal(await frame.locator('#mission-hud').evaluate(element=>getComputedStyle(element).top),'64px');
     const choice=guide.locator('ul').getByText('Medium',{exact:true});
     if (touch) await guide.getByRole('button',{name:'Medium',exact:true}).tap();
     else{await choice.waitFor();await page.keyboard.press('2',{delay:70});}
@@ -207,7 +215,7 @@ async function verifyCompactActivities() {
 }
 
 try {
-  for (const width of [375, 1440]) {
+  for (const width of scope==='--activities' ? [] : [375, 1440]) {
     const delayed = await freshGame(width);
     let release;
     const gate = new Promise(resolve => { release = resolve; });

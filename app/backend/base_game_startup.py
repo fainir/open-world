@@ -172,6 +172,8 @@ def with_base_startup(html: str, *, autoplay: bool = False, guide: bool = False)
         html = html.replace("this.ammoEl=document.createElement('div');this.ammoEl.style",
                             "this.ammoEl=document.createElement('div');this.ammoEl.id='ow-gallery-ammo';this.ammoEl.style", 1)
         html = html.replace('<br><span style="font-size:10px;color:rgba(255,255,255,0.4)">R to reload</span>', '', 1)
+        html = html.replace("function tryTrick(idx){", "function tryTrick(idx){\n  if(zoneManager.activeZone)return;", 1)
+        html = html.replace("function tryFight(idx){", "function tryFight(idx){\n  if(zoneManager.activeZone)return;", 1)
         # Zone actions read key state each frame. A tap can begin and end between frames.
         html = html.replace("function mBtn(id,onDown,onUp){\n    const el=document.getElementById(id);",
                             "function mBtn(id,onDown,onUp){\n    const el=document.getElementById(id);let releaseFrame=0;", 1)
