@@ -117,10 +117,10 @@ SHARED_PAGE_STYLE = (
 )
 
 
-def game_response(path, head='', *, base_demo=False, autoplay=False):
+def game_response(path, head='', *, base_demo=False, autoplay=False, guide=False):
     html = Path(path).read_text(encoding='utf-8')
     if base_demo:
-        html = with_base_startup(html, autoplay=autoplay)
+        html = with_base_startup(html, autoplay=autoplay, guide=guide)
     legacy_store = """fetch('/api/store/random-slug').then(r=>r.json()).then(d=>{
           if(d.share_slug)window.location.href='/shared/'+d.share_slug;
           else showTip('No published games yet!');

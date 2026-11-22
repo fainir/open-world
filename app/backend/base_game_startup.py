@@ -1,5 +1,7 @@
 """Start the first-party game only after its playing surface is ready."""
 
+from pathlib import Path
+
 PROMPT = '<div class="click">Click or press anything to start</div>'
 MODULE = '<script type="module">'
 START_GAME = 'function startGame(){\n'
@@ -7,6 +9,10 @@ IMMERSIVE_START = '  if(!isMobile)try{canvas.requestPointerLock()}catch(e){}'
 KEYBOARD_START = "document.addEventListener('keydown',()=>{if(overlay.style.display!=='none'&&!gameStarted)startGame()},{once:true});"
 MOBILE_INPUT = "const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;"
 MODULE_END = '</script>\n</body>\n</html>'
+GUIDE_ASSETS = Path(__file__).resolve().parents[1] / 'static'
+GUIDE_PANEL = """<aside id="ow-play-guide" aria-label="Current gameplay controls" hidden>
+<strong aria-live="polite"></strong><p></p><ul></ul><div class="ow-guide-choices"></div>
+</aside>"""
 ROTATION_EVENTS = """    window.dispatchEvent(new Event('resize'));
   }
   _applyRotation();
@@ -101,7 +107,7 @@ color:#fff;background:#0009;font-size:20px;touch-action:manipulation}
 </script>'''
 
 
-def with_base_startup(html: str, *, autoplay: bool = False) -> str:
+def with_base_startup(html: str, *, autoplay: bool = False, guide: bool = False) -> str:
     # The persisted owner template can predate a deploy. Match its known
     # startup shape before inserting anything into the response.
     markers = (PROMPT, MODULE, START_GAME, KEYBOARD_START, MODULE_END)
@@ -148,4 +154,32 @@ def with_base_startup(html: str, *, autoplay: bool = False) -> str:
     ready = "document.dispatchEvent(new Event('ow-base-ready'));\n"
     if autoplay and immersive >= 0:
         ready += "startGame(false);\n"
+    # Inject only when the persisted first-party template has the city control surface.
+    if guide and 'const zoneManager=new ZoneManager(gameAPI);' in html and 'id="mobile-controls"' in html:
+        style = (GUIDE_ASSETS / 'play-guide.css').read_text(encoding='utf-8')
+        script = (GUIDE_ASSETS / 'play-guide.js').read_text(encoding='utf-8')
+        module_tag = '<script type="module" id="ow-base-module">'
+        html = html.replace(module_tag, '<style>' + style + '</style>' + GUIDE_PANEL + module_tag, 1)
+        html = html.replace('<div id="joy-base">', '<div id="joy-base"><span id="ow-guide-stick"></span>', 1)
+        html = html.replace("const item=document.createElement('div');\n      item.className='char-opt'",
+                            "const item=document.createElement('button');\n      item.type='button';\n      item.className='char-opt'", 1)
+        html = html.replace("if(locked)showTip(isMobile?'Flying from the mountains!",
+                            "if(locked&&!document.body.classList.contains('ow-guided'))showTip(isMobile?'Flying from the mountains!", 1)
+        html = html.replace("this.canvas=document.createElement('canvas');this.canvas.width=240;",
+                            "this.hudEl.classList.add('ow-arcade-score');this.canvas=document.createElement('canvas');this.canvas.id='ow-arcade-canvas';this.canvas.width=240;", 1)
+        html = html.replace("<br><br>Press 1: Snake<br>Press 2: Breakout<br><br>Arrow keys to play", "")
+        html = html.replace("<br><br>Press 1: Snake<br>Press 2: Breakout", "")
+        html = html.replace("this.ammoEl=document.createElement('div');this.ammoEl.style",
+                            "this.ammoEl=document.createElement('div');this.ammoEl.id='ow-gallery-ammo';this.ammoEl.style", 1)
+        html = html.replace('<br><span style="font-size:10px;color:rgba(255,255,255,0.4)">R to reload</span>', '', 1)
+        # Zone actions read key state each frame. A tap can begin and end between frames.
+        html = html.replace("function mBtn(id,onDown,onUp){\n    const el=document.getElementById(id);",
+                            "function mBtn(id,onDown,onUp){\n    const el=document.getElementById(id);let releaseFrame=0;", 1)
+        html = html.replace("el.classList.add('active');onDown();",
+                            "cancelAnimationFrame(releaseFrame);el.classList.add('active');onDown();", 1)
+        html = html.replace("el.classList.remove('active');if(onUp)onUp();",
+                            "el.classList.remove('active');if(onUp){if(zoneManager.activeZone)releaseFrame=requestAnimationFrame(onUp);else onUp();}", 1)
+        html = html.replace("el.classList.remove('active');if(onUp)onUp()",
+                            "cancelAnimationFrame(releaseFrame);el.classList.remove('active');if(onUp)onUp()", 1)
+        ready = script + '\n' + ready + 'cityPlayGuide.update();\n'
     return html.replace(MODULE_END, ready + MODULE_END, 1)

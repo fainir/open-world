@@ -14,7 +14,7 @@ class BaseStartupTests(unittest.TestCase):
             original = game.read_bytes()
 
             base = game_response(game, base_demo=True)
-            home = game_response(game, base_demo=True, autoplay=True)
+            home = game_response(game, base_demo=True, autoplay=True, guide=True)
             shared = game_response(game)
 
             self.assertIn(b'Loading game', base.body)
@@ -26,6 +26,9 @@ class BaseStartupTests(unittest.TestCase):
             self.assertIn(b"document.dispatchEvent(new Event('ow-base-ready'));\nstartGame(false);", home.body)
             self.assertIn(b'if(!immersive)return;\n  if(!isMobile)try{canvas.requestPointerLock()', home.body)
             self.assertIn(b'aria-keyshortcuts="G"', home.body)
+            self.assertIn(b'id="ow-play-guide"', home.body)
+            self.assertIn(b'cityPlayGuide.update()', home.body)
+            self.assertNotIn(b'id="ow-play-guide"', shared.body)
             self.assertIn(b"window.addEventListener('resize',_applyRotation)", home.body)
             self.assertIn(b'Click or press anything to start', shared.body)
             self.assertIn(MOBILE_INPUT.encode(), shared.body)

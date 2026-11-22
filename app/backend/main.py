@@ -1226,7 +1226,7 @@ def serve_base_game(request: Request):
     path = get_base_game_path()
     if not os.path.exists(path):
         return game_error_response()
-    return game_response(path, base_demo=True, autoplay=request.query_params.get('autoplay') == '1')
+    return game_response(path, base_demo=True, autoplay=request.query_params.get('autoplay') == '1', guide=True)
 
 
 def _is_published_demo(version: GameVersion) -> bool:
