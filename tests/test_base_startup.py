@@ -26,6 +26,7 @@ class BaseStartupTests(unittest.TestCase):
             self.assertIn(b"document.dispatchEvent(new Event('ow-base-ready'));\nstartGame(false);", home.body)
             self.assertIn(b'if(!immersive)return;\n  if(!isMobile)try{canvas.requestPointerLock()', home.body)
             self.assertIn(b'aria-keyshortcuts="G"', home.body)
+            self.assertIn(b"window.addEventListener('resize',_applyRotation)", home.body)
             self.assertIn(b'Click or press anything to start', shared.body)
             self.assertIn(MOBILE_INPUT.encode(), shared.body)
             self.assertNotIn(b'ow-base-ready', shared.body)

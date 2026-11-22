@@ -80,6 +80,14 @@ async function verifyReady(game, width, label) {
       if (document.fullscreenElement) await document.exitFullscreen();
     });
     await page.setViewportSize({ width: 812, height: 375 });
+    // Update the physical screen metrics for touch routing into the opaque frame.
+    const device = await page.context().newCDPSession(page);
+    await device.send('Emulation.setDeviceMetricsOverride', {
+      width: 812, height: 375, screenWidth: 812, screenHeight: 375, deviceScaleFactor: 1, mobile: true,
+      screenOrientation: { type: 'landscapePrimary', angle: 90 },
+    });
+    await frame.locator('body:not([style*="rotate(90deg)"])').waitFor();
+    assert.deepEqual(await frame.locator('#game').evaluate(canvas => [canvas.clientWidth, canvas.clientHeight]), [812, 375]);
     await frame.locator('#btn-char-m').tap();
     await frame.locator('#char-close').tap();
     await frame.locator('#char-menu.open').waitFor({ state: 'hidden' });

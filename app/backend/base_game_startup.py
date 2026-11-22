@@ -7,6 +7,11 @@ IMMERSIVE_START = '  if(!isMobile)try{canvas.requestPointerLock()}catch(e){}'
 KEYBOARD_START = "document.addEventListener('keydown',()=>{if(overlay.style.display!=='none'&&!gameStarted)startGame()},{once:true});"
 MOBILE_INPUT = "const isMobile='ontouchstart' in window&&navigator.maxTouchPoints>0;"
 MODULE_END = '</script>\n</body>\n</html>'
+ROTATION_EVENTS = """    window.dispatchEvent(new Event('resize'));
+  }
+  _applyRotation();
+  window.addEventListener('orientationchange',()=>setTimeout(_applyRotation,100));
+  window.matchMedia('(orientation:portrait)').addEventListener('change',()=>setTimeout(_applyRotation,50));"""
 
 TOUCH_FULLSCREEN = """  const fsBtn=document.getElementById('btn-fs');
   fsBtn.addEventListener('touchstart',e=>{
@@ -120,6 +125,7 @@ def with_base_startup(html: str, *, autoplay: bool = False) -> str:
         html = html[:immersive] + "  if(!immersive)return;\n" + html[immersive:]
     html = html.replace("function _isPortrait(){const w=_origIW.get.call(window),h=_origIH.get.call(window);return h>w}",
                         "function _isPortrait(){const w=_origIW.get.call(window),h=_origIH.get.call(window);return h>w&&(w<750||matchMedia('(pointer: coarse)').matches)}", 1)
+    html = html.replace(ROTATION_EVENTS, "  }\n  _applyRotation();\n  window.addEventListener('resize',_applyRotation);", 1)
     rotated = "document.body.style.transform==='rotate(90deg)'"
     html = html.replace("let dx=tx-joyCX,dy=ty-joyCY;",
                         "let dx=tx-joyCX,dy=ty-joyCY;\n    if(" + rotated + ")[dx,dy]=[dy,-dx];", 1)
