@@ -115,6 +115,8 @@ async function verifyReady(game, width, label) {
     await page.keyboard.press('Escape');
     await frame.locator('#veh-menu.open').waitFor({ state: 'hidden' });
   }
+  await guide.waitFor({state:'visible'});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
   await page.screenshot({ path: join(evidenceDir, 'game-' + label + '-' + width + '.jpg'), type: 'jpeg', quality: 80 });
   assert.deepEqual(errors, []);
   assert.deepEqual(writes, []);
@@ -133,7 +135,9 @@ window.approachGuideTest = id => {
   const zone = zoneManager.zones.find(candidate => candidate.id === id);
   const [x,,z] = zone.position;
   P.set(x, Math.max(getH(x,z),getSurfaceH(x,z)) + .15, z);
-  V.set(0,0,0); hVel.set(0,0); mode='walk'; isFlying=false; onGround=true;
+  V.set(0,0,0);
+  if(typeof hVel!=='undefined')hVel.set(0,0);
+  mode='walk'; isFlying=false; onGround=true;
 };
 window.guideActivityReady = () => !!zoneManager.activeZone && !zoneManager.transitioning;`)});
   });
@@ -184,7 +188,7 @@ async function verifyCompactActivities() {
     await guide.getByRole('button',{name:'Breakout',exact:true}).tap();
     const canvas=arcade.frame.locator('#ow-arcade-canvas');
     await canvas.waitFor();
-    await guide.getByText('Breakout',{exact:true}).waitFor();
+    await guide.locator('strong').getByText('Breakout',{exact:true}).waitFor();
     const [card,board]=await Promise.all([guide.boundingBox(),canvas.boundingBox()]);
     assert.ok(card.x+card.width<=board.x||board.x+board.width<=card.x||
       card.y+card.height<=board.y||board.y+board.height<=card.y,'The Arcade board covers the guide.');

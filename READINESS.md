@@ -14,6 +14,7 @@ Production https://open-world.gg. FastAPI/SQLite/static studio; exact run/test/d
 | F3 | Generate a complete edit, retain prior version, reload and explicitly share | verified | A/openworld-sonnet-live-canary.json; A/openworld-production-browser-playback.json |
 | F4 | Game sandbox cannot access studio credentials/storage or privileged actions | verified | A/openworld-production-recovery.json; A/openworld-live-canary.json |
 | F5 | Recovery recreates matching game/database data and invalidates old sessions | verified | A/openworld-unattended-mirror-status.json; OPERATIONS.md; accepted13 source/ASGI cases |
+| F6 | Follow the current activity instructions and use the indicated keys or touch buttons | verified on the public city | [City gameplay guide](qa/city-play-guide.md) covers desktop play and compact and full-size landscape touch controls. |
 | A1 | Download the signed-in caller's profile, chats and generated game files | verified | [24 source/ASGI checks and real download](qa/account-acceptance.md); matching profile/chat/version ZIP and actual owned HTML at375/1440; credentials and foreign data excluded |
 | A2 | Close an account safely, remove active owned data/files and preserve other users | verified | [24 source/ASGI checks and real closure](qa/account-acceptance.md); password/typed confirmation, DB/file rollback, other-account preservation, crash intent and mandatory old-restore reconciliation; actual busy/error/retry/deletion at375/1440 |
 | A3 | Read accurate privacy/storage/provider/retention/contact disclosures | verified | [Compiled public policy/contact](qa/account-acceptance.md), `/privacy` and `/account`; explicit storage/provider/retention/removed-ID/independent-copy limits. Public rollout remains G4 |
@@ -74,6 +75,8 @@ No buildable row remains in this scoped release. The limited included beta is de
 Shared inherited credential and provider-budget actions stay in the portfolio ledger; no duplicate owner request here. Hosted CI no longer needs an allowance action. No new provider review is required for unchanged configuration.
 
 ## Log (last10)
+
+- 2026-11-22. Public Chrome followed the new city controls through the Diving Contest, and tested the Arcade board and Gallery controls in a compact touch viewport. [City gameplay guide](qa/city-play-guide.md)
 
 - 2026-11-22. The public homepage starts directly in the city. Live Chrome verified keyboard focus, Retry and the landscape touch layout before and after turning the phone. [City home checks](qa/city-home.md)
 
