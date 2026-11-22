@@ -464,6 +464,7 @@ const fab=$('ow-fab'),panel=$('ow-panel'),msgs=$('ow-messages'),input=$('ow-inpu
 // "Remix this" on a shared game lands on /v/<id>?remix=1: start a new chat from that version,
 // the same way the store's Play does, so the first edit branches a private copy.
 const remixing=/^\/v\/[a-f0-9-]+$/.test(location.pathname)&&new URLSearchParams(location.search).get('remix')==='1';
+const playOnHome=location.pathname==='/'&&new URLSearchParams(location.search).get('signin')!=='1';
 if(remixing){localStorage.removeItem(SK.SESSION);history.replaceState(history.state,'',location.pathname)}
 let sessionId=localStorage.getItem(SK.SESSION);
 let currentVersionId=localStorage.getItem(SK.VERSION);
@@ -757,7 +758,7 @@ function renderIdeas(){
 function syncIdeas(){
   if(!ideasMode){
     if(readStore(sessionStorage,SHARE_PROMPT)===currentVersionId&&currentVersionId)ideasMode='ready';
-    else if(!sessionId&&funding.value==='included'&&includedEnabled&&includedRemaining>0){ideasMode='ideas';ideasCollapsed=readStore(localStorage,IDEAS_PREF)==='collapsed';}
+    else if(!sessionId&&funding.value==='included'&&includedEnabled&&includedRemaining>0){ideasMode='ideas';ideasCollapsed=playOnHome||readStore(localStorage,IDEAS_PREF)==='collapsed';}
   }
   renderIdeas();
 }
@@ -1267,7 +1268,15 @@ async function loadGame(){
   // The public base already has the opaque sandbox response policy. Let the browser
   // stream/parse it directly instead of buffering the entire game in the parent.
   frame.removeAttribute('src');frame.removeAttribute('srcdoc');
-  if(!currentVersionId){frame.src='/game/base';return;}
+  if(!currentVersionId){
+    const home=playOnHome&&!document.querySelector('.ow-modal-overlay.ow-show');
+    if(home)frame.addEventListener('load',()=>{
+      if(revision===gameLoadRevision&&document.activeElement===document.body&&
+         !document.querySelector('.ow-modal-overlay.ow-show'))frame.focus({preventScroll:true});
+    },{once:true});
+    frame.src=home?'/game/base?autoplay=1':'/game/base';
+    return;
+  }
   try{
     // Private versions still require the caller's bearer/guest proof and never put it in a URL.
     const url='/game/version/'+encodeURIComponent(currentVersionId);
@@ -1298,10 +1307,7 @@ loadGame();
 if(remixing)showToast('Remix: describe a change and it becomes your own copy.');
 if(new URLSearchParams(location.search).get('signin')==='1'&&!Auth.isLoggedIn())$('ow-auth-modal').classList.add('ow-show');
 
-// Landscape is forced via CSS rotation in index.html — no orientation lock needed
-
-// Auto-open panel only on desktop — mobile users see the game home screen first
-if(!('ontouchstart' in window&&navigator.maxTouchPoints>0)){openPanel()}
+if((!playOnHome||currentVersionId)&&!navigator.maxTouchPoints){openPanel()}
 
 })();
 </script>

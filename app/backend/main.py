@@ -1222,11 +1222,11 @@ def api_admin_retry_contact(contact_id: str, db: Session = Depends(get_db), admi
 
 
 @app.get("/game/base")
-def serve_base_game():
+def serve_base_game(request: Request):
     path = get_base_game_path()
     if not os.path.exists(path):
         return game_error_response()
-    return game_response(path, base_demo=True)
+    return game_response(path, base_demo=True, autoplay=request.query_params.get('autoplay') == '1')
 
 
 def _is_published_demo(version: GameVersion) -> bool:

@@ -14,6 +14,7 @@ class BaseStartupTests(unittest.TestCase):
             original = game.read_bytes()
 
             base = game_response(game, base_demo=True)
+            home = game_response(game, base_demo=True, autoplay=True)
             shared = game_response(game)
 
             self.assertIn(b'Loading game', base.body)
@@ -21,6 +22,10 @@ class BaseStartupTests(unittest.TestCase):
             self.assertIn(b"document.dispatchEvent(new Event('ow-base-ready'))", base.body)
             self.assertIn(b"matchMedia('(pointer: coarse)').matches", base.body)
             self.assertIn(b"canvas.requestPointerLock()?.catch", base.body)
+            self.assertNotIn(b'startGame(false);', base.body)
+            self.assertIn(b"document.dispatchEvent(new Event('ow-base-ready'));\nstartGame(false);", home.body)
+            self.assertIn(b'if(!immersive)return;\n  if(!isMobile)try{canvas.requestPointerLock()', home.body)
+            self.assertIn(b'aria-keyshortcuts="G"', home.body)
             self.assertIn(b'Click or press anything to start', shared.body)
             self.assertIn(MOBILE_INPUT.encode(), shared.body)
             self.assertNotIn(b'ow-base-ready', shared.body)
@@ -36,4 +41,4 @@ class BaseStartupTests(unittest.TestCase):
             original.replace('</body>', '<script>console.log("later")</script>\n</body>', 1),
         ):
             with self.subTest(size=len(game)):
-                self.assertEqual(with_base_startup(game), game)
+                self.assertEqual(with_base_startup(game, autoplay=True), game)

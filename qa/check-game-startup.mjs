@@ -30,7 +30,7 @@ async function freshGame(width) {
   const errors = [], writes = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => {
-    if (request.url() === origin + '/game/base' && request.headers().authorization) {
+    if (request.url().startsWith(origin + '/game/base') && request.headers().authorization) {
       errors.push('The public base iframe received a credential header');
     }
   });
@@ -49,34 +49,43 @@ async function freshGame(width) {
 async function verifyReady(game, width, label) {
   const { page, frame, errors, writes } = game;
   const play = frame.getByRole('button', { name: /start game|tap to play/i });
-  await play.waitFor({ state: 'visible' });
+  await frame.locator('#overlay').waitFor({ state: 'hidden' });
+  assert.equal(await play.isVisible(), false);
   assert.equal(await frame.locator('#ow-base-status').isVisible(), false);
   assert.equal(await frame.locator('#ow-base-retry').isVisible(), false);
+  assert.equal(await page.locator('#ow-panel').getAttribute('aria-hidden'), 'true');
+  const fillsViewport = await page.locator('#ow-game').evaluate(iframe =>
+    iframe.clientWidth === innerWidth && iframe.clientHeight === innerHeight);
+  assert.ok(fillsViewport);
   assert.equal(await frame.locator('body').evaluate(() => {
     try { parent.localStorage.getItem('ow_token'); return 'readable'; }
     catch { return 'blocked'; }
   }), 'blocked');
-  if (width === 375) await play.tap();
-  else {
-    await play.press('Tab');
-    assert.equal(await play.isVisible(), true);
-    assert.equal(await play.evaluate(button => document.activeElement !== button), true);
-    await play.press('Escape');
-    assert.equal(await play.isVisible(), true);
-    await play.press(label === 'recovered' ? 'Space' : 'Enter');
-  }
-  await frame.locator('#overlay').waitFor({ state: 'hidden' });
   assert.equal(await frame.locator('#hud').evaluate(hud => getComputedStyle(hud).display), 'block');
   if (width === 375) {
     await frame.locator('body.playing').waitFor({ state: 'attached' });
     await frame.locator('#btn-shoot').waitFor({ state: 'visible' });
+    const dimensions = await frame.locator('#game').evaluate(canvas => ({
+      width: canvas.clientWidth, height: canvas.clientHeight, windowWidth: innerWidth, windowHeight: innerHeight,
+    }));
+    assert.equal(dimensions.width, dimensions.windowWidth);
+    assert.equal(dimensions.height, dimensions.windowHeight);
+    assert.ok(dimensions.width > dimensions.height);
+    await frame.getByRole('button', { name: 'Full screen', exact: true }).waitFor();
     await frame.locator('#btn-veh-m').tap();
     await frame.locator('#veh-menu.open').waitFor({ state: 'visible' });
+    await frame.locator('#veh-close').tap();
+    await frame.locator('#veh-menu.open').waitFor({ state: 'hidden' });
     await frame.locator('body').evaluate(async () => {
       if (document.fullscreenElement) await document.exitFullscreen();
     });
   } else {
     await frame.locator('#bottom-bar').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => document.activeElement?.id === 'ow-game');
+    await page.keyboard.press('v');
+    await frame.locator('#veh-menu.open').waitFor();
+    await page.keyboard.press('Escape');
+    await frame.locator('#veh-menu.open').waitFor({ state: 'hidden' });
   }
   await page.screenshot({ path: join(evidenceDir, 'game-' + label + '-' + width + '.jpg'), type: 'jpeg', quality: 80 });
   assert.deepEqual(errors, []);
@@ -99,7 +108,7 @@ try {
       ]);
       const iframe = delayed.page.locator('#ow-game');
       await iframe.waitFor({ state: 'visible' });
-      assert.equal(await iframe.getAttribute('src'), '/game/base');
+      assert.equal(await iframe.getAttribute('src'), '/game/base?autoplay=1');
       assert.equal(await iframe.getAttribute('srcdoc'), null);
       assert.equal(await iframe.getAttribute('sandbox'), 'allow-scripts allow-pointer-lock');
       const status = delayed.frame.getByText('Loading game…', { exact: true });
@@ -114,7 +123,7 @@ try {
       if (width === 375) await delayed.page.screenshot({ path: join(evidenceDir, 'game-loading-375.jpg'), type: 'jpeg', quality: 80 });
       release();
       await verifyReady(delayed, width, 'ready');
-      console.log(width + 'px: Loading during delay, one Start input reaches HUD and available controls.');
+      console.log(width + 'px: Loading during delay, then direct play with the HUD and working controls.');
     } finally {
       release();
       await delayed.context.close();
@@ -134,7 +143,7 @@ try {
       if (width === 375) await retry.tap();
       else await retry.press('Enter');
       await verifyReady(failed, width, 'recovered');
-      console.log(width + 'px: Retry after a failed dependency reloads the real base and enables first play.');
+      console.log(width + 'px: Retry after a failed dependency reloads straight into the playable game.');
     } finally {
       await failed.context.close();
     }
