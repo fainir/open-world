@@ -1358,9 +1358,10 @@ def serve_home(request: Request):
 @app.api_route("/island/", methods=["GET", "HEAD"], include_in_schema=False)
 @app.api_route("/island/resort", methods=["GET", "HEAD"], include_in_schema=False)
 @app.api_route("/island/resort/", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/play/resort-from-agent-guide", methods=["GET", "HEAD"], include_in_schema=False)
 def open_world_island(request: Request):
     destination = "https://tidefall-island.fainir2006.workers.dev/"
-    if request.url.path.rstrip("/") == "/island/resort":
+    if request.url.path.rstrip("/") in ("/island/resort", "/play/resort-from-agent-guide"):
         destination += "resort/"
     return RedirectResponse(
         url=destination,

@@ -103,6 +103,20 @@ class ShareLoop(unittest.IsolatedAsyncioTestCase):
             self.file.write_text('<!doctype html><html><body>' + self.marker + '</body></html>', encoding='utf-8')
             self.db.commit()
 
+    async def test_resort_guide_opens_the_existing_public_resort(self):
+        existing = await self.client.get('/island/resort', follow_redirects=False)
+        self.assertEqual(existing.status_code, 302)
+        for method in ('GET', 'HEAD'):
+            with self.subTest(method=method):
+                response = await self.client.request(
+                    method, '/play/resort-from-agent-guide?next=https://example.com/',
+                    follow_redirects=False,
+                )
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.headers['location'], existing.headers['location'])
+                self.assertEqual(response.headers['cache-control'], 'no-store')
+                self.assertNotIn('set-cookie', response.headers)
+
     async def test_remix_of_private_or_missing_games_reveals_nothing(self):
         private=GameVersion(session_id=self.session.id,user_id=self.owner.id,version_number=4,description='PRIVATE_SYNTHETIC',
                             file_path=self.file.name,is_shared=False,share_slug=secrets.token_hex(16))
